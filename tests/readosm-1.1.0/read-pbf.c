@@ -257,13 +257,14 @@ static int callback_relation (const void *user_data, const readosm_relation * re
               printf ("\t\t<member ref=\"%s\"", buf);
               break;
         };
-        if (member->role != NULL)
+        if (member->role != NULL) {
             printf (" role=\"%s\" />\n", member->role);
-        else
+        }
+        else {
             printf (" />\n");
+        }
       }
-      for (i = 0; i < relation->tag_count; i++)
-        {
+      for (i = 0; i < relation->tag_count; i++) {
         /* we'll now print each <tag> for this way */
         tag = relation->tags + i;
         printf ("\t\t<tag k=\"%s\" v=\"%s\" />\n", tag->key,
