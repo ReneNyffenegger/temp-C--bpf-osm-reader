@@ -1,0 +1,3 @@
+[submodule "clones/OSM-binary"]
+	path = clones/OSM-binary
+	url = https://github.com/scrosby/OSM-binary
