@@ -31,4 +31,11 @@ Trying to create a C++ reader for OpenStreetMap bpf files (from geofabrik.de)
     
     make: Leaving directory '/var/tmp/temp-C--bpf-osm-reader/clones/OSM-binary/src'
 
-### clones/tiny-osmpbf
+### clones/tiny-osmpbf: https://github.com/tyrasd/tiny-osmpbf
+
+## Copies
+
+### readosm-1.1.0
+
+readosm-1.1.0 was downloaded from https://www.gaia-gis.it/fossil/readosm/index
+    
