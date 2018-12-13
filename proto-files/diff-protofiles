@@ -1,0 +1,5 @@
+#
+#    Check if »original« protofiles are equal
+#
+gvim -d ../clones/OSM-binary/src/fileformat.proto ../clones/tiny-osmpbf/proto/fileformat.proto
+gvim -d ../clones/OSM-binary/src/osmformat.proto  ../clones/tiny-osmpbf/proto/osmformat.proto
