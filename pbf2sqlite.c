@@ -36,10 +36,49 @@
     MYSQL_STMT   *stmt_ins_tag_way     ; MYSQL_BIND  bind_ins_tag_way     [3];
     MYSQL_STMT   *stmt_ins_tag_rel     ; MYSQL_BIND  bind_ins_tag_rel     [3];
 
+
+    unsigned long long   ins_nod__nod_id;
+    double ins_nod__lat;
+    double ins_nod__lon;
+
+    long ins_nod_way__way_id    ;
+    long ins_nod_way__nod_id    ;
+    long ins_nod_way__order_    ;
+
+    long ins_rel_mem_nod__rel_of;
+    long ins_rel_mem_nod__order_;
+    long ins_rel_mem_nod__nod_id;
+    char ins_rel_mem_nod__rol   [1000];
+
+    long ins_rel_mem_way__rel_of;
+    long ins_rel_mem_way__order_;
+    long ins_rel_mem_way__nod_id;
+    char ins_rel_mem_way__rol   [1000];
+
+
+    long ins_rel_mem_rel__rel_of;
+    long ins_rel_mem_rel__order_;
+    long ins_rel_mem_rel__nod_id;
+    char ins_rel_mem_rel__rol   [1000];
+
+    long ins_tag_nod__nod_id    ;
+    char ins_tag_nod__key       [1000];
+    char ins_tag_nod__val       [1000];
+
+    long ins_tag_way__way_id    ;
+    char ins_tag_way__key       [1000];
+    char ins_tag_way__val       [1000];
+
+    long ins_tag_ral__rel_id    ;
+    char ins_tag_ral__key       [1000];
+    char ins_tag_ral__val       [1000];
+
+
 #endif
 
 
 void dbExec(const char* sql) {
+  printf("dbExec: %s\n", sql);
 #ifdef PBF2SQLITE
   if (sqlite3_exec(db, sql, NULL, NULL, NULL)) {
      printf("Could not exec %s\n", sql);
@@ -55,10 +94,17 @@ void dbExec(const char* sql) {
 #endif
 }
 
-static int callback_node (const void *user_data, const readosm_node * node) {
+static int callback_node (const void *user_data, const readosm_node *node) {
     char buf[128];
     int i;
     const readosm_tag *tag;
+
+    static int callback_node_cnt = 0;
+    callback_node_cnt ++;
+
+    if (! (callback_node_cnt % 10000)) {
+       printf("callback_node_cnt = %d\n", callback_node_cnt);
+    }
 
 //  TQ84: commented
 //
@@ -127,6 +173,15 @@ static int callback_node (const void *user_data, const readosm_node * node) {
    sqlite3_reset      (stmt_ins_nod);
 
 #elif defined PBF2MYSQL
+
+   ins_nod__nod_id = node -> id;
+   ins_nod__lat    = node -> latitude;
+   ins_nod__lon    = node -> longitude;
+
+   if (mysql_stmt_execute(stmt_ins_nod)) {
+      fprintf(stderr, "Could not execute stmt_ins_nod.\n%s\n", mysql_error(db));
+      exit(1);
+   }
 
 #endif
 
@@ -433,6 +488,29 @@ void createDB(const char* name) {
   remove(name);
   sqlite3_open(filename, &db);
 #elif defined PBF2MYSQL
+
+   db = mysql_init(NULL);
+   if (!db) {
+     fprintf(stderr, "Could not init mysql connection\n");
+     exit(1);
+   }
+
+   if (! mysql_real_connect(db,
+        "localhost",
+        "root"     ,
+        "iAmRoot"  ,
+         NULL      ,
+         0         , // Port number - 0 = default ?
+         NULL      ,
+         0
+   )) {
+
+    fprintf(stderr, "%s\n", mysql_error(db));
+    mysql_close(db);
+    exit(1);
+
+   }
+
    dbExec("drop database if exists osm_ch");  // TODO: osm_ch should of course not be hard coded.
    dbExec("create database osm_ch");
    dbExec("use osm_ch");
@@ -441,9 +519,9 @@ void createDB(const char* name) {
 //sqlite3_exec(db,
   dbExec(
 "CREATE TABLE nod ("
-"          id             integer primary key,"
-"          lat            double not null, -- real not null,"
-"          lon            double not null  -- real not null"
+"          id             bigint not null primary key, -- integer primary key,\n"
+"          lat            double not null, -- real not null,\n"
+"          lon            double not null  -- real not null \n"
 "        )"
   );
 
@@ -462,7 +540,7 @@ void createDB(const char* name) {
 "          nod_id  integer,"
 "          way_id  integer,"
 "          rel_id  integer,"
-"          rol     varchar(1024)  -- text"
+"          rol     varchar(1024)  -- text\n"
 ")"
   );
 
@@ -486,12 +564,12 @@ void createDB(const char* name) {
 // ""
 
    dbExec(
-"CREATE TABLE tag("
-"          nod_id         integer null,"
-"          way_id         integer null,"
-"          rel_id         integer null,"
-"          key            varchar(1024), -- text not null,"
-"          val            varchar(1024)  -- text not null"
+"CREATE TABLE tag (\n"
+"          nod_id         integer null,\n"
+"          way_id         integer null,\n"
+"          rel_id         integer null,\n"
+"          k              varchar( 500), -- text not null,\n"
+"          v              varchar( 500)  -- text not null \n"
 "        )"
 );
 //  NULL, NULL, NULL);
@@ -521,45 +599,6 @@ MYSQL_STMT *prepareStatement(const char* sql) {
 }
 #endif 
 
-#if defined PBF2MYSQL
-
-    int    ins_nod__nod_id;
-    double ins_nod__lat;
-    double ins_nod__lon;
-
-    int  ins_nod_way__way_id    ;
-    int  ins_nod_way__nod_id    ;
-    int  ins_nod_way__order_    ;
-
-    int  ins_rel_mem_nod__rel_of;
-    int  ins_rel_mem_nod__order_;
-    int  ins_rel_mem_nod__nod_id;
-    char ins_rel_mem_nod__rol   [1000];
-
-    int  ins_rel_mem_way__rel_of;
-    int  ins_rel_mem_way__order_;
-    int  ins_rel_mem_way__nod_id;
-    char ins_rel_mem_way__rol   [1000];
-
-
-    int  ins_rel_mem_rel__rel_of;
-    int  ins_rel_mem_rel__order_;
-    int  ins_rel_mem_rel__nod_id;
-    char ins_rel_mem_rel__rol   [1000];
-
-    int  ins_tag_nod__nod_id    ;
-    char ins_tag_nod__key       [1000];
-    char ins_tag_nod__val       [1000];
-
-    int  ins_tag_way__way_id    ;
-    char ins_tag_way__key       [1000];
-    char ins_tag_way__val       [1000];
-
-    int  ins_tag_ral__rel_id    ;
-    char ins_tag_ral__key       [1000];
-    char ins_tag_ral__val       [1000];
-
-#endif
 
 
 void prepareStatements() {
@@ -569,13 +608,13 @@ void prepareStatements() {
     stmt_ins_rel_mem_nod  = prepareStatement("insert into rel_mem (rel_of, order_, nod_id, rol) values (?, ?, ?, ?)");
     stmt_ins_rel_mem_way  = prepareStatement("insert into rel_mem (rel_of, order_, way_id, rol) values (?, ?, ?, ?)");
     stmt_ins_rel_mem_rel  = prepareStatement("insert into rel_mem (rel_of, order_, rel_id, rol) values (?, ?, ?, ?)");
-    stmt_ins_tag_nod      = prepareStatement("insert into tag (nod_id, key, val) values (?, ?, ?)");
-    stmt_ins_tag_way      = prepareStatement("insert into tag (way_id, key, val) values (?, ?, ?)");
-    stmt_ins_tag_rel      = prepareStatement("insert into tag (rel_id, key, val) values (?, ?, ?)");
+    stmt_ins_tag_nod      = prepareStatement("insert into tag (nod_id, k, v) values (?, ?, ?)");
+    stmt_ins_tag_way      = prepareStatement("insert into tag (way_id, k, v) values (?, ?, ?)");
+    stmt_ins_tag_rel      = prepareStatement("insert into tag (rel_id, k, v) values (?, ?, ?)");
 
 #if defined PBF2MYSQL
 
-    memset( bind_ins_nod         , 0, sizeof(bind_ins_nod         ));  bind_ins_nod         [0].buffer_type = MYSQL_TYPE_LONG  ; bind_ins_nod         [0].buffer = (char*) &ins_nod__nod_id        ;
+    memset( bind_ins_nod         , 0, sizeof(bind_ins_nod         ));  bind_ins_nod         [0].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_nod         [0].buffer = (char*) &ins_nod__nod_id        ; 
                                                                        bind_ins_nod         [1].buffer_type = MYSQL_TYPE_DOUBLE; bind_ins_nod         [1].buffer = (char*) &ins_nod__lat           ;
                                                                        bind_ins_nod         [2].buffer_type = MYSQL_TYPE_DOUBLE; bind_ins_nod         [2].buffer = (char*) &ins_nod__lon           ;
 
@@ -611,6 +650,13 @@ void prepareStatements() {
                                                                        bind_ins_tag_rel     [1].buffer_type = MYSQL_TYPE_STRING; bind_ins_tag_rel     [1].buffer = (char*) &ins_tag_ral__key       ;
                                                                        bind_ins_tag_rel     [2].buffer_type = MYSQL_TYPE_STRING; bind_ins_tag_rel     [2].buffer = (char*) &ins_tag_ral__val       ;
 
+    if (mysql_stmt_bind_param(stmt_ins_nod, bind_ins_nod)) {
+      fprintf(stderr, "Could not bind bind_ins_nod.\n");
+      exit(1);
+    }
+
+
+
 #endif
 }
 
@@ -645,8 +691,8 @@ int init_readosm(const char* filename_pbf) {
 void createIndexes() {
 
   dbExec("create index nod_way_ix_way_id on nod_way(way_id  )");
-  dbExec("create index tag_ix_val        on tag    (     val)");
-  dbExec("create index tag_ix_key_val    on tag    (key, val)");
+  dbExec("create index tag_ix_val        on tag    (     v  )");
+  dbExec("create index tag_ix_key_val    on tag    (k  , v  )");
   dbExec("create index tag_ix_nod_id     on tag    (nod_id  )");
   dbExec("create index tag_ix_way_id     on tag    (way_id  )");
   dbExec("create index tag_ix_rel_id     on tag    (rel_id  )");
@@ -669,11 +715,20 @@ int main (int argc, char *argv[]) {
 
   prepareStatements(db);
 
+
+#ifdef PBF2SQLITE
 //sqlite3_exec(db, "begin transaction", NULL, NULL, NULL);
   dbExec("begin transaction");
+#elif defined PBF2MYSQL
+  dbExec("begin work"       );
+#endif
   init_readosm(filename_pbf);
 //sqlite3_exec(db, "commit transaction", NULL, NULL, NULL);
+#ifdef PBF2SQLITE
   dbExec("commit transaction");
+#elif defined PBF2MYSQL
+  dbExec("commit work"       );
+#endif
 
   createIndexes();
 }

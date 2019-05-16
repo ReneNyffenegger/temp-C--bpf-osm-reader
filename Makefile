@@ -2,7 +2,7 @@
 
 
 
-pbf2mysql-windows: pbf2sqlite.c
+pbf2mysql-windows.exe: pbf2sqlite.c
 	@rem gcc  -I"C:\Program Files\MySQL\MySQL Server 8.0\include" -Icopies\readosm-1.1.0\headers -DPBF2MYSQL  $< copies\readosm-1.1.0-win-gcc\src\*.o  -o $@ -lreadosm -L"C:\Program Files\MySQL\MySQL Server 8.0\lib -lmysql  -lzlib -lexpat
 	gcc  -I"C:\Program Files\MySQL\MySQL Server 8.0\include" -Icopies\readosm-1.1.0\headers  -L"C:\Program Files\MySQL\MySQL Server 8.0\lib" -DPBF2MYSQL -lmysql  $< copies/readosm-1.1.0-win-gcc/src/*.o  -o $@ -lzlib -lexpat
 
