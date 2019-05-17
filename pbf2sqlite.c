@@ -62,7 +62,11 @@
 
     unsigned long long ins_tag_nod__nod_id    ;
     char               ins_tag_nod__key       [1000];
+    long               ins_tag_nod__key_len   ;
     char               ins_tag_nod__val       [1000];
+    long               ins_tag_nod__val_len   ;
+//  char const        *ins_tag_nod__key       ;
+//  char const        *ins_tag_nod__val       ;
 
     unsigned long long ins_tag_way__way_id    ;
     char               ins_tag_way__key       [1000];
@@ -206,6 +210,28 @@ static int callback_node (const void *user_data, const readosm_node *node) {
         sqlite3_step      (stmt_ins_tag_nod);
         sqlite3_reset     (stmt_ins_tag_nod);
 #elif defined PBF2MYSQL
+
+       ins_tag_nod__nod_id = node->id   ;
+       strcpy(ins_tag_nod__key, tag ->key  );
+       strcpy(ins_tag_nod__val, tag ->value);
+
+       ins_tag_nod__key_len = strlen(ins_tag_nod__key);
+       ins_tag_nod__val_len = strlen(ins_tag_nod__val);
+
+//     printf("k: %s\nv: %s\n", ins_tag_nod__key, ins_tag_nod__val);
+
+//     unsigned char* x;
+//     for (x=ins_tag_nod__val; *x; x++) {
+//        printf("%02X ", *x);
+//     }
+//     printf("\n\n");
+
+       if (mysql_stmt_execute(stmt_ins_tag_nod)) {
+          fprintf(stderr, "Could not execute stmt_ins_tag_nod.\n%s\n", mysql_error(db));
+          exit(1);
+       }
+
+
 #endif
 
 //      printf ("\t\t<tag k=\"%s\" v=\"%s\" />\n", tag->key,
@@ -313,6 +339,7 @@ static int callback_way (const void *user_data, const readosm_way * way) {
           sqlite3_step      (stmt_ins_tag_way);
           sqlite3_reset     (stmt_ins_tag_way);
 #elif defined PBF2MYSQL
+
 #endif
 
       }
@@ -520,8 +547,12 @@ void createDB(const char* name) {
    }
 
    dbExec("drop database if exists osm_ch");  // TODO: osm_ch should of course not be hard coded.
-   dbExec("create database osm_ch");
+// dbExec("create database osm_ch default character set utf8mb4 collate       utf8mb4_0900_as_cs");
+   dbExec("create database osm_ch         character set utf8mb4");
    dbExec("use osm_ch");
+// dbExec("set names utf8mb4");
+// dbExec("set character set utf8mb4");
+// mysql_set_character_set(db, "utf8mb4");
 #endif
 
 //sqlite3_exec(db,
@@ -543,11 +574,11 @@ void createDB(const char* name) {
 
   dbExec (
 "create table rel_mem ("
-"          rel_of  integer not null,"
+"          rel_of  bigint  not null,"
 "          order_  integer not null,"
-"          nod_id  integer,"
-"          way_id  integer,"
-"          rel_id  integer,"
+"          nod_id  bigint,"
+"          way_id  bigint,"
+"          rel_id  bigint,"
 "          rol     varchar(1024)  -- text\n"
 ")"
   );
@@ -573,11 +604,11 @@ void createDB(const char* name) {
 
    dbExec(
 "CREATE TABLE tag (\n"
-"          nod_id         integer null,\n"
-"          way_id         integer null,\n"
-"          rel_id         integer null,\n"
-"          k              varchar( 500), -- text not null,\n"
-"          v              varchar( 500)  -- text not null \n"
+"          nod_id         bigint null,\n"
+"          way_id         bigint null,\n"
+"          rel_id         bigint null,\n"
+"          k              varchar( 500), -- character set utf8mb4 collate       utf8mb4_0900_as_cs, -- text not null,\n"
+"          v              varchar( 500)  -- character set utf8mb4 collate       utf8mb4_0900_as_cs -- text not null \n"
 "        )"
 );
 //  NULL, NULL, NULL);
@@ -647,8 +678,8 @@ void prepareStatements() {
                                                                        bind_ins_rel_mem_rel [3].buffer_type = MYSQL_TYPE_STRING  ; bind_ins_rel_mem_rel [3].buffer = (char*) &ins_rel_mem_rel__rol   ;
 
     memset( bind_ins_tag_nod     , 0, sizeof(bind_ins_tag_nod     ));  bind_ins_tag_nod     [0].buffer_type = MYSQL_TYPE_LONGLONG; bind_ins_tag_nod     [0].buffer = (char*) &ins_tag_nod__nod_id    ;
-                                                                       bind_ins_tag_nod     [1].buffer_type = MYSQL_TYPE_STRING  ; bind_ins_tag_nod     [1].buffer = (char*) &ins_tag_nod__key       ;
-                                                                       bind_ins_tag_nod     [2].buffer_type = MYSQL_TYPE_STRING  ; bind_ins_tag_nod     [2].buffer = (char*) &ins_tag_nod__val       ;
+                                                                       bind_ins_tag_nod     [1].buffer_type = MYSQL_TYPE_VAR_STRING  ; bind_ins_tag_nod     [1].buffer = (char*) &ins_tag_nod__key       ; bind_ins_tag_nod [1].buffer_length=500; bind_ins_tag_nod[1].length = &ins_tag_nod__key_len;
+                                                                       bind_ins_tag_nod     [2].buffer_type = MYSQL_TYPE_VAR_STRING  ; bind_ins_tag_nod     [2].buffer = (char*) &ins_tag_nod__val       ; bind_ins_tag_nod [2].buffer_length=500; bind_ins_tag_nod[2].length = &ins_tag_nod__val_len;
 
     memset( bind_ins_tag_way     , 0, sizeof(bind_ins_tag_way     ));  bind_ins_tag_way     [0].buffer_type = MYSQL_TYPE_LONGLONG; bind_ins_tag_way     [0].buffer = (char*) &ins_tag_way__way_id    ;
                                                                        bind_ins_tag_way     [1].buffer_type = MYSQL_TYPE_STRING  ; bind_ins_tag_way     [1].buffer = (char*) &ins_tag_way__key       ;
