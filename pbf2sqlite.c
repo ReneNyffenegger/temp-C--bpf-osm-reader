@@ -48,35 +48,30 @@
     unsigned long long ins_rel_mem_nod__rel_of;
     unsigned long long ins_rel_mem_nod__order_;
     unsigned long long ins_rel_mem_nod__nod_id;
-    char               ins_rel_mem_nod__rol   [1000];
+    char               ins_rel_mem_nod__rol   [1000]; long ins_rel_mem_nod__rol_len;
 
     unsigned long long ins_rel_mem_way__rel_of;
     unsigned long long ins_rel_mem_way__order_;
-    unsigned long long ins_rel_mem_way__nod_id;
-    char               ins_rel_mem_way__rol   [1000];
+    unsigned long long ins_rel_mem_way__way_id;
+    char               ins_rel_mem_way__rol   [1000]; long ins_rel_mem_way__rol_len;
 
     unsigned long long ins_rel_mem_rel__rel_of;
     unsigned long long ins_rel_mem_rel__order_;
-    unsigned long long ins_rel_mem_rel__nod_id;
-    char               ins_rel_mem_rel__rol   [1000];
+    unsigned long long ins_rel_mem_rel__rel_id;
+    char               ins_rel_mem_rel__rol   [1000]; long ins_rel_mem_rel__rol_len;
+
 
     unsigned long long ins_tag_nod__nod_id    ;
-    char               ins_tag_nod__key       [1000];
-    long               ins_tag_nod__key_len   ;
-    char               ins_tag_nod__val       [1000];
-    long               ins_tag_nod__val_len   ;
+    char               ins_tag_nod__key       [1000]; long ins_tag_nod__key_len;
+    char               ins_tag_nod__val       [1000]; long ins_tag_nod__val_len;
 
     unsigned long long ins_tag_way__way_id    ;
-    char               ins_tag_way__key       [1000];
-    long               ins_tag_way__key_len   ;
-    char               ins_tag_way__val       [1000];
-    long               ins_tag_way__val_len   ;
+    char               ins_tag_way__key       [1000]; long ins_tag_way__key_len;
+    char               ins_tag_way__val       [1000]; long ins_tag_way__val_len;
 
     unsigned long long ins_tag_rel__rel_id    ;
-    char               ins_tag_rel__key       [1000];
-    long               ins_tag_rel__key_len   ;
-    char               ins_tag_rel__val       [1000];
-    long               ins_tag_rel__val_len   ;
+    char               ins_tag_rel__key       [1000]; long ins_tag_rel__key_len;
+    char               ins_tag_rel__val       [1000]; long ins_tag_rel__val_len;
 
 
 #endif
@@ -469,6 +464,18 @@ static int callback_relation (const void *user_data, const readosm_relation * re
               sqlite3_step      (stmt_ins_rel_mem_nod);
               sqlite3_reset     (stmt_ins_rel_mem_nod);
 #elif defined PBF2MYSQL
+
+              ins_rel_mem_nod__rel_of  = relation->id;
+              ins_rel_mem_nod__order_  = i;
+              ins_rel_mem_nod__nod_id  = member->id;
+
+              strcpy(ins_rel_mem_nod__rol, member->role); ins_rel_mem_nod__rol_len = strlen(ins_rel_mem_nod__rol);
+
+              if (mysql_stmt_execute(stmt_ins_rel_mem_nod)) {
+                 fprintf(stderr, "Could not execute stmt_ins_rel_mem_nod.\n%s\n", mysql_error(db));
+                 exit(1);
+              }
+
 #endif
               break;
 
@@ -482,6 +489,17 @@ static int callback_relation (const void *user_data, const readosm_relation * re
               sqlite3_step      (stmt_ins_rel_mem_way);
               sqlite3_reset     (stmt_ins_rel_mem_way);
 #elif defined PBF2MYSQL
+
+              ins_rel_mem_way__rel_of  = relation->id;
+              ins_rel_mem_way__order_  = i;
+              ins_rel_mem_way__way_id  = member->id;
+
+              strcpy(ins_rel_mem_way__rol, member->role); ins_rel_mem_way__rol_len = strlen(ins_rel_mem_way__rol);
+
+              if (mysql_stmt_execute(stmt_ins_rel_mem_way)) {
+                 fprintf(stderr, "Could not execute stmt_ins_rel_mem_way.\n%s\n", mysql_error(db));
+                 exit(1);
+              }
 #endif
               break;
 
@@ -495,6 +513,16 @@ static int callback_relation (const void *user_data, const readosm_relation * re
               sqlite3_step      (stmt_ins_rel_mem_rel);
               sqlite3_reset     (stmt_ins_rel_mem_rel);
 #elif defined PBF2MYSQL
+              ins_rel_mem_rel__rel_of  = relation->id;
+              ins_rel_mem_rel__order_  = i;
+              ins_rel_mem_rel__rel_id  = member->id;
+
+              strcpy(ins_rel_mem_rel__rol, member->role); ins_rel_mem_rel__rol_len = strlen(ins_rel_mem_rel__rol);
+
+              if (mysql_stmt_execute(stmt_ins_rel_mem_rel)) {
+                 fprintf(stderr, "Could not execute stmt_ins_rel_mem_rel.\n%s\n", mysql_error(db));
+                 exit(1);
+              }
 #endif
               break;
 
@@ -692,30 +720,29 @@ void prepareStatements() {
     memset( bind_ins_rel_mem_nod , 0, sizeof(bind_ins_rel_mem_nod ));  bind_ins_rel_mem_nod [0].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_nod [0].buffer = (char*) &ins_rel_mem_nod__rel_of;
                                                                        bind_ins_rel_mem_nod [1].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_nod [1].buffer = (char*) &ins_rel_mem_nod__order_;
                                                                        bind_ins_rel_mem_nod [2].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_nod [2].buffer = (char*) &ins_rel_mem_nod__nod_id;
-                                                                       bind_ins_rel_mem_nod [3].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_rel_mem_nod [3].buffer = (char*) &ins_rel_mem_nod__rol   ;
+                                                                       bind_ins_rel_mem_nod [3].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_rel_mem_nod [3].buffer = (char*) &ins_rel_mem_nod__rol   ; bind_ins_rel_mem_nod[3].buffer_length=500; bind_ins_rel_mem_nod[3].length = &ins_rel_mem_nod__rol_len;
 
     memset( bind_ins_rel_mem_way , 0, sizeof(bind_ins_rel_mem_way ));  bind_ins_rel_mem_way [0].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_way [0].buffer = (char*) &ins_rel_mem_way__rel_of;
                                                                        bind_ins_rel_mem_way [1].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_way [1].buffer = (char*) &ins_rel_mem_way__order_;
-                                                                       bind_ins_rel_mem_way [2].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_way [2].buffer = (char*) &ins_rel_mem_way__nod_id;
-                                                                       bind_ins_rel_mem_way [3].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_rel_mem_way [3].buffer = (char*) &ins_rel_mem_way__rol   ;
-
+                                                                       bind_ins_rel_mem_way [2].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_way [2].buffer = (char*) &ins_rel_mem_way__way_id;
+                                                                       bind_ins_rel_mem_way [3].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_rel_mem_way [3].buffer = (char*) &ins_rel_mem_way__rol   ; bind_ins_rel_mem_way[3].buffer_length=500; bind_ins_rel_mem_way[3].length = &ins_rel_mem_way__rol_len;
 
     memset( bind_ins_rel_mem_rel , 0, sizeof(bind_ins_rel_mem_rel ));  bind_ins_rel_mem_rel [0].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_rel [0].buffer = (char*) &ins_rel_mem_rel__rel_of;
                                                                        bind_ins_rel_mem_rel [1].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_rel [1].buffer = (char*) &ins_rel_mem_rel__order_;
-                                                                       bind_ins_rel_mem_rel [2].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_rel [2].buffer = (char*) &ins_rel_mem_rel__nod_id;
-                                                                       bind_ins_rel_mem_rel [3].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_rel_mem_rel [3].buffer = (char*) &ins_rel_mem_rel__rol   ;
+                                                                       bind_ins_rel_mem_rel [2].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_rel_mem_rel [2].buffer = (char*) &ins_rel_mem_rel__rel_id;
+                                                                       bind_ins_rel_mem_rel [3].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_rel_mem_rel [3].buffer = (char*) &ins_rel_mem_rel__rol   ; bind_ins_rel_mem_rel[3].buffer_length=500; bind_ins_rel_mem_rel[3].length = &ins_rel_mem_rel__rol_len;
 
     memset( bind_ins_tag_nod     , 0, sizeof(bind_ins_tag_nod     ));  bind_ins_tag_nod     [0].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_tag_nod     [0].buffer = (char*) &ins_tag_nod__nod_id    ;
-                                                                       bind_ins_tag_nod     [1].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_nod     [1].buffer = (char*) &ins_tag_nod__key       ; bind_ins_tag_nod [1].buffer_length=500; bind_ins_tag_nod[1].length = &ins_tag_nod__key_len;
-                                                                       bind_ins_tag_nod     [2].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_nod     [2].buffer = (char*) &ins_tag_nod__val       ; bind_ins_tag_nod [2].buffer_length=500; bind_ins_tag_nod[2].length = &ins_tag_nod__val_len;
+                                                                       bind_ins_tag_nod     [1].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_nod     [1].buffer = (char*) &ins_tag_nod__key       ; bind_ins_tag_nod    [1].buffer_length=500; bind_ins_tag_nod    [1].length = &ins_tag_nod__key_len;
+                                                                       bind_ins_tag_nod     [2].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_nod     [2].buffer = (char*) &ins_tag_nod__val       ; bind_ins_tag_nod    [2].buffer_length=500; bind_ins_tag_nod    [2].length = &ins_tag_nod__val_len;
 
     memset( bind_ins_tag_way     , 0, sizeof(bind_ins_tag_way     ));  bind_ins_tag_way     [0].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_tag_way     [0].buffer = (char*) &ins_tag_way__way_id    ;
-                                                                       bind_ins_tag_way     [1].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_way     [1].buffer = (char*) &ins_tag_way__key       ; bind_ins_tag_way [1].buffer_length=500; bind_ins_tag_way[1].length = &ins_tag_way__key_len;
-                                                                       bind_ins_tag_way     [2].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_way     [2].buffer = (char*) &ins_tag_way__val       ; bind_ins_tag_way [2].buffer_length=500; bind_ins_tag_way[2].length = &ins_tag_way__val_len;
+                                                                       bind_ins_tag_way     [1].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_way     [1].buffer = (char*) &ins_tag_way__key       ; bind_ins_tag_way    [1].buffer_length=500; bind_ins_tag_way    [1].length = &ins_tag_way__key_len;
+                                                                       bind_ins_tag_way     [2].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_way     [2].buffer = (char*) &ins_tag_way__val       ; bind_ins_tag_way    [2].buffer_length=500; bind_ins_tag_way    [2].length = &ins_tag_way__val_len;
 
     memset( bind_ins_tag_rel     , 0, sizeof(bind_ins_tag_rel     ));  bind_ins_tag_rel     [0].buffer_type = MYSQL_TYPE_LONGLONG  ; bind_ins_tag_rel     [0].buffer = (char*) &ins_tag_rel__rel_id    ;
-                                                                       bind_ins_tag_rel     [1].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_rel     [1].buffer = (char*) &ins_tag_rel__key       ; bind_ins_tag_rel [1].buffer_length=500; bind_ins_tag_rel[1].length = &ins_tag_rel__key_len;
-                                                                       bind_ins_tag_rel     [2].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_rel     [2].buffer = (char*) &ins_tag_rel__val       ; bind_ins_tag_rel [2].buffer_length=500; bind_ins_tag_rel[2].length = &ins_tag_rel__val_len;
+                                                                       bind_ins_tag_rel     [1].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_rel     [1].buffer = (char*) &ins_tag_rel__key       ; bind_ins_tag_rel    [1].buffer_length=500; bind_ins_tag_rel    [1].length = &ins_tag_rel__key_len;
+                                                                       bind_ins_tag_rel     [2].buffer_type = MYSQL_TYPE_VAR_STRING; bind_ins_tag_rel     [2].buffer = (char*) &ins_tag_rel__val       ; bind_ins_tag_rel    [2].buffer_length=500; bind_ins_tag_rel    [2].length = &ins_tag_rel__val_len;
 
     if (mysql_stmt_bind_param(stmt_ins_nod, bind_ins_nod)) {
       fprintf(stderr, "Could not bind bind_ins_nod.\n");
