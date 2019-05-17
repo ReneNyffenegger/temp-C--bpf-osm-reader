@@ -830,8 +830,8 @@ int main (int argc, char *argv[]) {
   const char* dbName  = "osm_ch";
 #endif
 // const char* filename_pbf = "/home/rene/github/github/OpenStreetMap/pbf/ch.pbf";
-// const char* filename_pbf = "../../github/OpenStreetMap/pbf/ch.pbf";
-   const char* filename_pbf = "../../github/OpenStreetMap/pbf/li.pbf";
+   const char* filename_pbf = "../../github/OpenStreetMap/pbf/ch.pbf";
+// const char* filename_pbf = "../../github/OpenStreetMap/pbf/li.pbf";
 
   createDB(dbName);
 
