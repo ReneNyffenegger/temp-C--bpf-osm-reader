@@ -813,6 +813,7 @@ int init_readosm(const char* filename_pbf) {
 void createIndexes() {
 
   dbExec("create index nod_way_ix_way_id on nod_way(way_id  )");
+//dbExec("create index nod_way_ix_nod_id on nod_way(nod_id  )"); // ?
   dbExec("create index tag_ix_v          on tag    (     v  )");
 //dbExec("create index tag_ix_k          on tag    (k       )");
   dbExec("create index tag_ix_k_v        on tag    (k  , v  )");
