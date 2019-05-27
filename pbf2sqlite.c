@@ -103,7 +103,7 @@ static int callback_node (const void *user_data, const readosm_node *node) {
     callback_node_cnt ++;
 
     if (! (callback_node_cnt % 10000)) {
-       printf("callback_node_cnt = %d\n", callback_node_cnt);
+       printf("Nodes loaded: %d\n", callback_node_cnt);
     }
 
 //  TQ84: commented
@@ -243,6 +243,13 @@ static int callback_way (const void *user_data, const readosm_way * way) {
     char buf[128];
     int i;
     const readosm_tag *tag;
+
+    static int callback_way_cnt = 0;
+    callback_way_cnt ++;
+
+    if (! (callback_way_cnt % 10000)) {
+       printf("Ways loaded: %d\n", callback_way_cnt);
+    }
 
 // TQ84
 //  if (user_data != NULL) {
@@ -385,6 +392,13 @@ static int callback_relation (const void *user_data, const readosm_relation * re
     int i;
     const readosm_member *member;
     const readosm_tag *tag;
+
+    static int callback_rel_cnt = 0;
+    callback_rel_cnt ++;
+
+    if (! (callback_rel_cnt % 10000)) {
+       printf("Relations loaded: %d\n", callback_rel_cnt);
+    }
 
 //  if (user_data != NULL) {
 //    user_data = NULL;    /* silencing stupid compiler warnings */
@@ -577,7 +591,7 @@ static int callback_relation (const void *user_data, const readosm_relation * re
 void createDB(const char* name) {
 #ifdef PBF2SQLITE
   remove(name);
-  sqlite3_open(filename, &db);
+  sqlite3_open(name, &db);
 #elif defined PBF2MYSQL
 
    db = mysql_init(NULL);
@@ -827,6 +841,7 @@ void createIndexes() {
 int main (int argc, char *argv[]) {
 
 #ifdef PBF2SQLITE
+//const char* dbName  = "/home/rene/github/github/OpenStreetMap/db/li.db";
   const char* dbName  = "/home/rene/github/github/OpenStreetMap/db/ch.db";
 #elif defined PBF2MYSQL
   const char* dbName  = "osm_ch";
