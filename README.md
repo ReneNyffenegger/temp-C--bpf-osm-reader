@@ -1,11 +1,15 @@
 # temp-C--bpf-osm-reader
 
-Trying to create a C++ reader for OpenStreetMap bpf files (from geofabrik.de)
+Trying to create a C++ reader for OpenStreetMap bpf files.
+
+Getting pbf files
+  - geofabrik.de
+  - https://mirror.init7.net/openstreetmap/pbf/ --> planet-YYMMDD.osm.pbf
+  - etc.
 
 ## Clones
 
 ### clones/OSM-binary: https://github.com/scrosby/OSM-binary
-
 
     protoc --proto_path=. --cpp_out=. fileformat.proto
     #   [libprotobuf WARNING google/protobuf/compiler/parser.cc:562] No syntax specified for the proto file: fileformat.proto. Please use 'syntax = "proto2";' or 'syntax = "proto3";' to specify a syntax version. (Defaulted to proto2 syntax.)
