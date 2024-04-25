@@ -1,0 +1,12 @@
+#!/bin/sh
+
+
+if [ ! -d ~/osm ]; then
+    mkdir ~/osm
+fi
+
+if [ ! -d ~/osm/pbf ]; then
+    mkdir ~/osm/pbf
+fi
+
+curl https://download.geofabrik.de/europe/switzerland-latest.osm.pbf -O ~/osm/pbf/switzerland.pbf
