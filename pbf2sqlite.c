@@ -847,12 +847,14 @@ int main (int argc, char *argv[]) {
 
 #ifdef PBF2SQLITE
 //const char* dbName  = "/home/rene/github/github/OpenStreetMap/db/li.db";
-  const char* dbName  = "/mnt/a/osm/pbf/ch.db";
+//const char* dbName  = "/mnt/a/osm/pbf/ch.db";
+  const char* dbName  = "/mnt/a/osm/pbf/planet.db";
 #elif defined PBF2MYSQL
   const char* dbName  = "osm_ch";
 #endif
 // const char* filename_pbf = "/home/rene/github/github/OpenStreetMap/pbf/ch.pbf";
-   const char* filename_pbf = "/mnt/a/osm/pbf/switzerland.pbf";
+// const char* filename_pbf = "/mnt/a/osm/pbf/switzerland.pbf";
+   const char* filename_pbf = "/mnt/a/osm/pbf/planet.pbf";
 // const char* filename_pbf = "../../github/OpenStreetMap/pbf/li.pbf";
 
   createDB(dbName);
