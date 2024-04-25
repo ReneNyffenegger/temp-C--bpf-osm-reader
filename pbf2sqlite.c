@@ -654,7 +654,7 @@ void createDB(const char* name) {
 "          nod_id  bigint,"
 "          way_id  bigint,"
 "          rel_id  bigint,"
-"          rol     varchar(255)  -- text\n"
+"          rol     /*varchar(255)*/  text\n"
 ")"
   );
 
@@ -682,8 +682,8 @@ void createDB(const char* name) {
 "          nod_id         bigint null,\n"
 "          way_id         bigint null,\n"
 "          rel_id         bigint null,\n"
-"          k              varchar( 255), -- character set utf8mb4 collate       utf8mb4_0900_as_cs, -- text not null,\n"
-"          v              varchar( 255)  -- character set utf8mb4 collate       utf8mb4_0900_as_cs -- text not null \n"
+"          k              /*varchar( 255) */ text, -- character set utf8mb4 collate       utf8mb4_0900_as_cs, -- text not null,\n"
+"          v              /*varchar( 255) */ text  -- character set utf8mb4 collate       utf8mb4_0900_as_cs -- text not null \n"
 "        )"
 );
 //  NULL, NULL, NULL);
