@@ -1,13 +1,14 @@
 #!/bin/sh
 
+outdir=/mnt/a
 
-if [ ! -d ~/osm ]; then
-    mkdir ~/osm
+if [ ! -d $outdir/osm ]; then
+    mkdir $outdir/osm
 fi
 
-if [ ! -d ~/osm/pbf ]; then
-    mkdir ~/osm/pbf
+if [ ! -d $outdir/osm/pbf ]; then
+    mkdir $outdir/osm/pbf
 fi
 
-curl -L https://download.geofabrik.de/europe/switzerland-latest.osm.pbf -o ~/osm/pbf/switzerland.pbf
-curl -L https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf      -o ~/osm/pbf/planet.pbf
+curl -L https://download.geofabrik.de/europe/switzerland-latest.osm.pbf -o $outdir/osm/pbf/switzerland.pbf
+curl -L https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf      -o $outdir/osm/pbf/planet.pbf
