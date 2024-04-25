@@ -9,5 +9,5 @@ if [ ! -d ~/osm/pbf ]; then
     mkdir ~/osm/pbf
 fi
 
-curl https://download.geofabrik.de/europe/switzerland-latest.osm.pbf -O ~/osm/pbf/switzerland.pbf
-curl https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf      -O ~/osm/pbf/planet.pbf
+curl -L https://download.geofabrik.de/europe/switzerland-latest.osm.pbf -o ~/osm/pbf/switzerland.pbf
+curl -L https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf      -o ~/osm/pbf/planet.pbf
