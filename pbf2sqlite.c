@@ -11,6 +11,7 @@
 
 #include "readosm.h"
 
+
 #ifdef PBF2SQLITE
 
     sqlite3      *db;
@@ -590,8 +591,12 @@ static int callback_relation (const void *user_data, const readosm_relation * re
 
 void createDB(const char* name) {
 #ifdef PBF2SQLITE
-  remove(name);
-  sqlite3_open(name, &db);
+  if (!remove(name)) {
+     printf("could not remove %s\n", name);
+  }
+  if (!sqlite3_open(name, &db)) {
+     printf("could not open sqlite db %s\n", name);
+  }
 #elif defined PBF2MYSQL
 
    db = mysql_init(NULL);
@@ -806,7 +811,7 @@ int init_readosm(const char* filename_pbf) {
 //  }
     ret = readosm_open (filename_pbf, &osm_handle);
     if (ret != READOSM_OK) {
-      fprintf (stderr, "OPEN error: %d\n", ret);
+      fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
       goto stop;
     }
 
@@ -842,12 +847,12 @@ int main (int argc, char *argv[]) {
 
 #ifdef PBF2SQLITE
 //const char* dbName  = "/home/rene/github/github/OpenStreetMap/db/li.db";
-  const char* dbName  = "/home/rene/github/github/OpenStreetMap/db/ch.db";
+  const char* dbName  = "/mnt/a/osm/pbf/ch.db";
 #elif defined PBF2MYSQL
   const char* dbName  = "osm_ch";
 #endif
 // const char* filename_pbf = "/home/rene/github/github/OpenStreetMap/pbf/ch.pbf";
-   const char* filename_pbf = "../../github/OpenStreetMap/pbf/ch.pbf";
+   const char* filename_pbf = "/mnt/a/osm/pbf/switzerland.pbf";
 // const char* filename_pbf = "../../github/OpenStreetMap/pbf/li.pbf";
 
   createDB(dbName);
