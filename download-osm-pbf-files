@@ -10,3 +10,4 @@ if [ ! -d ~/osm/pbf ]; then
 fi
 
 curl https://download.geofabrik.de/europe/switzerland-latest.osm.pbf -O ~/osm/pbf/switzerland.pbf
+curl https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf      -O ~/osm/pbf/planet.pbf
