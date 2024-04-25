@@ -845,17 +845,28 @@ void createIndexes() {
 
 int main (int argc, char *argv[]) {
 
+    if (argc < 1) {
+       printf("specify ch, li or planet");
+       exit(1);
+    }
+
 #ifdef PBF2SQLITE
 //const char* dbName  = "/home/rene/github/github/OpenStreetMap/db/li.db";
 //const char* dbName  = "/mnt/a/osm/pbf/ch.db";
-  const char* dbName  = "/mnt/a/osm/pbf/planet.db";
+//const char* dbName  = "/mnt/a/osm/pbf/planet.db";
 #elif defined PBF2MYSQL
-  const char* dbName  = "osm_ch";
+//const char* dbName  = "osm_ch";
 #endif
 // const char* filename_pbf = "/home/rene/github/github/OpenStreetMap/pbf/ch.pbf";
 // const char* filename_pbf = "/mnt/a/osm/pbf/switzerland.pbf";
-   const char* filename_pbf = "/mnt/a/osm/pbf/planet.pbf";
+// const char* filename_pbf = "/mnt/a/osm/pbf/planet.pbf";
 // const char* filename_pbf = "../../github/OpenStreetMap/pbf/li.pbf";
+
+  char dbName      [1024];
+  char filename_pbf[1024];
+
+  if (!snprintf(dbName      , sizeof(dbName      ), "/mnt/a/osm/pbf/%s.db" , argv[1])) { printf("! 1\n"); exit(1); }
+  if (!snprintf(filename_pbf, sizeof(filename_pbf), "/mnt/a/osm/pbf/%s.pbf", argv[1])) { printf("! 2\n"); exit(1); }
 
   createDB(dbName);
 
