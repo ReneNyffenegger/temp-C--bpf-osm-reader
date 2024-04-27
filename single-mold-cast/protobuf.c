@@ -942,7 +942,7 @@ parse_field (unsigned char *start, unsigned char *stop,
 }
 
 static int
-skip_osm_header (readosm_file * input, unsigned int sz)
+skip_osm_header (const readosm_file * input, unsigned int sz)
 {
 /*
  / expecting to retrieve a valid OSMHeader header 
@@ -2229,7 +2229,7 @@ parse_primitive_group (readosm_string_table * strings,
 }
 
 static int
-parse_osm_data (readosm_file * input, unsigned int sz,
+parse_osm_data (const readosm_file * input, unsigned int sz,
 		struct pbf_params *params)
 {
 /* expecting to retrieve a valid OSMData header */
@@ -2410,7 +2410,7 @@ parse_osm_data (readosm_file * input, unsigned int sz,
 }
 
 READOSM_PRIVATE int
-parse_osm_pbf (readosm_file * input, const void *user_data,
+parse_osm_pbf (const readosm_file * input, const void *user_data,
 	       readosm_node_callback node_fnct, readosm_way_callback way_fnct,
 	       readosm_relation_callback relation_fnct)
 {

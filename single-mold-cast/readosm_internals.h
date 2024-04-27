@@ -270,12 +270,13 @@ READOSM_PRIVATE void append_tag_to_relation (readosm_internal_relation *
 READOSM_PRIVATE void destroy_internal_relation (readosm_internal_relation *
 						relation);
 
-/* XML and ProtoBuf parsers */
-READOSM_PRIVATE int parse_osm_pbf (readosm_file * input, const void *user_data,
-				   readosm_node_callback node_fnct,
-				   readosm_way_callback way_fnct,
-				   readosm_relation_callback relation_fnct);
 
+// READOSM_PRIVATE int parse_osm_pbf (readosm_file * input,
+//            const void *user_data,
+// 				   readosm_node_callback     node_fnct,
+// 				   readosm_way_callback      way_fnct,
+// 				   readosm_relation_callback relation_fnct);
+// 
 // READOSM_PRIVATE int parse_osm_xml (readosm_file * input, const void *user_data,
 // 				   readosm_node_callback node_fnct,
 // 				   readosm_way_callback way_fnct,

@@ -107,7 +107,7 @@ destroy_osm_file (readosm_file * input)
 }
 
 READOSM_DECLARE int
-readosm_open (const char *path, const void **osm_handle)
+readosm_open (const char *path, const readosm_file **osm_handle)
 {
 /* opening and initializing the OSM input file */
     readosm_file *input;
@@ -164,10 +164,11 @@ int load_osm_pbf(const char* filename_pbf,
      readosm_node_callback     cb_nod,
      readosm_way_callback      cb_way,
      readosm_relation_callback cb_rel) {
-    const void *osm_handle;
+
+    const readosm_file *osm_handle;
     int ret;
 
-    ret = readosm_open (filename_pbf, &osm_handle);
+    ret = readosm_open(filename_pbf, (const readosm_file**) &osm_handle);
     if (ret != READOSM_OK) {
       fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
       goto stop;
