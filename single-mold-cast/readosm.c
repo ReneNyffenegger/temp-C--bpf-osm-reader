@@ -55,6 +55,10 @@
 #endif
 
 #include "readosm.h"
+#include "protobuf.c"
+#include "osm_objects.c"
+
+#include "readosm.h"
 #include "readosm_internals.h"
 
 #ifdef _WIN32
@@ -155,39 +159,30 @@ readosm_close (const void *osm_handle)
     return READOSM_OK;
 }
 
-READOSM_DECLARE int
-readosm_parse (const void *osm_handle, const void *user_data,
-	       readosm_node_callback node_fnct, readosm_way_callback way_fnct,
-	       readosm_relation_callback relation_fnct)
-{
-/* attempting to parse the OSM input file */
+
+int load_osm_pbf(const char* filename_pbf,
+     readosm_node_callback     cb_nod,
+     readosm_way_callback      cb_way,
+     readosm_relation_callback cb_rel) {
+    const void *osm_handle;
     int ret;
-    readosm_file *input = (readosm_file *) osm_handle;
-    if (!input)
-	return READOSM_NULL_HANDLE;
-    if ((input->magic1 == READOSM_MAGIC_START)
-	&& input->magic2 == READOSM_MAGIC_END)
-	;
-    else
-	return READOSM_INVALID_HANDLE;
 
-//    if (input->file_format == READOSM_OSM_FORMAT)
-//	ret =
-//	    parse_osm_xml (input, user_data, node_fnct, way_fnct,
-//			   relation_fnct);
-//    else if (input->file_format == READOSM_PBF_FORMAT)
-//	ret =
-	    parse_osm_pbf (input, user_data, node_fnct, way_fnct,
-			   relation_fnct);
-//    else
-//	return READOSM_INVALID_HANDLE;
+    ret = readosm_open (filename_pbf, &osm_handle);
+    if (ret != READOSM_OK) {
+      fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
+      goto stop;
+    }
 
-    return ret;
+    ret = parse_osm_pbf(osm_handle, (const void *) 0, cb_nod, cb_way, cb_rel);
+    if (ret != READOSM_OK) {
+      fprintf (stderr, "PARSE error: %d\n", ret);
+      goto stop;
+    }
+
+    fprintf (stderr, "Ok, OSM input file successfully parsed\n");
+
+  stop:
+
+    readosm_close (osm_handle);
+    return 0;
 }
-
-// READOSM_DECLARE const char *
-// readosm_version (void)
-// {
-// /* returning the current ReadOSM version string */
-//     return VERSION;
-// }

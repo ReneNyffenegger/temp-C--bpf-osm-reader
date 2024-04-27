@@ -11,12 +11,7 @@
 #error neither PBF2SQLITE nor PBF2MYSQL defined
 #endif
 
-#include "readosm.h"
-#include "protobuf.c"
 #include "readosm.c"
-#include "osm_objects.c"
-// #include "osmxml.c"
-
 
 #ifdef PBF2SQLITE
 
@@ -807,33 +802,6 @@ void prepareStatements() {
 #endif
 }
 
-int init_readosm(const char* filename_pbf) {
-    const void *osm_handle;
-    int ret;
-
-//  if (argc != 2) {
-//    fprintf (stderr, "usage: test_osm1 path-to-OSM-file\n");
-//    return -1;
-//  }
-    ret = readosm_open (filename_pbf, &osm_handle);
-    if (ret != READOSM_OK) {
-      fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
-      goto stop;
-    }
-
-    ret = parse_osm_pbf(osm_handle, (const void *) 0, callback_node, callback_way, callback_relation);
-    if (ret != READOSM_OK) {
-      fprintf (stderr, "PARSE error: %d\n", ret);
-      goto stop;
-    }
-
-    fprintf (stderr, "Ok, OSM input file successfully parsed\n");
-
-  stop:
-
-    readosm_close (osm_handle);
-    return 0;
-}
 
 void createIndexes() {
 
@@ -887,7 +855,7 @@ int main (int argc, char *argv[]) {
 #elif defined PBF2MYSQL
   dbExec("begin work"       );
 #endif
-  init_readosm(filename_pbf);
+  load_osm_pbf(filename_pbf, callback_node, callback_way, callback_relation );
 //sqlite3_exec(db, "commit transaction", NULL, NULL, NULL);
 #ifdef PBF2SQLITE
   dbExec("commit transaction");

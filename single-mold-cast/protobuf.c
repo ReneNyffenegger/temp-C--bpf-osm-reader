@@ -1017,7 +1017,7 @@ skip_osm_header (readosm_file * input, unsigned int sz)
     return 0;
 }
 
-int
+static int
 unzip_compressed_block (unsigned char *zip_ptr, unsigned int zip_sz,
 			unsigned char *raw_ptr, unsigned int raw_sz)
 {
