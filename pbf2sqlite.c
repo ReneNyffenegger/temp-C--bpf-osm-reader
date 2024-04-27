@@ -815,7 +815,7 @@ int init_readosm(const char* filename_pbf) {
       goto stop;
     }
 
-    ret = readosm_parse (osm_handle, (const void *) 0, callback_node, callback_way, callback_relation);
+    ret = parse_osm_pbf(osm_handle, (const void *) 0, callback_node, callback_way, callback_relation);
     if (ret != READOSM_OK) {
       fprintf (stderr, "PARSE error: %d\n", ret);
       goto stop;

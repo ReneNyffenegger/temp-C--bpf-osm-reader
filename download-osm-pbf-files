@@ -1,6 +1,7 @@
 #!/bin/sh
 
-outdir=/mnt/a
+# outdir=/mnt/a
+  outdir=~
 
 if [ ! -d $outdir/osm ]; then
     mkdir $outdir/osm
@@ -12,5 +13,5 @@ fi
 
 # curl -L https://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf -o $outdir/osm/pbf/li.pbf
 # curl -L https://download.geofabrik.de/europe/switzerland-latest.osm.pbf   -o $outdir/osm/pbf/ch.pbf
-  curl -L https://planet.osm.ch/switzerland.pbf                             -o $outdir/osm/pbf/planet.ch.pbf
+# curl -L https://planet.osm.ch/switzerland.pbf                             -o $outdir/osm/pbf/planet.ch.pbf
 # curl -L https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf        -o $outdir/osm/pbf/planet.pbf
