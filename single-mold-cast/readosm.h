@@ -323,7 +323,7 @@ extern "C"
      
      \return a text string corresponding the current zlib version
 	*/
-    READOSM_DECLARE const char * readosm_zlib_version (void);
+//    READOSM_DECLARE const char * readosm_zlib_version (void);
 
 int load_osm_pbf(const char* filename_pbf,
      readosm_node_callback     cb_nod,
