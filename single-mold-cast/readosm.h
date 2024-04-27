@@ -94,9 +94,9 @@ extern "C"
 #define READOSM_INVALID_HANDLE		-4 /**< Invalid OSM_handle argument */
 #define READOSM_INSUFFICIENT_MEMORY	-5 /**< some kind of memory allocation
                                                 failure */
-#define READOSM_CREATE_XML_PARSER_ERROR	-6 /**< cannot create the XML Parser */
+// #define READOSM_CREATE_XML_PARSER_ERROR	-6 /**< cannot create the XML Parser */
 #define READOSM_READ_ERROR		-7 /**< read error */
-#define READOSM_XML_ERROR		-8 /**< XML parser error */
+// #define READOSM_XML_ERROR		-8 /**< XML parser error */
 #define READOSM_INVALID_PBF_HEADER	-9 /**< invalid PBF header */
 #define READOSM_UNZIP_ERROR		-10 /**< unZip error */
 #define READOSM_ABORT			-11 /**< user-required parser abort */

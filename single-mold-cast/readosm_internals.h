@@ -57,11 +57,11 @@
 #define READOSM_OSM_FORMAT	4589
 #define READOSM_PBF_FORMAT	7491
 
-/* XML tags */
-#define READOSM_CURRENT_TAG_UNKNOWN 	0
-#define READOSM_CURRENT_TAG_IS_NODE	101
-#define READOSM_CURRENT_TAG_IS_WAY	102
-#define READOSM_CURRENT_TAG_IS_RELATION	103
+// /* XML tags */
+// #define READOSM_CURRENT_TAG_UNKNOWN 	0
+// #define READOSM_CURRENT_TAG_IS_NODE	101
+// #define READOSM_CURRENT_TAG_IS_WAY	102
+// #define READOSM_CURRENT_TAG_IS_RELATION	103
 
 /* block size */
 #define READOSM_BLOCK_SZ	128
@@ -275,10 +275,11 @@ READOSM_PRIVATE int parse_osm_pbf (readosm_file * input, const void *user_data,
 				   readosm_node_callback node_fnct,
 				   readosm_way_callback way_fnct,
 				   readosm_relation_callback relation_fnct);
-READOSM_PRIVATE int parse_osm_xml (readosm_file * input, const void *user_data,
-				   readosm_node_callback node_fnct,
-				   readosm_way_callback way_fnct,
-				   readosm_relation_callback relation_fnct);
+
+// READOSM_PRIVATE int parse_osm_xml (readosm_file * input, const void *user_data,
+// 				   readosm_node_callback node_fnct,
+// 				   readosm_way_callback way_fnct,
+// 				   readosm_relation_callback relation_fnct);
 
 /* callback handlers */
 READOSM_PRIVATE int call_node_callback (readosm_node_callback node_callback,
