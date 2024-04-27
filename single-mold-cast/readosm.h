@@ -206,29 +206,17 @@ extern "C"
     typedef struct readosm_member_struct readosm_member;
 
 
-	/**
-	 a struct representing a RELATION object, and wrapping a complex XML fragment like the following:
-	\verbatim
-<relation id="12345" version="1" changeset="54321" user="some-user" uid="66" timestamp="2005-02-28T17:45:15Z">
-	<member type="way" ref="12345" role="outer" />
-	<member type="way" ref="12346" role="inner" />
-	<tag key="created_by" value="JOSM" />
-	<tag key="tourism" value="camp_site" />
-</relation>
-	\endverbatim
-	 */
-    struct readosm_relation_struct
-    {
-	const long long id; /**< RELATION-ID (expected to be a unique value) */
-	const int version; /**< object version */
-	const long long changeset; /**< ChangeSet ID */
-	const char *user; /**< name of the User defining this RELATION */
-	const int uid; /**< corresponding numeric UserID */
-	const char *timestamp; /**< when this RELATION was defined */
-	const int member_count;	/**< number of associated MEMBERs (may be zero) */
+struct readosm_relation_struct {
+	const long long       id; /**< RELATION-ID (expected to be a unique value) */
+	const int             version;  /**< object version */
+	const long long       changeset; /**< ChangeSet ID */
+	const char           *user; /**< name of the User defining this RELATION */
+	const int             uid; /**< corresponding numeric UserID */
+	const char           *timestamp; /**< when this RELATION was defined */
+	const int             member_count;	/**< number of associated MEMBERs (may be zero) */
 	const readosm_member *members; /**< array of MEMBER objects (may be NULL) */
-	const int tag_count; /**< number of associated TAGs (may be zero) */
-	const readosm_tag *tags; /**< array of TAG objects (may be NULL) */
+	const int             tag_count; /**< number of associated TAGs (may be zero) */
+	const readosm_tag    *tags; /**< array of TAG objects (may be NULL) */
     };
 
 	/**
@@ -238,18 +226,10 @@ extern "C"
      */
     typedef struct readosm_relation_struct readosm_relation;
 
-/** callback function handling NODE objects */
-    typedef int (*readosm_node_callback) (const void *user_data,
-					  const readosm_node * node);
-
-/** callback function handling WAY objects */
-    typedef int (*readosm_way_callback) (const void *user_data,
-					 const readosm_way * way);
-
-/** callback function handling RELATION objects */
-    typedef int (*readosm_relation_callback) (const void *user_data,
-					      const readosm_relation *
-					      relation);
+//  callback functions
+    typedef int (*readosm_node_callback    ) (const void *user_data, const readosm_node * node);
+    typedef int (*readosm_way_callback     ) (const void *user_data, const readosm_way * way);
+    typedef int (*readosm_relation_callback) (const void *user_data, const readosm_relation * relation);
 
     /**
      Open the .osm or .pbf file, preparing for future functions
@@ -264,8 +244,7 @@ extern "C"
      \note You are expected to readosm_close() even on failure, so as to
      correctly release any dynamic memory allocation.
      */
-    READOSM_DECLARE int readosm_open (const char *path,
-				      const void **osm_handle);
+//    READOSM_DECLARE int readosm_open (const char *path, const void **osm_handle);
 
     /** 
      Close the .osm or .pbf file and release any allocated resource
@@ -278,7 +257,7 @@ extern "C"
     \note After calling readosm_close() any related resource will be released,
     and the handle will no longer be valid.
     */
-    READOSM_DECLARE int readosm_close (const void *osm_handle);
+//    READOSM_DECLARE int readosm_close (const void *osm_handle);
 
     /** 
      Close the .osm or .pbf file and release any allocated resource
@@ -298,25 +277,25 @@ extern "C"
     \note After calling readosm_close() any related resource will be released,
     and the handle will no longer be valid.
     */
-    READOSM_DECLARE int readosm_parse (const void *osm_handle,
-				       const void *user_data,
-				       readosm_node_callback node_fnct,
-				       readosm_way_callback way_fnct,
-				       readosm_relation_callback relation_fnct);
+//    READOSM_DECLARE int readosm_parse (const void *osm_handle,
+//				       const void *user_data,
+//				       readosm_node_callback node_fnct,
+//				       readosm_way_callback way_fnct,
+//				       readosm_relation_callback relation_fnct);
 
     /**
      Return the current ReadOSM version
      
      \return a text string corresponding the current ReadOSM version
 	*/
-    READOSM_DECLARE const char * readosm_version (void);
+ // READOSM_DECLARE const char * readosm_version (void);
 
     /**
      Return the current libexpat version used by ReadOSM
      
      \return a text string corresponding the current Expat version
 	*/
-    READOSM_DECLARE const char * readosm_expat_version (void);
+//  READOSM_DECLARE const char * readosm_expat_version (void);
 
     /**
      Return the current zlib version used by ReadOSM
