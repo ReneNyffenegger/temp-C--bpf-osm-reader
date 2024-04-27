@@ -11,7 +11,7 @@
 #error neither PBF2SQLITE nor PBF2MYSQL defined
 #endif
 
-#include "readosm.c"
+#include "readosm.h"
 
 #ifdef PBF2SQLITE
 
