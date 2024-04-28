@@ -101,38 +101,40 @@ static void init_variant (readosm_variant * variant, int little_endian_cpu) {
 
     variant->little_endian_cpu = little_endian_cpu;
     variant->type              = READOSM_VAR_UNDEFINED;
-    variant->field_id          = 0;
-    variant->str_len           = 0;
+    variant->field_id          =    0;
+    variant->str_len           =    0;
     variant->pointer           = NULL;
-    variant->valid             = 0;
+    variant->valid             =    0;
     variant->first             = NULL;
     variant->last              = NULL;
 }
 
-static void
-reset_variant (readosm_variant * variant)
-{
-/* resetting a PBF Variant object to its initial empty state */
-    variant->type = READOSM_VAR_UNDEFINED;
+static void reset_variant (readosm_variant * variant) {
+
+ // resetting a PBF Variant object to its initial empty state */
+    variant->type     = READOSM_VAR_UNDEFINED;
     variant->field_id = 0;
-    variant->str_len = 0;
-    variant->pointer = NULL;
-    variant->valid = 0;
+    variant->str_len  = 0;
+    variant->pointer  = NULL;
+    variant->valid    = 0;
 }
 
-static void
-add_variant_hints (readosm_variant * variant, unsigned char type,
-                   unsigned char field_id)
+static void add_variant_hints (
+   readosm_variant * variant,
+   unsigned char     expected_type,
+   unsigned char     field_id)
 {
-/* adding a field hint to a PBF Variant object */
+ //
+ // adding a field hint to a PBF Variant object
+ //
     readosm_variant_hint *hint = malloc (sizeof (readosm_variant_hint));
-    hint->type = type;
-    hint->field_id = field_id;
+    hint->expected_type = expected_type;
+    hint->field_id      = field_id;
     hint->next = NULL;
-    if (variant->first == NULL)
-        variant->first = hint;
-    if (variant->last != NULL)
-        variant->last->next = hint;
+
+    if (variant->first == NULL) variant->first      = hint;
+    if (variant->last  != NULL) variant->last->next = hint;
+
     variant->last = hint;
 }
 
@@ -149,7 +151,7 @@ find_type_hint (readosm_variant * variant, unsigned char field_id,
                 switch (type)
                   {
                   case 0:
-                      switch (hint->type)
+                      switch (hint->expected_type)
                         {
                         case READOSM_VAR_INT32:
                         case READOSM_VAR_INT64:
@@ -159,14 +161,14 @@ find_type_hint (readosm_variant * variant, unsigned char field_id,
                         case READOSM_VAR_SINT64:
                         case READOSM_VAR_BOOL:
                         case READOSM_VAR_ENUM:
-                            *type_hint = hint->type;
+                            *type_hint = hint->expected_type;
                             return 1;
                         }
                       break;
                   case 2:
-                      if (hint->type == READOSM_LEN_BYTES)
+                      if (hint->expected_type == READOSM_LEN_BYTES)
                         {
-                            *type_hint = hint->type;
+                            *type_hint = hint->expected_type;
                             return 1;
                         }
                       break;
@@ -478,10 +480,9 @@ reset_int64_packed (readosm_int64_packed * packed)
     packed->values = NULL;
 }
 
-static void
-init_packed_infos (readosm_packed_infos * packed)
-{
-/* initialing an empty PBF  packed Infos object */
+static void init_packed_infos (readosm_packed_infos * packed) {
+
+ // initialing an empty PBF  packed Infos object
     packed->ver_count = 0;
     packed->versions = NULL;
     packed->tim_count = 0;
@@ -537,10 +538,10 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
     int count = 0;
     int neg;
 
-    while (1)
-      {
+    while (1) {
           if (ptr > stop)
               return NULL;
+
           c = *ptr++;
           if ((c & 0x80) == 0x80)
               next = 1;
@@ -658,6 +659,7 @@ static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, re
           len = varlen.value.uint32_value;
           if ((ptr + len - 1) > stop)
               return NULL;
+
           variant->pointer = ptr;
           variant->str_len = len;
           variant->valid = 1;
@@ -682,6 +684,7 @@ static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *s
              append_uint32_packed (packed, variant.value.uint32_value);
              if (ptr > stop)
                  break;
+
              start = ptr;
              continue;
        }
@@ -690,10 +693,7 @@ static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *s
     return 1;
 }
 
-static int
-parse_sint32_packed (readosm_int32_packed * packed, unsigned char *start,
-                     unsigned char *stop, char little_endian_cpu)
-{
+static int parse_sint32_packed (readosm_int32_packed * packed, unsigned char *start, unsigned char *stop, char little_endian_cpu) {
 /* parsing an int32 packed object */
     unsigned char *ptr = start;
     readosm_variant variant;
@@ -702,8 +702,7 @@ parse_sint32_packed (readosm_int32_packed * packed, unsigned char *start,
     init_variant (&variant, little_endian_cpu);
     variant.type = READOSM_VAR_SINT32;
 
-    while (1)
-      {
+    while (1) {
           ptr = read_var (start, stop, &variant);
           if (variant.valid)
             {
@@ -792,7 +791,7 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, r
  / a bitwise mask is used so to store both the
  / field-id and the field-type on a single byte
 */
-    type = *ptr & 0x07;
+    type     =  *ptr & 0x07;
     field_id = (*ptr & 0xf8) >> 3;
 
 /* attempting to identify the field accordingly to declared hints */
@@ -804,8 +803,8 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, r
     ptr++;
 
 /* parsing the field value */
-    switch (variant->type)
-      {
+    switch (variant->type) {
+
       case READOSM_VAR_INT32:
       case READOSM_VAR_INT64:
       case READOSM_VAR_UINT32:
@@ -817,7 +816,7 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, r
       case READOSM_LEN_BYTES:
            return read_bytes (ptr, stop, variant);
 
-      };
+    };
     return NULL;
 }
 
@@ -1042,13 +1041,13 @@ static int parse_pbf_node_infos (
 readosm_node_callback        g_cb_nod;
 readosm_way_callback         g_cb_way;
 readosm_relation_callback    g_cb_rel;
-int                          g_little_endian_cpu;
+char                         g_little_endian_cpu;
 
 static int parse_pbf_nodes (
                  readosm_string_table * strings,
                  unsigned char *start,
                  unsigned char *stop,
-                 char         little_endian_cpu
+                 char          little_endian_cpu
 //               pbf_params *params
 //               readosm_node_callback cb_node
                  )
@@ -1185,24 +1184,29 @@ static int parse_pbf_nodes (
                   /* latitudes and longitudes require to be rescaled as DOUBLEs */
                       nd->latitude  = delta_lat / 10000000.0;
                       nd->longitude = delta_lon / 10000000.0;
-                      if (fromPackedInfos)
-                        {
+
+                      if (fromPackedInfos) {
                             nd->version = *(packed_infos.versions + base + i);
-                            xtime = *(packed_infos.timestamps + base + i);
-                            times = gmtime (&xtime);
-                            if (times)
-                              {
-                                  /* formatting Timestamps */
+                            xtime       = *(packed_infos.timestamps + base + i);
+                            times       = gmtime (&xtime);
+
+                            if (times) {
+
+                               // formatting Timestamps
                                   char buf[64];
                                   int len;
                                   sprintf (buf,
                                            "%04d-%02d-%02dT%02d:%02d:%02dZ",
                                            times->tm_year + 1900,
-                                           times->tm_mon + 1, times->tm_mday,
-                                           times->tm_hour, times->tm_min,
+                                           times->tm_mon  +    1,
+                                           times->tm_mday,
+                                           times->tm_hour,
+                                           times->tm_min,
                                            times->tm_sec);
+
                                   if (nd->timestamp)
                                       free (nd->timestamp);
+
                                   len = strlen (buf);
                                   nd->timestamp = malloc (len + 1);
                                   strcpy (nd->timestamp, buf);
@@ -1850,7 +1854,7 @@ static int parse_primitive_group (
     unsigned char *base = start;
 
 /* initializing an empty variant field */
-    init_variant (&variant, little_endian_cpu);
+    init_variant      (&variant, little_endian_cpu);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
@@ -1861,7 +1865,7 @@ static int parse_primitive_group (
 
     while (1) {
 
-          /* resetting an empty variant field */
+       // resetting an empty variant field
           reset_variant (&variant);
 
           base = parse_field (start, stop, &variant);
@@ -1876,13 +1880,14 @@ static int parse_primitive_group (
 //              if (params->node_callback == NULL)
 //                  goto skip;  /* skipping: no node-callback */
 
-                if (!parse_pbf_nodes
-                    (strings, variant.pointer,
+                if (!parse_pbf_nodes (
+                     strings,
+                     variant.pointer,
                      variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu
 //                   params -> node_callback
-                     ))
-                    goto error;
+                   ))
+                   goto error;
             }
 
           if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) { // Way
@@ -1958,7 +1963,7 @@ static int parse_osm_data (
 
 
  // initializing an empty variant field
-    init_variant (&variant, input->little_endian_cpu);
+    init_variant      (&variant, input->little_endian_cpu);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 3);

@@ -107,8 +107,8 @@ typedef struct /* readosm_packed_infos_struct */ {
 
 typedef struct readosm_variant_hint_struct {
  // VariantHints for PBF parsing
-    unsigned char field_id;     /* field ID */
-    unsigned char type;         /* expected type */
+    unsigned char field_id;
+    unsigned char expected_type;
     struct        readosm_variant_hint_struct *next;   /* supporting linked list */
 }
 readosm_variant_hint;
@@ -118,7 +118,7 @@ typedef struct /* readosm_variant_struct */ {
 
  // a PBF Variant type wrapper
 
-    char little_endian_cpu;     // actual CPU endianness
+    char          little_endian_cpu;     // actual CPU endianness
 
     unsigned char type;         // current type
     unsigned char field_id;     // field ID
