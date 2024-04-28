@@ -2279,7 +2279,7 @@ static int parse_osm_data (
  //
     int ok_header = 0;
     int hdsz = 0;
-    size_t rd;
+    size_t   rd;
     unsigned char *buf = malloc (sz);
     unsigned char *base = buf;
     unsigned char *start = buf;
@@ -2344,32 +2344,31 @@ static int parse_osm_data (
     if ((int) rd != hdsz)
         goto error;
 
-/* uncompressing the OSMData zipped */
-    finalize_variant (&variant);
+ // uncompressing the OSMData zipped */
+    finalize_variant  (&variant);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_VAR_INT32, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
     while (1)
       {
-          /* resetting an empty variant field */
+       // resetting an empty variant field
           reset_variant (&variant);
 
           base = parse_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
+
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* found an uncompressed block */
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
+             // found an uncompressed block */
                 raw_sz = variant.length;
                 raw_ptr = malloc (raw_sz);
                 memcpy (raw_ptr, variant.pointer, raw_sz);
             }
-          if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32)
-            {
-                /* expected size of unZipped block */
+          if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
+              // expected size of unZipped block */
                 raw_sz = variant.value.int32_value;
-            }
+          }
           if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES)
             {
                 /* found a ZIP-compressed block */
@@ -2524,7 +2523,7 @@ int parse_osm_pbf (
           if (!parse_osm_data (input, hdsz /*, &params */))
 
               return READOSM_INVALID_PBF_HEADER;
-      }
+    }
     return READOSM_OK;
 }
 
