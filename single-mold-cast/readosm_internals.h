@@ -251,6 +251,6 @@ void destroy_internal_relation (readosm_internal_relation * relation);
 
 
 // callback handlers
-int call_node_callback     (readosm_node_callback node_callback, readosm_internal_node * node);
-int call_way_callback      (readosm_way_callback way_callback, readosm_internal_way * way);
+int call_node_callback     (readosm_node_callback     node_callback    , readosm_internal_node     * node);
+int call_way_callback      (readosm_way_callback      way_callback     , readosm_internal_way      * way);
 int call_relation_callback (readosm_relation_callback relation_callback, readosm_internal_relation * relation);
