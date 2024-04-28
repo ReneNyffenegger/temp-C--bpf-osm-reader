@@ -63,23 +63,23 @@
 // #define READOSM_CURRENT_TAG_IS_WAY   102
 // #define READOSM_CURRENT_TAG_IS_RELATION      103
 
-/* block size */
+// block size
 #define READOSM_BLOCK_SZ        128
 
-typedef struct readosm_internal_tag_struct
-{
-/* a struct wrapping TAG items */
-    char *key;                  /* pointer to KEY value (NULL terminated string) */
-    char *value;                /* pointer to VALUE (NULL terminated string) */
+typedef struct readosm_internal_tag_struct {
+
+// a struct wrapping TAG items
+    char *key;                  // pointer to KEY value (NULL terminated string)
+    char *value;                // pointer to VALUE (NULL terminated string)
 } readosm_internal_tag;
 
-typedef struct readosm_internal_tag_block_struct
-{
+typedef struct readosm_internal_tag_block readosm_internal_tag_block;
+struct  readosm_internal_tag_block {
 /* a struct wrapping a block of TAG items */
     readosm_internal_tag tags[READOSM_BLOCK_SZ];        /* array of Tags */
     int next_item;              /* index to next free (unused) item */
-    struct readosm_internal_tag_block_struct *next;     /* supporting linked list */
-} readosm_internal_tag_block;
+    readosm_internal_tag_block *next;     /* supporting linked list */
+};
 
 typedef struct readosm_export_tag_struct
 {
@@ -88,19 +88,20 @@ typedef struct readosm_export_tag_struct
     char *value;                /* pointer to VALUE (NULL terminated string) */
 } readosm_export_tag;
 
-typedef struct readosm_internal_node_struct
-{
-/* a struct wrapping NODE items */
-    long long id;               /* NODE-ID (unique value) */
-    double latitude;            /* geographic latitude */
-    double longitude;           /* geographic longitude */
-    int version;                /* version id */
-    long long changeset;        /* changeset id */
-    char *user;                 /* pointer to user name (NULL terminated string) */
-    int uid;                    /* uid identifying the user */
-    char *timestamp;            /* last modified timestamp */
-    int tag_count;              /* how many TAG items are there */
-    readosm_internal_tag_block first_tag;       /* pointers supporting a linked list */
+typedef struct /* readosm_internal_node_struct */ {
+ // 
+ // a struct wrapping NODE items */
+ //
+    long long                   id;               /* NODE-ID (unique value) */
+    double                      latitude;            /* geographic latitude */
+    double                      longitude;           /* geographic longitude */
+    int                         version;                /* version id */
+    long long                   changeset;        /* changeset id */
+    char                       *user;                 /* pointer to user name (NULL terminated string) */
+    int                         uid;                    /* uid identifying the user */
+    char                       *timestamp;            /* last modified timestamp */
+    int                         tag_count;              /* how many TAG items are there */
+    readosm_internal_tag_block  first_tag;       /* pointers supporting a linked list */
     readosm_internal_tag_block *last_tag;       /* of TAG blocks (first block is static) */
 } readosm_internal_node;
 
@@ -283,15 +284,16 @@ READOSM_PRIVATE void destroy_internal_relation (readosm_internal_relation *
 //                                 readosm_way_callback way_fnct,
 //                                 readosm_relation_callback relation_fnct);
 
-/* callback handlers */
+// callback handlers
 READOSM_PRIVATE int call_node_callback (readosm_node_callback node_callback,
-                                        const void *user_data,
+    //                                  const void *user_data,
                                         readosm_internal_node * node);
+
 READOSM_PRIVATE int call_way_callback (readosm_way_callback way_callback,
-                                       const void *user_data,
+   //                                  const void *user_data,
                                        readosm_internal_way * way);
 READOSM_PRIVATE int call_relation_callback (readosm_relation_callback
                                             relation_callback,
-                                            const void *user_data,
+  //                                        const void *user_data,
                                             readosm_internal_relation *
                                             relation);

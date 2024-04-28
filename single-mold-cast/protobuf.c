@@ -64,17 +64,17 @@
 
 #define MAX_NODES 1024
 
-typedef struct /* pbf_params */ {
-
-/* an helper struct supporting PBF parsing */
-
-    const void                  *user_data;
-    readosm_node_callback        node_callback;
-    readosm_way_callback         way_callback;
-    readosm_relation_callback    relation_callback;
-
-    int stop;
-} pbf_params;
+// typedef struct /* pbf_params */ {
+// 
+// /* an helper struct supporting PBF parsing */
+// 
+//     const void                  *user_data;
+//     readosm_node_callback        node_callback;
+//     readosm_way_callback         way_callback;
+//     readosm_relation_callback    relation_callback;
+// 
+//     int stop;
+// } pbf_params;
 
 static void init_variant (readosm_variant * variant, int little_endian_cpu) {
 
@@ -838,57 +838,61 @@ parse_sint32_packed (readosm_int32_packed * packed, unsigned char *start,
     return 1;
 }
 
-static int
-parse_sint64_packed (readosm_int64_packed * packed, unsigned char *start,
-                     unsigned char *stop, char little_endian_cpu)
+static int parse_sint64_packed (
+    readosm_int64_packed *packed,
+    unsigned char        *start,
+    unsigned char        *stop,
+    char                  little_endian_cpu)
 {
-/* parsing a sint64 packed object */
+ //
+ // parsing a sint64 packed object
+ //
     unsigned char *ptr = start;
     readosm_variant variant;
 
-/* initializing an empty variant field (length) */
+ //
+ // initializing an empty variant field (length) */
+ //
     init_variant (&variant, little_endian_cpu);
     variant.type = READOSM_VAR_SINT64;
 
-    while (1)
-      {
-          ptr = read_var (start, stop, &variant);
-          if (variant.valid)
-            {
-                append_int64_packed (packed, variant.value.int64_value);
-                if (ptr > stop)
-                    break;
-                start = ptr;
-                continue;
-            }
-          return 0;
-      }
+    while (1) {
+       ptr = read_var (start, stop, &variant);
+
+       if (variant.valid) {
+          append_int64_packed (packed, variant.value.int64_value);
+          if (ptr > stop)
+              break;
+          start = ptr;
+          continue;
+       }
+       return 0;
+
+    }
     return 1;
 }
 
-static unsigned int
-get_header_size (unsigned char *buf, int little_endian_cpu)
-{
-/* 
- / retrieving the current header size 
- / please note: header sizes in PBF always are 4 bytes
- / BIG endian encoded
-*/
+static unsigned int get_header_size (unsigned char *buf, int little_endian_cpu) {
+//
+// retrieving the current header size 
+// please note: header sizes in PBF always are 4 bytes BIG endian encoded
+//
     readosm_endian4 endian4;
-    if (little_endian_cpu)
-      {
-          endian4.bytes[0] = *(buf + 3);
-          endian4.bytes[1] = *(buf + 2);
-          endian4.bytes[2] = *(buf + 1);
-          endian4.bytes[3] = *(buf + 0);
-      }
-    else
-      {
-          endian4.bytes[0] = *(buf + 0);
-          endian4.bytes[1] = *(buf + 1);
-          endian4.bytes[2] = *(buf + 2);
-          endian4.bytes[3] = *(buf + 3);
-      }
+
+    if (little_endian_cpu) {
+        endian4.bytes[0] = *(buf + 3);
+        endian4.bytes[1] = *(buf + 2);
+        endian4.bytes[2] = *(buf + 1);
+        endian4.bytes[3] = *(buf + 0);
+    }
+    else {
+        endian4.bytes[0] = *(buf + 0);
+        endian4.bytes[1] = *(buf + 1);
+        endian4.bytes[2] = *(buf + 2);
+        endian4.bytes[3] = *(buf + 3);
+    }
+
+//  printf("header size: %d\n", endian4.uint32_value);
     return endian4.uint32_value;
 }
 
@@ -1337,10 +1341,13 @@ parse_pbf_node_infos (readosm_packed_infos * packed_infos,
 readosm_node_callback        g_cb_nod;
 readosm_way_callback         g_cb_way;
 readosm_relation_callback    g_cb_rel;
+int                          g_little_endian_cpu;
 
-static int parse_pbf_nodes (readosm_string_table * strings,
-                 unsigned char *start, unsigned char *stop,
-                 char little_endian_cpu
+static int parse_pbf_nodes (
+                 readosm_string_table * strings,
+                 unsigned char *start,
+                 unsigned char *stop,
+                 char         little_endian_cpu
 //               pbf_params *params
 //               readosm_node_callback cb_node
                  )
@@ -1365,13 +1372,13 @@ static int parse_pbf_nodes (readosm_string_table * strings,
  / any 0 value means that the current Node stops: next index
  / will be a key-index for the next Node item
 */
-    readosm_variant variant;
+    readosm_variant       variant;
     unsigned char *base = start;
     readosm_uint32_packed packed_keys;
-    readosm_int64_packed packed_ids;
-    readosm_int64_packed packed_lats;
-    readosm_int64_packed packed_lons;
-    readosm_packed_infos packed_infos;
+    readosm_int64_packed  packed_ids;
+    readosm_int64_packed  packed_lats;
+    readosm_int64_packed  packed_lons;
+    readosm_packed_infos  packed_infos;
     readosm_internal_node *nodes = NULL;
     int nd_count = 0;
     int valid = 0;
@@ -1379,10 +1386,10 @@ static int parse_pbf_nodes (readosm_string_table * strings,
 
 /* initializing empty packed objects */
     init_uint32_packed (&packed_keys);
-    init_int64_packed (&packed_ids);
-    init_int64_packed (&packed_lats);
-    init_int64_packed (&packed_lons);
-    init_packed_infos (&packed_infos);
+    init_int64_packed  (&packed_ids);
+    init_int64_packed  (&packed_lats);
+    init_int64_packed  (&packed_lons);
+    init_packed_infos  (&packed_infos);
 
 /* initializing an empty variant field */
     init_variant (&variant, little_endian_cpu);
@@ -1472,6 +1479,7 @@ static int parse_pbf_nodes (readosm_string_table * strings,
           valid = 1;
           fromPackedInfos = 1;
       }
+
     if (!valid)
         goto error;
     else {
@@ -1497,12 +1505,11 @@ static int parse_pbf_nodes (readosm_string_table * strings,
                 if ((nd_count - base) < MAX_NODES)
                     max_nodes = nd_count - base;
                 nodes = malloc (sizeof (readosm_internal_node) * max_nodes);
-                for (i = 0; i < max_nodes; i++)
-                  {
-                      /* initializing an array of empty internal Nodes */
+                for (i = 0; i < max_nodes; i++) {
+                   // initializing an array of empty internal Nodes
                       nd = nodes + i;
                       init_internal_node (nd);
-                  }
+                }
                 for (i = 0; i < max_nodes; i++) {
                       /* reassembling internal Nodes */
                       const char *key = NULL;
@@ -1599,7 +1606,7 @@ static int parse_pbf_nodes (readosm_string_table * strings,
                             nd = nodes + i;
                             ret =
                                 call_node_callback (g_cb_nod, // params->node_callback,
-                                                    0, // params->user_data,
+//                                                  0, // params->user_data,
                                                     nd);
                             if (ret != READOSM_OK) {
                                   exit(42);
@@ -1869,7 +1876,7 @@ static int parse_pbf_way (readosm_string_table * strings,
 /* processing the WAY */
 //  if (params->way_callback != NULL && params->stop == 0)
 //    {
-          int ret = call_way_callback (g_cb_way /* cb_way */ /*params->way_callback*/, 0 /* params->user_data */, way);
+          int ret = call_way_callback (g_cb_way /* cb_way */ /*params->way_callback*//* params->user_data */, way);
 
           if (ret != READOSM_OK)
               exit(43);
@@ -2142,7 +2149,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
 //  if (params->relation_callback != NULL && params->stop == 0)
 //    {
           int ret = call_relation_callback (g_cb_rel, // params->relation_callback,
-                                            0, // params->user_data,
+//                                          0, // params->user_data,
                                             relation);
           if (ret != READOSM_OK)
               exit(44);
@@ -2266,9 +2273,10 @@ static int parse_osm_data (
    const readosm_file * input,
    unsigned int sz
 // pbf_params *params
-   )
+)
 {
-/* expecting to retrieve a valid OSMData header */
+ // expecting to retrieve a valid OSMData header
+ //
     int ok_header = 0;
     int hdsz = 0;
     size_t rd;
@@ -2389,18 +2397,19 @@ static int parse_osm_data (
     stop = raw_ptr + raw_sz - 1;
     finalize_variant (&variant);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 17);
     add_variant_hints (&variant, READOSM_VAR_INT32, 18);
     add_variant_hints (&variant, READOSM_VAR_INT64, 19);
     add_variant_hints (&variant, READOSM_VAR_INT64, 20);
     while (1) {
-          /* resetting an empty variant field */
+       // resetting an empty variant field
           reset_variant (&variant);
 
           base = parse_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
+
           start = base;
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES)
             {
@@ -2414,7 +2423,7 @@ static int parse_osm_data (
             }
 
           if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
-                // the PrimitiveGroup to be parsed
+             // the PrimitiveGroup to be parsed
                 if (!parse_primitive_group (
                     &string_table, variant.pointer,
                      variant.pointer + variant.length - 1,
@@ -2454,7 +2463,7 @@ static int parse_osm_data (
 /*READOSM_PRIVATE*/
 int parse_osm_pbf (
    const readosm_file       *input,
-   const void               *user_data,
+// const void               *user_data,
    readosm_node_callback     node_fnct,
    readosm_way_callback      way_fnct,
    readosm_relation_callback relation_fnct)
@@ -2479,10 +2488,12 @@ int parse_osm_pbf (
 //  params.relation_callback = relation_fnct;
 //  params.stop = 0;
 
-/* reading BlobHeader size: OSMHeader */
+ // reading BlobHeader size: OSMHeader */
     rd = fread (buf, 1, 4, input->in);
+
     if (rd != 4)
         return READOSM_INVALID_PBF_HEADER;
+
     hdsz = get_header_size (buf, input->little_endian_cpu);
 
 /* testing OSMHeader */
@@ -2500,10 +2511,13 @@ int parse_osm_pbf (
 //            return READOSM_ABORT;
 
           rd = fread (buf, 1, 4, input->in);
+
           if (rd == 0 && feof (input->in))
               break;
+
           if (rd != 4)
               return READOSM_INVALID_PBF_HEADER;
+
           hdsz = get_header_size (buf, input->little_endian_cpu);
 
           /* parsing OSMData */

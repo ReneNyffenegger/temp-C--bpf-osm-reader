@@ -204,7 +204,7 @@ int load_osm_pbf(
  // }
 
     int ret;
-    ret = parse_osm_pbf(osm_handle, (const void *) 0, cb_nod, cb_way, cb_rel);
+    ret = parse_osm_pbf(osm_handle,  cb_nod, cb_way, cb_rel);
 
 
     if (ret != READOSM_OK) {

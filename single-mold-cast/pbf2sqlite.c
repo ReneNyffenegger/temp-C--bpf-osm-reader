@@ -96,7 +96,7 @@ void dbExec(const char* sql) {
 #endif
 }
 
-static int callback_node (const void *user_data, const readosm_node *node) {
+static int callback_node (/*const void *user_data,*/ const readosm_node *node) {
     char buf[128];
     int i;
     const readosm_tag *tag;
@@ -241,7 +241,7 @@ static int callback_node (const void *user_data, const readosm_node *node) {
     return READOSM_OK;
 }
 
-static int callback_way (const void *user_data, const readosm_way * way) {
+static int callback_way (/*const void *user_data, */ const readosm_way * way) {
     char buf[128];
     int i;
     const readosm_tag *tag;
@@ -374,7 +374,7 @@ static int callback_way (const void *user_data, const readosm_way * way) {
     return READOSM_OK;
 }
 
-static int callback_relation (const void *user_data, const readosm_relation * relation) {
+static int callback_relation (/*const void *user_data,*/ const readosm_relation * relation) {
 /* 
 * printing an OSM Relation (callback function) 
 *

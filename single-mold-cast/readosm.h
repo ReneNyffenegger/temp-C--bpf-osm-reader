@@ -227,9 +227,9 @@ struct readosm_relation_struct {
     typedef struct readosm_relation_struct readosm_relation;
 
 //  callback functions
-    typedef int (*readosm_node_callback    ) (const void *user_data, const readosm_node * node);
-    typedef int (*readosm_way_callback     ) (const void *user_data, const readosm_way * way);
-    typedef int (*readosm_relation_callback) (const void *user_data, const readosm_relation * relation);
+    typedef int (*readosm_node_callback    ) (const readosm_node     *node    );
+    typedef int (*readosm_way_callback     ) (const readosm_way      *way     );
+    typedef int (*readosm_relation_callback) (const readosm_relation *relation);
 
     /**
      Open the .osm or .pbf file, preparing for future functions
