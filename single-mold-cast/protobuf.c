@@ -64,6 +64,25 @@
 
 #define MAX_NODES 1024
 
+
+typedef union /* readosm_endian4_union */ {
+
+/* a union used for 32 bit ints [cross-endian] */
+    unsigned char bytes[4];
+    int           int32_value;
+    unsigned int uint32_value;
+    float         float_value;
+} four_byte_value;
+
+typedef union /* readosm_endian8_union */ {
+// a union used for 64 bit ints [cross-endian] */
+//
+    unsigned char       bytes[8];
+    long long           int64_value;
+    unsigned long long uint64_value;
+    double              double_value;
+} eight_byte_value;
+
 // typedef struct /* pbf_params */ {
 // 
 // /* an helper struct supporting PBF parsing */
@@ -512,8 +531,8 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
     unsigned long long v64;
     unsigned int value32 = 0x00000000;
     unsigned long long value64 = 0x0000000000000000;
-    readosm_endian4 endian4;
-    readosm_endian8 endian8;
+    four_byte_value endian4;
+    eight_byte_value endian8;
     int next;
     int count = 0;
     int neg;
@@ -656,14 +675,13 @@ static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *s
 
     while (1) {
        ptr = read_var (start, stop, &variant);
-       if (variant.valid)
-         {
+       if (variant.valid) {
              append_uint32_packed (packed, variant.value.uint32_value);
              if (ptr > stop)
                  break;
              start = ptr;
              continue;
-         }
+       }
        return 0;
     }
     return 1;
@@ -736,7 +754,7 @@ static unsigned int get_header_size (unsigned char *buf, int little_endian_cpu) 
 // retrieving the current header size 
 // please note: header sizes in PBF always are 4 bytes BIG endian encoded
 //
-    readosm_endian4 endian4;
+    four_byte_value endian4;
 
     if (little_endian_cpu) {
         endian4.bytes[0] = *(buf + 3);

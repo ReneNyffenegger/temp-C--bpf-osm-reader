@@ -70,7 +70,7 @@
 static int test_endianness () {
 
 /* checks the current CPU endianness */
-    readosm_endian4 endian4;
+    four_byte_value endian4;
     endian4.bytes[0] = 0x01;
     endian4.bytes[1] = 0x00;
     endian4.bytes[2] = 0x00;
