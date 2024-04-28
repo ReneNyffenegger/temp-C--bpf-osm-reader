@@ -79,20 +79,20 @@ static int test_endianness () {
     return READOSM_BIG_ENDIAN;
 }
 
-static readosm_file * alloc_osm_file (int little_endian_cpu/*, int format*/) {
-
-/* allocating and initializing the OSM input file struct */
-    readosm_file *input = malloc (sizeof (readosm_file));
-    if (!input)
-        return NULL;
-
-//  input->magic1 = READOSM_MAGIC_START;
-//  input->file_format = format;
-    input->little_endian_cpu = little_endian_cpu;
-//  input->magic2 = READOSM_MAGIC_END;
-    input->in = NULL;
-    return input;
-}
+// static readosm_file * alloc_osm_file (int little_endian_cpu/*, int format*/) {
+// 
+// /* allocating and initializing the OSM input file struct */
+//     readosm_file *input = malloc (sizeof (readosm_file));
+//     if (!input)
+//         return NULL;
+// 
+// //  input->magic1 = READOSM_MAGIC_START;
+// //  input->file_format = format;
+//     input->little_endian_cpu = little_endian_cpu;
+// //  input->magic2 = READOSM_MAGIC_END;
+//     input->in = NULL;
+//     return input;
+// }
 
 static void destroy_osm_file (readosm_file * input) {
 
@@ -104,45 +104,45 @@ static void destroy_osm_file (readosm_file * input) {
       }
 }
 
-/* READOSM_DECLARE */ int readosm_open (const char *path, readosm_file **osm_handle) {
-
-// opening and initializing the OSM input file 
-//  readosm_file *input;
-//  int len;
-    int format;
-    int little_endian_cpu = test_endianness();
-
-//  *osm_handle = NULL;
-//  if (path == NULL || osm_handle == NULL)
-//      return READOSM_NULL_HANDLE;
-
-//  len = strlen (path);
-
-//  if (len > 4 && strcasecmp (path + len - 4, ".osm") == 0)
-//      format = READOSM_OSM_FORMAT;
-
-//  else if (len > 4 && strcasecmp (path + len - 4, ".pbf") == 0)
-//      format = READOSM_PBF_FORMAT;
-
-//  else
-//      return READOSM_INVALID_SUFFIX;
-
-/* allocating the OSM input file struct */
-//  input = alloc_osm_file (little_endian_cpu/*, format*/);
-   *osm_handle = alloc_osm_file (little_endian_cpu/*, format*/);
-
-    if (! *osm_handle)
-        return READOSM_INSUFFICIENT_MEMORY;
-
-//  *osm_handle = input;
-
-   ( *osm_handle)->in = fopen(path, "rb");
-//  input->in = fopen (path, "rb");
-    if ((*osm_handle)->in == NULL)
-        return READOSM_FILE_NOT_FOUND;
-
-    return READOSM_OK;
-}
+// /* READOSM_DECLARE */ int readosm_open (const char *path, readosm_file **osm_handle) {
+// 
+// // opening and initializing the OSM input file 
+// //  readosm_file *input;
+// //  int len;
+//     int format;
+//     int little_endian_cpu = test_endianness();
+// 
+// //  *osm_handle = NULL;
+// //  if (path == NULL || osm_handle == NULL)
+// //      return READOSM_NULL_HANDLE;
+// 
+// //  len = strlen (path);
+// 
+// //  if (len > 4 && strcasecmp (path + len - 4, ".osm") == 0)
+// //      format = READOSM_OSM_FORMAT;
+// 
+// //  else if (len > 4 && strcasecmp (path + len - 4, ".pbf") == 0)
+// //      format = READOSM_PBF_FORMAT;
+// 
+// //  else
+// //      return READOSM_INVALID_SUFFIX;
+// 
+// /* allocating the OSM input file struct */
+// //  input = alloc_osm_file (little_endian_cpu/*, format*/);
+//    *osm_handle = alloc_osm_file (little_endian_cpu/*, format*/);
+// 
+//     if (! *osm_handle)
+//         return READOSM_INSUFFICIENT_MEMORY;
+// 
+// //  *osm_handle = input;
+// 
+//    ( *osm_handle)->in = fopen(path, "rb");
+// //  input->in = fopen (path, "rb");
+//     if ((*osm_handle)->in == NULL)
+//         return READOSM_FILE_NOT_FOUND;
+// 
+//     return READOSM_OK;
+// }
 
 /* READOSM_DECLARE */
 int readosm_close (const void *osm_handle) {
@@ -174,12 +174,20 @@ int load_osm_pbf(
 ) {
 
     readosm_file *osm_handle;
-    int ret;
 
 
 //  ret = readosm_open(filename_pbf, /*(const readosm_file**)*/ &osm_handle);
 
-    osm_handle = alloc_osm_file (test_endianness()/*, format*/);
+/* allocating and initializing the OSM input file struct */
+    osm_handle = malloc (sizeof (readosm_file));
+    if (!osm_handle)
+        return 999;
+
+//  input->magic1 = READOSM_MAGIC_START;
+//  input->file_format = format;
+    osm_handle -> little_endian_cpu = test_endianness();
+//  osm_handle->magic2 = READOSM_MAGIC_END;
+
 
     if (! osm_handle)
         return READOSM_INSUFFICIENT_MEMORY;
@@ -190,11 +198,12 @@ int load_osm_pbf(
     if (osm_handle->in == NULL)
         return READOSM_FILE_NOT_FOUND;
 
-    if (ret != READOSM_OK) {
-        fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
-        goto stop;
-    }
+ // if (ret != READOSM_OK) {
+ //     fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
+ //     goto stop;
+ // }
 
+    int ret;
     ret = parse_osm_pbf(osm_handle, (const void *) 0, cb_nod, cb_way, cb_rel);
 
 
