@@ -158,9 +158,7 @@ find_type_hint (readosm_variant * variant, unsigned char field_id,
     return 0;
 }
 
-static void
-finalize_variant (readosm_variant * variant)
-{
+static void finalize_variant (readosm_variant * variant) {
 /* cleaning any memory allocation for a PBF Variant object */
     readosm_variant_hint *hint;
     readosm_variant_hint *hint_n;
@@ -175,9 +173,7 @@ finalize_variant (readosm_variant * variant)
     variant->last = NULL;
 }
 
-static void
-init_string_table (readosm_string_table * string_table)
-{
+static void init_string_table (readosm_string_table * string_table) {
 /* initializing an empty PBF StringTable object */
     string_table->first = NULL;
     string_table->last = NULL;
@@ -185,8 +181,7 @@ init_string_table (readosm_string_table * string_table)
     string_table->strings = NULL;
 }
 
-static void
-append_string_to_table (readosm_string_table * string_table,
+static void append_string_to_table (readosm_string_table * string_table,
                         readosm_variant * variant)
 {
 /* appending a string to a PBF StringTable object */
@@ -480,20 +475,14 @@ init_packed_infos (readosm_packed_infos * packed)
     packed->users = NULL;
 }
 
-static void
-finalize_packed_infos (readosm_packed_infos * packed)
-{
-/* cleaning any memory allocation for a packed Infos object */
-    if (packed->versions)
-        free (packed->versions);
-    if (packed->timestamps)
-        free (packed->timestamps);
-    if (packed->changesets)
-        free (packed->changesets);
-    if (packed->uids)
-        free (packed->uids);
-    if (packed->users)
-        free (packed->users);
+static void finalize_packed_infos (readosm_packed_infos * packed) {
+ // cleaning any memory allocation for a packed Infos object
+
+    if (packed->versions  ) free (packed->versions  );
+    if (packed->timestamps) free (packed->timestamps);
+    if (packed->changesets) free (packed->changesets);
+    if (packed->uids      ) free (packed->uids      );
+    if (packed->users     ) free (packed->users     );
 }
 
 static unsigned char * read_var (unsigned char *start, unsigned char *stop, readosm_variant *variant) {
@@ -546,165 +535,31 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
             case READOSM_VAR_SINT32:
             
                 switch (count) {
-                  case 0:
-                      memset (endian4.bytes, 0x00, 4);
-                      if (variant->little_endian_cpu)
-                          endian4.bytes[0] = c;
-                      else
-                          endian4.bytes[3] = c;
-                      v32 = endian4.uint32_value;
-                      v32 &= READOSM_MASK32_1;
-                      value32 |= v32;
-                      break;
-                  case 1:
-                      memset (endian4.bytes, 0x00, 4);
-                      if (variant->little_endian_cpu)
-                          endian4.bytes[0] = c;
-                      else
-                          endian4.bytes[3] = c;
-                      v32 = endian4.uint32_value << 7;
-                      v32 &= READOSM_MASK32_2;
-                      value32 |= v32;
-                      break;
-                  case 2:
-                      memset (endian4.bytes, 0x00, 4);
-                      if (variant->little_endian_cpu)
-                          endian4.bytes[0] = c;
-                      else
-                          endian4.bytes[3] = c;
-                      v32 = endian4.uint32_value << 14;
-                      v32 &= READOSM_MASK32_3;
-                      value32 |= v32;
-                      break;
-                  case 3:
-                      memset (endian4.bytes, 0x00, 4);
-                      if (variant->little_endian_cpu)
-                          endian4.bytes[0] = c;
-                      else
-                          endian4.bytes[3] = c;
-                      v32 = endian4.uint32_value << 21;
-                      v32 &= READOSM_MASK32_4;
-                      value32 |= v32;
-                      break;
-                  case 4:
-                      memset (endian4.bytes, 0x00, 4);
-                      if (variant->little_endian_cpu)
-                          endian4.bytes[0] = c;
-                      else
-                          endian4.bytes[3] = c;
-                      v32 = endian4.uint32_value << 28;
-                      v32 &= READOSM_MASK32_5;
-                      value32 |= v32;
-                      break;
+                  case 0: memset (endian4.bytes, 0x00, 4); if (variant->little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value      ; v32 &= READOSM_MASK32_1; value32 |= v32; break;
+                  case 1: memset (endian4.bytes, 0x00, 4); if (variant->little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value <<  7; v32 &= READOSM_MASK32_2; value32 |= v32; break;
+                  case 2: memset (endian4.bytes, 0x00, 4); if (variant->little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value << 14; v32 &= READOSM_MASK32_3; value32 |= v32; break;
+                  case 3: memset (endian4.bytes, 0x00, 4); if (variant->little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value << 21; v32 &= READOSM_MASK32_4; value32 |= v32; break;
+                  case 4: memset (endian4.bytes, 0x00, 4); if (variant->little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value << 28; v32 &= READOSM_MASK32_5; value32 |= v32; break;
                   default:
                       return NULL;
                   };
                 break;
+
             case READOSM_VAR_INT64:
             case READOSM_VAR_UINT64:
             case READOSM_VAR_SINT64:
                 switch (count)
                   {
-                  case 0:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value;
-                      v64 &= READOSM_MASK64_1;
-                      value64 |= v64;
-                      break;
-                  case 1:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value << 7;
-                      v64 &= READOSM_MASK64_2;
-                      value64 |= v64;
-                      break;
-                  case 2:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value << 14;
-                      v64 &= READOSM_MASK64_3;
-                      value64 |= v64;
-                      break;
-                  case 3:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value << 21;
-                      v64 &= READOSM_MASK64_4;
-                      value64 |= v64;
-                      break;
-                  case 4:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value << 28;
-                      v64 &= READOSM_MASK64_5;
-                      value64 |= v64;
-                      break;
-                  case 5:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value << 35;
-                      v64 &= READOSM_MASK64_6;
-                      value64 |= v64;
-                      break;
-                  case 6:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value << 42;
-                      v64 &= READOSM_MASK64_7;
-                      value64 |= v64;
-                      break;
-                  case 7:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value << 49;
-                      v64 &= READOSM_MASK64_8;
-                      value64 |= v64;
-                      break;
-                  case 8:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value << 56;
-                      v64 &= READOSM_MASK64_9;
-                      value64 |= v64;
-                      break;
-                  case 9:
-                      memset (endian8.bytes, 0x00, 8);
-                      if (variant->little_endian_cpu)
-                          endian8.bytes[0] = c;
-                      else
-                          endian8.bytes[7] = c;
-                      v64 = endian8.uint64_value << 63;
-                      v64 &= READOSM_MASK64_A;
-                      value64 |= v64;
-                      break;
+                  case 0: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value      ; v64 &= READOSM_MASK64_1; value64 |= v64; break;
+                  case 1: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value <<  7; v64 &= READOSM_MASK64_2; value64 |= v64; break;
+                  case 2: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 14; v64 &= READOSM_MASK64_3; value64 |= v64; break;
+                  case 3: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 21; v64 &= READOSM_MASK64_4; value64 |= v64; break;
+                  case 4: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 28; v64 &= READOSM_MASK64_5; value64 |= v64; break;
+                  case 5: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 35; v64 &= READOSM_MASK64_6; value64 |= v64; break;
+                  case 6: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 42; v64 &= READOSM_MASK64_7; value64 |= v64; break;
+                  case 7: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 49; v64 &= READOSM_MASK64_8; value64 |= v64; break;
+                  case 8: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 56; v64 &= READOSM_MASK64_9; value64 |= v64; break;
+                  case 9: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 63; v64 &= READOSM_MASK64_A; value64 |= v64; break;
                   default:
                       return NULL;
                   };
@@ -715,42 +570,47 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
               break;
       }
 
-    switch (variant->type)
-      {
+    switch (variant->type) {
+
       case READOSM_VAR_INT32:
-          variant->value.int32_value = (int) value32;
-          variant->valid = 1;
-          return ptr;
+           variant->value.int32_value = (int) value32;
+           variant->valid = 1;
+           return ptr;
+
       case READOSM_VAR_UINT32:
-          variant->value.uint32_value = value32;
-          variant->valid = 1;
-          return ptr;
+           variant->value.uint32_value = value32;
+           variant->valid = 1;
+           return ptr;
+
       case READOSM_VAR_SINT32:
-          if ((value32 & 0x00000001) == 0)
-              neg = 1;
-          else
-              neg = -1;
-          v32 = (value32 + 1) / 2;
-          variant->value.int32_value = v32 * neg;
-          variant->valid = 1;
-          return ptr;
+           if ((value32 & 0x00000001) == 0)
+               neg = 1;
+           else
+               neg = -1;
+           v32 = (value32 + 1) / 2;
+           variant->value.int32_value = v32 * neg;
+           variant->valid = 1;
+           return ptr;
+
       case READOSM_VAR_INT64:
-          variant->value.int64_value = (int) value64;
-          variant->valid = 1;
-          return ptr;
+           variant->value.int64_value = (int) value64;
+           variant->valid = 1;
+           return ptr;
+
       case READOSM_VAR_UINT64:
-          variant->value.uint64_value = value64;
-          variant->valid = 1;
-          return ptr;
+           variant->value.uint64_value = value64;
+           variant->valid = 1;
+           return ptr;
+
       case READOSM_VAR_SINT64:
-          if ((value64 & 0x0000000000000001) == 0)
-              neg = 1;
-          else
-              neg = -1;
-          v64 = (value64 + 1) / 2;
-          variant->value.int64_value = v64 * neg;
-          variant->valid = 1;
-          return ptr;
+           if ((value64 & 0x0000000000000001) == 0)
+               neg = 1;
+           else
+               neg = -1;
+           v64 = (value64 + 1) / 2;
+           variant->value.int64_value = v64 * neg;
+           variant->valid = 1;
+           return ptr;
       };
     return NULL;
 }
