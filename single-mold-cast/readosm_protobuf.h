@@ -134,7 +134,7 @@ typedef struct /* readosm_variant_struct */ {
     }
     value;                      // The VARIANT value
 
-    size_t                length;      // length in bytes [for strings]
+    size_t                str_len;     // length in bytes [for strings]
     unsigned char        *pointer;     // pointer to String value
     char                  valid;       // valid value
     readosm_variant_hint *first;       // pointers supporting a linked list

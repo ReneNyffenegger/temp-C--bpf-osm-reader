@@ -102,7 +102,7 @@ static void init_variant (readosm_variant * variant, int little_endian_cpu) {
     variant->little_endian_cpu = little_endian_cpu;
     variant->type              = READOSM_VAR_UNDEFINED;
     variant->field_id          = 0;
-    variant->length            = 0;
+    variant->str_len           = 0;
     variant->pointer           = NULL;
     variant->valid             = 0;
     variant->first             = NULL;
@@ -115,7 +115,7 @@ reset_variant (readosm_variant * variant)
 /* resetting a PBF Variant object to its initial empty state */
     variant->type = READOSM_VAR_UNDEFINED;
     variant->field_id = 0;
-    variant->length = 0;
+    variant->str_len = 0;
     variant->pointer = NULL;
     variant->valid = 0;
 }
@@ -205,9 +205,9 @@ static void append_string_to_table (readosm_string_table * string_table,
 {
 /* appending a string to a PBF StringTable object */
     readosm_string *string = malloc (sizeof (readosm_string));
-    string->string = malloc (variant->length + 1);
-    memcpy (string->string, variant->pointer, variant->length);
-    *(string->string + variant->length) = '\0';
+    string->string = malloc (variant->str_len + 1);
+    memcpy (string->string, variant->pointer, variant->str_len);
+    *(string->string + variant->str_len) = '\0';
     string->next = NULL;
     if (string_table->first == NULL)
         string_table->first = string;
@@ -659,7 +659,7 @@ static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, re
           if ((ptr + len - 1) > stop)
               return NULL;
           variant->pointer = ptr;
-          variant->length = len;
+          variant->str_len = len;
           variant->valid = 1;
           return ptr + len;
       }
@@ -859,8 +859,7 @@ static int skip_osm_header (const readosm_file * input, unsigned int sz) {
           if (base == NULL && variant.valid == 0)
               goto error;
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES
-              && variant.length == 9)
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 9)
             {
                 if (memcmp (variant.pointer, "OSMHeader", 9) == 0)
                     ok_header = 1;
@@ -1018,11 +1017,11 @@ static int parse_pbf_node_infos (
               goto error;
 
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) { /* versions: *not* delta encoded */                                         if (!parse_uint32_packed (&packed_u32, variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; pu32 = packed_u32.first; while (pu32) { count++; pu32 = pu32->next; } packed_infos->ver_count = count; if (packed_infos->versions   != NULL) { free (packed_infos->versions  ); packed_infos->versions   = NULL; } if (count > 0) { packed_infos->versions   = malloc (sizeof (int      ) * count); count = 0; pu32 = packed_u32.first; while (pu32) {              *(packed_infos->versions + count) = pu32->value;     count++; pu32 = pu32->next;} } reset_uint32_packed (&packed_u32); }
-          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) { /* timestamps: delta encoded */                        int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->tim_count = count; if (packed_infos->timestamps != NULL) { free (packed_infos->timestamps); packed_infos->timestamps = NULL; } if (count > 0) { packed_infos->timestamps = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->timestamps + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
-          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) { /* changesets: delta encoded */                        long long delta = 0; if (!parse_sint64_packed (&packed_64 , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; p64  = packed_64.first ; while (p64 ) { count++; p64  = p64->next;  } packed_infos->cng_count = count; if (packed_infos->changesets != NULL) { free (packed_infos->changesets); packed_infos->changesets = NULL; } if (count > 0) { packed_infos->changesets = malloc (sizeof (long long) * count); count = 0; p64  = packed_64.first ; while (p64)  { delta += p64->value; *(packed_infos->changesets + count) = delta; count++; p64  = p64->next; } } reset_int64_packed  (&packed_64);  }
-          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) { /* uids: delta encoded */                              int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->uid_count = count; if (packed_infos->uids       != NULL) { free (packed_infos->uids      ); packed_infos->uids       = NULL; } if (count > 0) { packed_infos->uids       = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->uids       + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
-          if (variant.field_id == 5 && variant.type == READOSM_LEN_BYTES) { /* user-names: delta encoded (index to StringTable) */ int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->usr_count = count; if (packed_infos->users      != NULL) { free (packed_infos->users     ); packed_infos->users      = NULL; } if (count > 0) { packed_infos->users      = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->users      + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) { /* versions: *not* delta encoded */                                         if (!parse_uint32_packed (&packed_u32, variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; pu32 = packed_u32.first; while (pu32) { count++; pu32 = pu32->next; } packed_infos->ver_count = count; if (packed_infos->versions   != NULL) { free (packed_infos->versions  ); packed_infos->versions   = NULL; } if (count > 0) { packed_infos->versions   = malloc (sizeof (int      ) * count); count = 0; pu32 = packed_u32.first; while (pu32) {              *(packed_infos->versions + count) = pu32->value;     count++; pu32 = pu32->next;} } reset_uint32_packed (&packed_u32); }
+          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) { /* timestamps: delta encoded */                        int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->tim_count = count; if (packed_infos->timestamps != NULL) { free (packed_infos->timestamps); packed_infos->timestamps = NULL; } if (count > 0) { packed_infos->timestamps = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->timestamps + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
+          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) { /* changesets: delta encoded */                        long long delta = 0; if (!parse_sint64_packed (&packed_64 , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; p64  = packed_64.first ; while (p64 ) { count++; p64  = p64->next;  } packed_infos->cng_count = count; if (packed_infos->changesets != NULL) { free (packed_infos->changesets); packed_infos->changesets = NULL; } if (count > 0) { packed_infos->changesets = malloc (sizeof (long long) * count); count = 0; p64  = packed_64.first ; while (p64)  { delta += p64->value; *(packed_infos->changesets + count) = delta; count++; p64  = p64->next; } } reset_int64_packed  (&packed_64);  }
+          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) { /* uids: delta encoded */                              int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->uid_count = count; if (packed_infos->uids       != NULL) { free (packed_infos->uids      ); packed_infos->uids       = NULL; } if (count > 0) { packed_infos->uids       = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->uids       + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
+          if (variant.field_id == 5 && variant.type == READOSM_LEN_BYTES) { /* user-names: delta encoded (index to StringTable) */ int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->usr_count = count; if (packed_infos->users      != NULL) { free (packed_infos->users     ); packed_infos->users      = NULL; } if (count > 0) { packed_infos->users      = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->users      + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
           if (base > stop)
               break;
       }
@@ -1113,11 +1112,11 @@ static int parse_pbf_nodes (
 
           start = base;
 
-          if (variant.field_id ==  1 && variant.type == READOSM_LEN_BYTES) { /* NODE IDs    */ if (!parse_sint64_packed  (&packed_ids  , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
-          if (variant.field_id ==  5 && variant.type == READOSM_LEN_BYTES) { /* DenseInfos  */ if (!parse_pbf_node_infos (&packed_infos, variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error;                                         }
-          if (variant.field_id ==  8 && variant.type == READOSM_LEN_BYTES) { /* latitudes   */ if (!parse_sint64_packed  (&packed_lats , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
-          if (variant.field_id ==  9 && variant.type == READOSM_LEN_BYTES) { /* longitudes  */ if (!parse_sint64_packed  (&packed_lons , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
-          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES) { /* packes-keys */ if (!parse_uint32_packed  (&packed_keys , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
+          if (variant.field_id ==  1 && variant.type == READOSM_LEN_BYTES) { /* NODE IDs    */ if (!parse_sint64_packed  (&packed_ids  , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
+          if (variant.field_id ==  5 && variant.type == READOSM_LEN_BYTES) { /* DenseInfos  */ if (!parse_pbf_node_infos (&packed_infos, variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error;                                         }
+          if (variant.field_id ==  8 && variant.type == READOSM_LEN_BYTES) { /* latitudes   */ if (!parse_sint64_packed  (&packed_lats , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
+          if (variant.field_id ==  9 && variant.type == READOSM_LEN_BYTES) { /* longitudes  */ if (!parse_sint64_packed  (&packed_lons , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
+          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES) { /* packes-keys */ if (!parse_uint32_packed  (&packed_keys , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
           if (base > stop)
               break;
       }
@@ -1465,7 +1464,7 @@ static int parse_pbf_way (readosm_string_table * strings,
                 /* KEYs are encoded as an array of StringTable index */
                 if (!parse_uint32_packed
                     (&packed_keys, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_keys);
@@ -1475,7 +1474,7 @@ static int parse_pbf_way (readosm_string_table * strings,
                 /* VALUEs are encoded as an array of StringTable index  */
                 if (!parse_uint32_packed
                     (&packed_values, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_values);
@@ -1485,7 +1484,7 @@ static int parse_pbf_way (readosm_string_table * strings,
                 /* WAY-INFO block */
                 if (!parse_pbf_way_info
                     (way, strings, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
             }
@@ -1497,7 +1496,7 @@ static int parse_pbf_way (readosm_string_table * strings,
                 /* KEYs are encoded as an array of StringTable index */
                 if (!parse_sint64_packed
                     (&packed_refs, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 value = packed_refs.first;
@@ -1700,7 +1699,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
                 /* KEYs are encoded as an array of StringTable index */
                 if (!parse_uint32_packed
                     (&packed_keys, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_keys);
@@ -1710,7 +1709,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
                 /* VALUEs are encoded as an array of StringTable index */
                 if (!parse_uint32_packed
                     (&packed_values, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_values);
@@ -1720,7 +1719,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
                 /* RELATION-INFO block */
                 if (!parse_pbf_relation_info
                     (relation, strings, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
             }
@@ -1729,7 +1728,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
                 /* MEMBER-ROLEs are encoded as an array of StringTable index */
                 if (!parse_uint32_packed
                     (&packed_roles, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_roles);
@@ -1739,7 +1738,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
                 /* MEMBER-REFs are encoded as an array */
                 if (!parse_sint64_packed
                     (&packed_refs, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_int64_packed (&packed_refs);
@@ -1749,7 +1748,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
                 /* MEMBER-TYPEs are encoded as an array */
                 if (!parse_uint32_packed
                     (&packed_types, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_types);
@@ -1879,7 +1878,7 @@ static int parse_primitive_group (
 
                 if (!parse_pbf_nodes
                     (strings, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu
 //                   params -> node_callback
                      ))
@@ -1893,7 +1892,7 @@ static int parse_primitive_group (
 
                 if (!parse_pbf_way
                     (strings, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu
 //                   params -> way_callback
 //                   params
@@ -1909,7 +1908,7 @@ static int parse_primitive_group (
 
                 if (!parse_pbf_relation
                     (strings, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu
 //                   params -> relation_callback
 //                   params
@@ -1981,7 +1980,7 @@ static int parse_osm_data (
 
           start = base;
 
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.length == 7) {
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 7) {
                 if (memcmp (variant.pointer, "OSMData", 7) == 0) ok_header = 1;
           }
 
@@ -2022,7 +2021,7 @@ static int parse_osm_data (
           start = base;
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
              // found an uncompressed block */
-                raw_sz = variant.length;
+                raw_sz = variant.str_len;
                 raw_ptr = malloc (raw_sz);
                 memcpy (raw_ptr, variant.pointer, raw_sz);
             }
@@ -2034,7 +2033,7 @@ static int parse_osm_data (
             {
                 /* found a ZIP-compressed block */
                 zip_ptr = variant.pointer;
-                zip_sz = variant.length;
+                zip_sz = variant.str_len;
             }
           if (base > stop)
               break;
@@ -2076,7 +2075,7 @@ static int parse_osm_data (
                 /* the StringTable */
                 if (!parse_string_table
                     (&string_table, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_string_table (&string_table);
@@ -2086,7 +2085,7 @@ static int parse_osm_data (
              // the PrimitiveGroup to be parsed
                 if (!parse_primitive_group (
                     &string_table, variant.pointer,
-                     variant.pointer + variant.length - 1,
+                     variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu
                      // , params
                     ))
