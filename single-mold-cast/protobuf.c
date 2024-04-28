@@ -751,28 +751,32 @@ static int parse_sint64_packed (
     return 1;
 }
 
-static unsigned int get_header_size (unsigned char *buf, int little_endian_cpu) {
+readosm_node_callback        g_cb_nod;
+readosm_way_callback         g_cb_way;
+readosm_relation_callback    g_cb_rel;
+char                         g_little_endian_cpu;
+
+static unsigned int get_header_size (unsigned char *buf /*, int little_endian_cpu*/) {
 //
 // retrieving the current header size 
 // please note: header sizes in PBF always are 4 bytes BIG endian encoded
 //
-    four_byte_value endian4;
+    four_byte_value four_bytes;
 
-    if (little_endian_cpu) {
-        endian4.bytes[0] = *(buf + 3);
-        endian4.bytes[1] = *(buf + 2);
-        endian4.bytes[2] = *(buf + 1);
-        endian4.bytes[3] = *(buf + 0);
+    if (g_little_endian_cpu) {
+        four_bytes.bytes[0] = *(buf + 3);
+        four_bytes.bytes[1] = *(buf + 2);
+        four_bytes.bytes[2] = *(buf + 1);
+        four_bytes.bytes[3] = *(buf + 0);
     }
     else {
-        endian4.bytes[0] = *(buf + 0);
-        endian4.bytes[1] = *(buf + 1);
-        endian4.bytes[2] = *(buf + 2);
-        endian4.bytes[3] = *(buf + 3);
+        four_bytes.bytes[0] = *(buf + 0);
+        four_bytes.bytes[1] = *(buf + 1);
+        four_bytes.bytes[2] = *(buf + 2);
+        four_bytes.bytes[3] = *(buf + 3);
     }
 
-//  printf("header size: %d\n", endian4.uint32_value);
-    return endian4.uint32_value;
+    return four_bytes.uint32_value;
 }
 
 static unsigned char * parse_field (unsigned char *start, unsigned char *stop, readosm_variant * variant) {
@@ -820,31 +824,32 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, r
     return NULL;
 }
 
-readosm_node_callback        g_cb_nod;
-readosm_way_callback         g_cb_way;
-readosm_relation_callback    g_cb_rel;
-char                         g_little_endian_cpu;
 
 static int skip_osm_header (const readosm_file * input, unsigned int sz) {
 
-/*
- / expecting to retrieve a valid OSMHeader header 
- / there is nothing really interesting here, so we'll
- / simply discard the whole block, simply advancing
- / the read file-pointer as appropriate
-*/
+//
+// expecting to retrieve a valid OSMHeader header 
+// there is nothing really interesting here, so we'll
+// simply discard the whole block, simply advancing
+// the read file-pointer as appropriate
+//
+
+printf("skip_osm_header, sz = %d\n", sz);
+
     int ok_header = 0;
     int hdsz = 0;
+
     size_t rd;
-    unsigned char *buf = malloc (sz);
-    unsigned char *base = buf;
+    unsigned char *buf   = malloc (sz);
+    unsigned char *base  = buf;
     unsigned char *start = buf;
-    unsigned char *stop = buf + sz - 1;
+    unsigned char *stop  = buf + sz - 1;
     readosm_variant variant;
+
     if (buf == NULL)
         goto error;
 
-/* initializing an empty variant field */
+ // initializing an empty variant field 
     init_variant (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
@@ -854,40 +859,55 @@ static int skip_osm_header (const readosm_file * input, unsigned int sz) {
     if (rd != sz)
         goto error;
 
-/* reading the OSMHeader header */
+// reading the OSMHeader header
+//
     while (1) {
-          /* resetting an empty variant field */
+       printf("  next iteration");
+       // resetting an empty variant field
           reset_variant (&variant);
 
           base = parse_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
+
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 9)
-            {
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 9) {
+
+                printf("    field_id == 1\n");
                 if (memcmp (variant.pointer, "OSMHeader", 9) == 0)
                     ok_header = 1;
-            }
-          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32)
+          }
+
+          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
               hdsz = variant.value.int32_value;
-          if (base > stop)
+              printf("    field_id == 3, hdsz = %d\n", hdsz);
+          }
+
+          if (base > stop) {
+              printf("    base > stop\n");
               break;
-      }
+          }
+    }
+
     free (buf);
     buf = NULL;
+
     if (!ok_header || !hdsz)
         goto error;
 
-    buf = malloc (hdsz);
-    base = buf;
+    buf   = malloc (hdsz);
+    base  = buf;
     start = buf;
-    stop = buf + hdsz - 1;
+    stop  = buf + hdsz - 1;
+
     rd = fread (buf, 1, hdsz, input->in);
+
     if ((int) rd != hdsz)
         goto error;
 
     if (buf != NULL)
         free (buf);
+
     finalize_variant (&variant);
     return 1;
 
@@ -1585,13 +1605,10 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
           if (base == NULL && variant.valid == 0)
               goto error;
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_VAR_INT32)
-            {
-                /* version */
+          if (variant.field_id == 1 && variant.type == READOSM_VAR_INT32) { // version
                 relation->version = variant.value.int32_value;
-            }
-          if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32)
-            {
+          }
+          if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
                 /* timestamp */
                 const time_t xtime = variant.value.int32_value;
                 struct tm *times = gmtime (&xtime);
@@ -1609,19 +1626,16 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
                       relation->timestamp = malloc (len + 1);
                       strcpy (relation->timestamp, buf);
                   }
-            }
-          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT64)
-            {
+          }
+          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT64) {
                 /* changeset */
                 relation->changeset = variant.value.int64_value;
-            }
-          if (variant.field_id == 4 && variant.type == READOSM_VAR_INT32)
-            {
+          }
+          if (variant.field_id == 4 && variant.type == READOSM_VAR_INT32) {
                 /* uid */
                 relation->uid = variant.value.int32_value;
-            }
-          if (variant.field_id == 5 && variant.type == READOSM_VAR_INT32)
-            {
+          }
+          if (variant.field_id == 5 && variant.type == READOSM_VAR_INT32) {
                 /* user-name: index to StringTable entry */
                 int userid;
                 if (relation->user)
@@ -1691,13 +1705,11 @@ static int parse_pbf_relation (readosm_string_table * strings,
           if (base == NULL && variant.valid == 0)
               goto error;
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_VAR_INT64)
-            {
+          if (variant.field_id == 1 && variant.type == READOSM_VAR_INT64) {
                 /* RELATION ID */
                 relation->id = variant.value.int64_value;
-            }
-          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES)
-            {
+          }
+          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
                 /* KEYs are encoded as an array of StringTable index */
                 if (!parse_uint32_packed
                     (&packed_keys, variant.pointer,
@@ -1705,9 +1717,8 @@ static int parse_pbf_relation (readosm_string_table * strings,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_keys);
-            }
-          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES)
-            {
+          }
+          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
                 /* VALUEs are encoded as an array of StringTable index */
                 if (!parse_uint32_packed
                     (&packed_values, variant.pointer,
@@ -1715,38 +1726,34 @@ static int parse_pbf_relation (readosm_string_table * strings,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_values);
-            }
-          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES)
-            {
+          }
+          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) {
                 /* RELATION-INFO block */
                 if (!parse_pbf_relation_info
                     (relation, strings, variant.pointer,
                      variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
-            }
-          if (variant.field_id == 8 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* MEMBER-ROLEs are encoded as an array of StringTable index */
+          }
+          if (variant.field_id == 8 && variant.type == READOSM_LEN_BYTES) {
+             /* MEMBER-ROLEs are encoded as an array of StringTable index */
                 if (!parse_uint32_packed
                     (&packed_roles, variant.pointer,
                      variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_roles);
-            }
-          if (variant.field_id == 9 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* MEMBER-REFs are encoded as an array */
+          }
+          if (variant.field_id == 9 && variant.type == READOSM_LEN_BYTES) {
+             /* MEMBER-REFs are encoded as an array */
                 if (!parse_sint64_packed
                     (&packed_refs, variant.pointer,
                      variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_int64_packed (&packed_refs);
-            }
-          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES)
-            {
+          }
+          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES) {
                 /* MEMBER-TYPEs are encoded as an array */
                 if (!parse_uint32_packed
                     (&packed_types, variant.pointer,
@@ -1754,7 +1761,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
                      variant.little_endian_cpu))
                     goto error;
                 array_from_uint32_packed (&packed_types);
-            }
+          }
           if (base > stop)
               break;
       }
@@ -1769,24 +1776,22 @@ static int parse_pbf_relation (readosm_string_table * strings,
                 int i_val = *(packed_values.values + i);
                 readosm_string *s_key = *(strings->strings + i_key);
                 readosm_string *s_value = *(strings->strings + i_val);
-                append_tag_to_relation (relation, s_key->string,
-                                        s_value->string);
+                append_tag_to_relation (relation, s_key->string, s_value->string);
             }
       }
     else
         goto error;
-    if (packed_roles.count == packed_refs.count
-        && packed_roles.count == packed_types.count)
-      {
+
+    if (packed_roles.count == packed_refs.count && packed_roles.count == packed_types.count) {
           int i;
           long long delta = 0;
-          for (i = 0; i < packed_roles.count; i++)
-            {
+          for (i = 0; i < packed_roles.count; i++) {
                 int xtype = READOSM_UNDEFINED;
                 int i_role = *(packed_roles.values + i);
                 readosm_string *s_role = *(strings->strings + i_role);
                 int type = *(packed_types.values + i);
                 delta += *(packed_refs.values + i);
+
                 if (type == 0)
                     xtype = READOSM_MEMBER_NODE;
                 else if (type == 1)
@@ -1837,7 +1842,6 @@ static int parse_primitive_group (
    unsigned char *start,
    unsigned char *stop,
             char little_endian_cpu
-//        pbf_params *params
 )
 {
 // 
@@ -1928,12 +1932,7 @@ static int parse_primitive_group (
     return 0;
 }
 
-static int parse_osm_data (
-   const readosm_file * input,
-   unsigned int sz
-// pbf_params *params
-)
-{
+static int parse_osm_data (const readosm_file * input, unsigned int sz) {
  // expecting to retrieve a valid OSMData header
  //
     int ok_header = 0;
@@ -1950,7 +1949,7 @@ static int parse_osm_data (
     readosm_variant variant;
     readosm_string_table string_table;
 
-    printf("parse_osm_data\n");
+    printf("  parse_osm_data\n");
 
     if (buf == NULL)
         goto error;
@@ -1971,6 +1970,7 @@ static int parse_osm_data (
 
 // reading the OSMData header
     while (1) {
+          printf("  iterating\n");
 
        // resetting an empty variant field
           reset_variant (&variant);
@@ -1983,16 +1983,20 @@ static int parse_osm_data (
           start = base;
 
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 7) {
+                printf("     field_id = 1\n");
                 if (memcmp (variant.pointer, "OSMData", 7) == 0) ok_header = 1;
           }
 
-          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32)
+          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
               hdsz = variant.value.int32_value;
+              printf("     field_id = 3, hdsz = %d\n", hdsz);
+          }
 
           if (base > stop)
               break;
 
-      }
+    }
+
     free (buf);
     buf = NULL;
     if (!ok_header || !hdsz)
@@ -2026,38 +2030,38 @@ static int parse_osm_data (
                 raw_sz = variant.str_len;
                 raw_ptr = malloc (raw_sz);
                 memcpy (raw_ptr, variant.pointer, raw_sz);
-            }
+          }
           if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
               // expected size of unZipped block */
                 raw_sz = variant.value.int32_value;
           }
-          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* found a ZIP-compressed block */
+          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
+              // found a ZIP-compressed block
                 zip_ptr = variant.pointer;
                 zip_sz = variant.str_len;
-            }
+          }
           if (base > stop)
               break;
-      }
-    if (zip_ptr != NULL && zip_sz != 0 && raw_sz != 0)
-      {
+    }
+
+    if (zip_ptr != NULL && zip_sz != 0 && raw_sz != 0) {
           /* unZipping a compressed block */
           raw_ptr = malloc (raw_sz);
           if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, raw_sz))
               goto error;
-      }
+    }
+
     free (buf);
     buf = NULL;
     if (raw_ptr == NULL || raw_sz == 0)
         goto error;
 
-/* parsing the PrimitiveBlock */
+// parsing the PrimitiveBlock
     base = raw_ptr;
     start = raw_ptr;
     stop = raw_ptr + raw_sz - 1;
     finalize_variant (&variant);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 17);
     add_variant_hints (&variant, READOSM_VAR_INT32, 18);
@@ -2074,7 +2078,7 @@ static int parse_osm_data (
 
           start = base;
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
-                /* the StringTable */
+             // the StringTable
                 if (!parse_string_table
                     (&string_table, variant.pointer,
                      variant.pointer + variant.str_len - 1,
@@ -2154,7 +2158,7 @@ int parse_osm_pbf (
     rd = fread (buf, 1, 4, input->in);
     if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
-    hdsz = get_header_size (buf, g_little_endian_cpu /* input->little_endian_cpu */);
+    hdsz = get_header_size (buf /*, g_little_endian_cpu*/ /* input->little_endian_cpu */);
 
 /* testing OSMHeader */
     if (!skip_osm_header (input, hdsz))
@@ -2173,7 +2177,7 @@ int parse_osm_pbf (
 
           if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
-          hdsz = get_header_size (buf, g_little_endian_cpu /* input->little_endian_cpu*/);
+          hdsz = get_header_size (buf /*, g_little_endian_cpu */ /* input->little_endian_cpu*/);
 
           /* parsing OSMData */
           if (!parse_osm_data (input, hdsz /*, &params */))
