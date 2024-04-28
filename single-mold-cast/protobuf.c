@@ -1047,13 +1047,11 @@ static int parse_pbf_nodes (
                  readosm_string_table * strings,
                  unsigned char *start,
                  unsigned char *stop,
-                 char          little_endian_cpu
-//               pbf_params *params
-//               readosm_node_callback cb_node
-                 )
+                 char           little_endian_cpu
+)
 {
 /* 
- / attempting to parse a valid PBF DenseNodes 
+ / Attempting to parse a valid PBF DenseNodes 
  /
  / Remark: a PBF DenseNodes block consists in five strings:
  / - ids
@@ -1062,7 +1060,7 @@ static int parse_pbf_nodes (
  / - latitudes
  / - packed-keys (*)
  /
- / each "string" in turn contains an array of INT values;
+ / Each "string" in turn contains an array of INT values;
  / and individual values are usually encoded as DELTAs,
  / i.e. differences respect the immediately preceding value.
  /
@@ -1074,15 +1072,15 @@ static int parse_pbf_nodes (
 */
     readosm_variant       variant;
     unsigned char *base = start;
-    readosm_uint32_packed packed_keys;
-    readosm_int64_packed  packed_ids;
-    readosm_int64_packed  packed_lats;
-    readosm_int64_packed  packed_lons;
-    readosm_packed_infos  packed_infos;
+    readosm_uint32_packed  packed_keys;
+    readosm_int64_packed   packed_ids;
+    readosm_int64_packed   packed_lats;
+    readosm_int64_packed   packed_lons;
+    readosm_packed_infos   packed_infos;
     readosm_internal_node *nodes = NULL;
-    int nd_count = 0;
-    int valid = 0;
-    int fromPackedInfos = 0;
+    int nd_count                 = 0;
+    int valid                    = 0;
+    int fromPackedInfos          = 0;
 
 /* initializing empty packed objects */
     init_uint32_packed (&packed_keys);
@@ -1142,11 +1140,11 @@ static int parse_pbf_nodes (
         goto error;
 
     else {
-          /*
-             / all right, we now have the same item count anywhere
-             / we can now go further away attempting to reassemble
-             / individual Nodes 
-           */
+          //
+          //  all right, we now have the same item count anywhere
+          //  we can now go further away attempting to reassemble
+          //  individual Nodes 
+          //
           readosm_internal_node *nd;
           int i;
           int i_keys = 0;
@@ -1159,11 +1157,14 @@ static int parse_pbf_nodes (
 
           while (base < nd_count) {
 
-                /* processing about 1024 nodes at each time */
+             // processing about 1024 nodes at each time
                 max_nodes = MAX_NODES;
+
                 if ((nd_count - base) < MAX_NODES)
                     max_nodes = nd_count - base;
+
                 nodes = malloc (sizeof (readosm_internal_node) * max_nodes);
+
                 for (i = 0; i < max_nodes; i++) {
                    // initializing an array of empty internal Nodes
                       nd = nodes + i;
@@ -1265,16 +1266,12 @@ static int parse_pbf_nodes (
                       int ret;
                       readosm_internal_node *nd;
                       int i;
-                      for (i = 0; i < max_nodes; i++)
-                        {
+                      for (i = 0; i < max_nodes; i++) {
                             nd = nodes + i;
-                            ret =
-                                call_node_callback (g_cb_nod, // params->node_callback,
-//                                                  0, // params->user_data,
-                                                    nd);
+                            ret = call_node_callback (g_cb_nod, nd);
+
                             if (ret != READOSM_OK) {
                                   exit(42);
-//                                params->stop = 1;
                                   break;
                               }
                         }
@@ -1842,14 +1839,14 @@ static int parse_primitive_group (
 //        pbf_params *params
 )
 {
-/* 
- / attempting to parse a valid Primitive Group 
- /
- / each PBF PrimitiveGroup can store only one type:
- / - NODEs
- / - WAYs
- / - RELATIONs
-*/
+// 
+// attempting to parse a valid Primitive Group 
+//
+// each PBF PrimitiveGroup can store only one type:
+// - NODEs
+// - WAYs
+// - RELATIONs
+//
     readosm_variant variant;
     unsigned char *base = start;
 
@@ -1863,6 +1860,7 @@ static int parse_primitive_group (
 
 /* reading the Primitive Group */
 
+    printf("parse_primitive_group\n");
     while (1) {
 
        // resetting an empty variant field
@@ -1875,17 +1873,12 @@ static int parse_primitive_group (
           start = base;
 
           if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) { // Dense nodes
-                /* DenseNodes */
 
-//              if (params->node_callback == NULL)
-//                  goto skip;  /* skipping: no node-callback */
-
-                if (!parse_pbf_nodes (
+               if (!parse_pbf_nodes (
                      strings,
                      variant.pointer,
                      variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu
-//                   params -> node_callback
                    ))
                    goto error;
             }
@@ -1955,6 +1948,9 @@ static int parse_osm_data (
     int raw_sz = 0;
     readosm_variant variant;
     readosm_string_table string_table;
+
+    printf("parse_osm_data\n");
+
     if (buf == NULL)
         goto error;
 
@@ -2066,6 +2062,7 @@ static int parse_osm_data (
     add_variant_hints (&variant, READOSM_VAR_INT32, 18);
     add_variant_hints (&variant, READOSM_VAR_INT64, 19);
     add_variant_hints (&variant, READOSM_VAR_INT64, 20);
+
     while (1) {
        // resetting an empty variant field
           reset_variant (&variant);
@@ -2075,8 +2072,7 @@ static int parse_osm_data (
               goto error;
 
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES)
-            {
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
                 /* the StringTable */
                 if (!parse_string_table
                     (&string_table, variant.pointer,
@@ -2084,9 +2080,10 @@ static int parse_osm_data (
                      variant.little_endian_cpu))
                     goto error;
                 array_from_string_table (&string_table);
-            }
+          }
 
           if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
+
              // the PrimitiveGroup to be parsed
                 if (!parse_primitive_group (
                     &string_table, variant.pointer,
@@ -2096,12 +2093,13 @@ static int parse_osm_data (
                     ))
 
                     goto error;
-            }
-          if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32)
-            {
+          }
+
+          if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
                 /* assumed to be a termination marker (???) */
                 break;
-            }
+          }
+
           if (base > stop)
               break;
       }
@@ -2142,14 +2140,6 @@ int parse_osm_pbf (
     g_cb_way = way_fnct;
     g_cb_rel = relation_fnct;
 
-// initializing the PBF helper structure
-
-//  params.user_data = user_data;
-//  params.node_callback = node_fnct;
-//  params.way_callback = way_fnct;
-//  params.relation_callback = relation_fnct;
-//  params.stop = 0;
-
  // reading BlobHeader size: OSMHeader */
     rd = fread (buf, 1, 4, input->in);
 
@@ -2167,10 +2157,6 @@ int parse_osm_pbf (
  / of many subsequent OSMData blocks 
 */
     while (1) {
-
-          /* reading BlobHeader size: OSMData */
-//        if (params.stop)
-//            return READOSM_ABORT;
 
           rd = fread (buf, 1, 4, input->in);
 

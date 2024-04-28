@@ -206,12 +206,12 @@ destroy_internal_node (readosm_internal_node * node)
     node->last_tag = &(node->first_tag);
 }
 
-static void
-init_export_node (readosm_export_node * node)
-{
+static void init_export_node (readosm_export_node * node) {
+
 /* initializing an empty export NODE object */
     if (node == NULL)
         return;
+
     node->id = READOSM_UNDEFINED;
     node->latitude = READOSM_UNDEFINED;
     node->longitude = READOSM_UNDEFINED;
@@ -594,7 +594,6 @@ reset_export_relation (readosm_export_relation * relation)
 }
 
 
-/* READOSM_PRIVATE */
 int call_node_callback (readosm_node_callback node_callback, readosm_internal_node * node) {
  //
  // calling the Node-handling callback function */

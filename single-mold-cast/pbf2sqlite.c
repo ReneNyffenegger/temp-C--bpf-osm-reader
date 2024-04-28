@@ -249,9 +249,11 @@ static int callback_way (/*const void *user_data, */ const readosm_way * way) {
     static int callback_way_cnt = 0;
     callback_way_cnt ++;
 
+#if 0
     if (! (callback_way_cnt % 10000)) {
        printf("Ways loaded: %d\n", callback_way_cnt);
     }
+#endif
 
 // TQ84
 //  if (user_data != NULL) {
