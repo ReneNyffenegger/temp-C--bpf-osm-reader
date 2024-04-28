@@ -2264,8 +2264,9 @@ static int parse_primitive_group (
 
 static int parse_osm_data (
    const readosm_file * input,
-   unsigned int sz,
-   pbf_params *params)
+   unsigned int sz
+// pbf_params *params
+   )
 {
 /* expecting to retrieve a valid OSMData header */
     int ok_header = 0;
@@ -2464,7 +2465,7 @@ int parse_osm_pbf (
     size_t        rd;
     unsigned char buf[8];
     unsigned int  hdsz;
-    pbf_params    params;
+//  pbf_params    params;
 
     g_cb_nod = node_fnct;
     g_cb_way = way_fnct;
@@ -2472,11 +2473,11 @@ int parse_osm_pbf (
 
 // initializing the PBF helper structure
 
-    params.user_data = user_data;
-    params.node_callback = node_fnct;
-    params.way_callback = way_fnct;
-    params.relation_callback = relation_fnct;
-    params.stop = 0;
+//  params.user_data = user_data;
+//  params.node_callback = node_fnct;
+//  params.way_callback = way_fnct;
+//  params.relation_callback = relation_fnct;
+//  params.stop = 0;
 
 /* reading BlobHeader size: OSMHeader */
     rd = fread (buf, 1, 4, input->in);
@@ -2492,11 +2493,12 @@ int parse_osm_pbf (
  / the PBF file is internally organized as a collection
  / of many subsequent OSMData blocks 
 */
-    while (1)
-      {
+    while (1) {
+
           /* reading BlobHeader size: OSMData */
-          if (params.stop)
-              return READOSM_ABORT;
+//        if (params.stop)
+//            return READOSM_ABORT;
+
           rd = fread (buf, 1, 4, input->in);
           if (rd == 0 && feof (input->in))
               break;
@@ -2505,7 +2507,8 @@ int parse_osm_pbf (
           hdsz = get_header_size (buf, input->little_endian_cpu);
 
           /* parsing OSMData */
-          if (!parse_osm_data (input, hdsz, &params))
+          if (!parse_osm_data (input, hdsz /*, &params */))
+
               return READOSM_INVALID_PBF_HEADER;
       }
     return READOSM_OK;
