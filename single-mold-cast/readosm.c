@@ -145,23 +145,23 @@ static void destroy_osm_file (readosm_file * input) {
 // }
 
 /* READOSM_DECLARE */
-int readosm_close (const void *osm_handle) {
-
-// attempting to destroy the OSM input file 
-//
-    readosm_file *input = (readosm_file *) osm_handle;
-    if (!input)
-        return READOSM_NULL_HANDLE;
-
-//  if ((input->magic1 == READOSM_MAGIC_START) && input->magic2 == READOSM_MAGIC_END) ;
-//  else
-//      return READOSM_INVALID_HANDLE;
-
-/* destroying the workbook */
-    destroy_osm_file (input);
-
-    return READOSM_OK;
-}
+// int readosm_close (const void *osm_handle) {
+// 
+// // attempting to destroy the OSM input file 
+// //
+//     readosm_file *input = (readosm_file *) osm_handle;
+//     if (!input)
+//         return READOSM_NULL_HANDLE;
+// 
+// //  if ((input->magic1 == READOSM_MAGIC_START) && input->magic2 == READOSM_MAGIC_END) ;
+// //  else
+// //      return READOSM_INVALID_HANDLE;
+// 
+// /* destroying the workbook */
+//     destroy_osm_file (input);
+// 
+//     return READOSM_OK;
+// }
 
 
 int load_osm_pbf(
@@ -209,13 +209,18 @@ int load_osm_pbf(
 
     if (ret != READOSM_OK) {
         fprintf (stderr, "PARSE error: %d\n", ret);
-        goto stop;
     }
-
-    fprintf (stderr, "Ok, OSM input file successfully parsed\n");
+    else {
+       fprintf (stderr, "Ok, OSM input file successfully parsed\n");
+    }
 
   stop:
 
-    readosm_close (osm_handle);
+    if (osm_handle->in)
+       fclose (osm_handle->in);
+
+    free (osm_handle);
+//  destroy_osm_file(osm_handle);
+//  readosm_close (osm_handle);
     return 0;
 }
