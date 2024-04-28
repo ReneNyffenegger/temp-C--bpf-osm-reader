@@ -338,6 +338,7 @@ static int callback_way (const void *user_data, const readosm_way * way) {
 
       for (i = 0; i < way->tag_count; i++) {
           tag = way->tags + i;
+
 #ifdef PBF2SQLITE
           sqlite3_bind_int64(stmt_ins_tag_way, 1, way->id  );
           sqlite3_bind_text (stmt_ins_tag_way, 2, tag->key  , -1, NULL);
@@ -855,7 +856,11 @@ int main (int argc, char *argv[]) {
 #elif defined PBF2MYSQL
   dbExec("begin work"       );
 #endif
+
+
   load_osm_pbf(filename_pbf, callback_node, callback_way, callback_relation );
+
+
 //sqlite3_exec(db, "commit transaction", NULL, NULL, NULL);
 #ifdef PBF2SQLITE
   dbExec("commit transaction");

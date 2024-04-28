@@ -76,18 +76,18 @@ struct pbf_params {
     int stop;
 };
 
-static void
-init_variant (readosm_variant * variant, int little_endian_cpu)
-{
-/* initializing an empty PBF Variant object */
+static void init_variant (readosm_variant * variant, int little_endian_cpu) {
+
+ // initializing an empty PBF Variant object
+
     variant->little_endian_cpu = little_endian_cpu;
-    variant->type = READOSM_VAR_UNDEFINED;
-    variant->field_id = 0;
-    variant->length = 0;
-    variant->pointer = NULL;
-    variant->valid = 0;
-    variant->first = NULL;
-    variant->last = NULL;
+    variant->type              = READOSM_VAR_UNDEFINED;
+    variant->field_id          = 0;
+    variant->length            = 0;
+    variant->pointer           = NULL;
+    variant->valid             = 0;
+    variant->first             = NULL;
+    variant->last              = NULL;
 }
 
 static void
@@ -496,9 +496,8 @@ finalize_packed_infos (readosm_packed_infos * packed)
         free (packed->users);
 }
 
-static unsigned char *
-read_var (unsigned char *start, unsigned char *stop, readosm_variant * variant)
-{
+static unsigned char * read_var (unsigned char *start, unsigned char *stop, readosm_variant *variant) {
+
 /* 
  / attempting to read a variable length base128 int 
  /
@@ -540,13 +539,13 @@ read_var (unsigned char *start, unsigned char *stop, readosm_variant * variant)
           else
               next = 0;
           c &= 0x7f;
-          switch (variant->type)
-            {
+          switch (variant->type) {
+
             case READOSM_VAR_INT32:
             case READOSM_VAR_UINT32:
             case READOSM_VAR_SINT32:
-                switch (count)
-                  {
+            
+                switch (count) {
                   case 0:
                       memset (endian4.bytes, 0x00, 4);
                       if (variant->little_endian_cpu)
@@ -756,10 +755,7 @@ read_var (unsigned char *start, unsigned char *stop, readosm_variant * variant)
     return NULL;
 }
 
-static unsigned char *
-read_bytes (unsigned char *start, unsigned char *stop,
-            readosm_variant * variant)
-{
+static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, readosm_variant * variant) {
 /* 
  / attempting to read some bytes from PBF
  / Strings and alike are encoded in PBF using a two steps approach:
@@ -788,10 +784,8 @@ read_bytes (unsigned char *start, unsigned char *stop,
     return NULL;
 }
 
-static int
-parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *start,
-                     unsigned char *stop, char little_endian_cpu)
-{
+static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *start, unsigned char *stop, char little_endian_cpu) {
+
 /* parsing a uint32 packed object */
     unsigned char *ptr = start;
     readosm_variant variant;
@@ -898,15 +892,13 @@ get_header_size (unsigned char *buf, int little_endian_cpu)
     return endian4.uint32_value;
 }
 
-static unsigned char *
-parse_field (unsigned char *start, unsigned char *stop,
-             readosm_variant * variant)
-{
-/* attempting to parse a variant field */
+static unsigned char * parse_field (unsigned char *start, unsigned char *stop, readosm_variant * variant) {
+
+ // attempting to parse a variant field
     unsigned char *ptr = start;
-    unsigned char type;
-    unsigned char field_id;
-    unsigned char type_hint;
+    unsigned char  type;
+    unsigned char  field_id;
+    unsigned char  type_hint;
 
     if (ptr > stop)
         return NULL;
@@ -936,16 +928,17 @@ parse_field (unsigned char *start, unsigned char *stop,
       case READOSM_VAR_UINT64:
       case READOSM_VAR_SINT32:
       case READOSM_VAR_SINT64:
-          return read_var (ptr, stop, variant);
+           return read_var (ptr, stop, variant);
+
       case READOSM_LEN_BYTES:
-          return read_bytes (ptr, stop, variant);
+           return read_bytes (ptr, stop, variant);
+
       };
     return NULL;
 }
 
-static int
-skip_osm_header (const readosm_file * input, unsigned int sz)
-{
+static int skip_osm_header (const readosm_file * input, unsigned int sz) {
+
 /*
  / expecting to retrieve a valid OSMHeader header 
  / there is nothing really interesting here, so we'll
@@ -974,8 +967,7 @@ skip_osm_header (const readosm_file * input, unsigned int sz)
         goto error;
 
 /* reading the OSMHeader header */
-    while (1)
-      {
+    while (1) {
           /* resetting an empty variant field */
           reset_variant (&variant);
 
@@ -1023,6 +1015,7 @@ static int
 unzip_compressed_block (unsigned char *zip_ptr, unsigned int zip_sz,
                         unsigned char *raw_ptr, unsigned int raw_sz)
 {
+
 /* 
  / decompressing a zip compressed block 
  / please note: PBF data blocks are internally stored as

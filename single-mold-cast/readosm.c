@@ -164,24 +164,43 @@ int readosm_close (const void *osm_handle) {
 }
 
 
-int load_osm_pbf(const char* filename_pbf,
-     readosm_node_callback     cb_nod,
-     readosm_way_callback      cb_way,
-     readosm_relation_callback cb_rel) {
+int load_osm_pbf(
+
+    const char* filename_pbf,
+
+    readosm_node_callback     cb_nod,
+    readosm_way_callback      cb_way,
+    readosm_relation_callback cb_rel
+) {
 
     readosm_file *osm_handle;
     int ret;
 
-    ret = readosm_open(filename_pbf, /*(const readosm_file**)*/ &osm_handle);
+
+//  ret = readosm_open(filename_pbf, /*(const readosm_file**)*/ &osm_handle);
+
+    osm_handle = alloc_osm_file (test_endianness()/*, format*/);
+
+    if (! osm_handle)
+        return READOSM_INSUFFICIENT_MEMORY;
+
+//  *osm_handle = input;
+
+    osm_handle->in = fopen(filename_pbf, "rb");
+    if (osm_handle->in == NULL)
+        return READOSM_FILE_NOT_FOUND;
+
     if (ret != READOSM_OK) {
-      fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
-      goto stop;
+        fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
+        goto stop;
     }
 
     ret = parse_osm_pbf(osm_handle, (const void *) 0, cb_nod, cb_way, cb_rel);
+
+
     if (ret != READOSM_OK) {
-      fprintf (stderr, "PARSE error: %d\n", ret);
-      goto stop;
+        fprintf (stderr, "PARSE error: %d\n", ret);
+        goto stop;
     }
 
     fprintf (stderr, "Ok, OSM input file successfully parsed\n");
