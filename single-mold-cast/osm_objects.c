@@ -131,7 +131,7 @@ void reset_export_tag (readosm_export_tag * tag)
 }
 
 /* READOSM_PRIVATE */
-void init_internal_node (readosm_internal_node * node) {
+void init_internal_node (osm_node * node) {
  // allocating an empty internal NODE object */
     node->id                  = READOSM_UNDEFINED;
     node->latitude            = READOSM_UNDEFINED;
@@ -149,7 +149,7 @@ void init_internal_node (readosm_internal_node * node) {
 
 READOSM_PRIVATE
 void
-append_tag_to_node (readosm_internal_node * node, const char *key,
+append_tag_to_node (osm_node * node, const char *key,
                     const char *value)
 {
 /* appending a TAG to a Node object */
@@ -182,7 +182,7 @@ append_tag_to_node (readosm_internal_node * node, const char *key,
 }
 
 READOSM_PRIVATE void
-destroy_internal_node (readosm_internal_node * node)
+destroy_internal_node (osm_node * node)
 {
 /* destroying an internal NODE object */
     readosm_internal_tag_block *tag_blk;
@@ -595,7 +595,7 @@ reset_export_relation (readosm_export_relation * relation)
 
 
 /* READOSM_PRIVATE */
-int call_node_callback (readosm_node_callback node_callback, readosm_internal_node * node) {
+int call_node_callback (readosm_node_callback node_callback, osm_node * node) {
  //
  // calling the Node-handling callback function */
  //

@@ -107,6 +107,7 @@ typedef struct /* readosm_internal_node_struct */ {
     readosm_internal_tag_block *last_tag;       /* of TAG blocks (first block is static) */
 } readosm_internal_node;
 
+
 typedef struct readosm_export_node_struct {
  // a struct intended to export NODE items
     long long id;               /* NODE-ID (unique value) */
@@ -251,6 +252,6 @@ void destroy_internal_relation (readosm_internal_relation * relation);
 
 
 // callback handlers
-int call_node_callback     (readosm_node_callback node_callback, readosm_internal_node * node);
-int call_way_callback      (readosm_way_callback way_callback, readosm_internal_way * way);
+int call_node_callback     (readosm_node_callback     node_callback    , readosm_internal_node     * node);
+int call_way_callback      (readosm_way_callback      way_callback     , readosm_internal_way      * way);
 int call_relation_callback (readosm_relation_callback relation_callback, readosm_internal_relation * relation);
