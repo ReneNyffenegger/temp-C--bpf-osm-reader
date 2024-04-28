@@ -64,7 +64,7 @@
 
 #define MAX_NODES 1024
 
-struct pbf_params {
+typedef struct /* pbf_params */ {
 
 /* an helper struct supporting PBF parsing */
 
@@ -74,7 +74,7 @@ struct pbf_params {
     readosm_relation_callback    relation_callback;
 
     int stop;
-};
+} pbf_params;
 
 static void init_variant (readosm_variant * variant, int little_endian_cpu) {
 
@@ -1337,7 +1337,7 @@ parse_pbf_node_infos (readosm_packed_infos * packed_infos,
 static int
 parse_pbf_nodes (readosm_string_table * strings,
                  unsigned char *start, unsigned char *stop,
-                 char little_endian_cpu, struct pbf_params *params)
+                 char little_endian_cpu, pbf_params *params)
 {
 /* 
  / attempting to parse a valid PBF DenseNodes 
@@ -1742,10 +1742,9 @@ static int parse_pbf_way_info (
     return 0;
 }
 
-static int
-parse_pbf_way (readosm_string_table * strings,
+static int parse_pbf_way (readosm_string_table * strings,
                unsigned char *start, unsigned char *stop,
-               char little_endian_cpu, struct pbf_params *params)
+               char little_endian_cpu, pbf_params *params)
 {
 /* attempting to parse a valid PBF Way */
     readosm_variant variant;
@@ -1969,7 +1968,7 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
 
 static int parse_pbf_relation (readosm_string_table * strings,
                     unsigned char *start, unsigned char *stop,
-                    char little_endian_cpu, struct pbf_params *params)
+                    char little_endian_cpu, pbf_params *params)
 {
 /* attempting to parse a valid PBF Relation */
     readosm_variant variant;
@@ -2151,7 +2150,7 @@ static int parse_primitive_group (
    unsigned char *start,
    unsigned char *stop,
             char little_endian_cpu,
-          struct pbf_params *params)
+          pbf_params *params)
 {
 /* 
  / attempting to parse a valid Primitive Group 
@@ -2234,7 +2233,7 @@ static int parse_primitive_group (
 static int parse_osm_data (
    const readosm_file * input,
    unsigned int sz,
-   struct pbf_params *params)
+   pbf_params *params)
 {
 /* expecting to retrieve a valid OSMData header */
     int ok_header = 0;
@@ -2416,19 +2415,21 @@ static int parse_osm_data (
     return 0;
 }
 
-/*READOSM_PRIVATE*/ int parse_osm_pbf (
+/*READOSM_PRIVATE*/
+int parse_osm_pbf (
    const readosm_file       *input,
    const void               *user_data,
    readosm_node_callback     node_fnct,
    readosm_way_callback      way_fnct,
    readosm_relation_callback relation_fnct)
 {
-/* parsing the input file [OSM PBF format] */
 
-    size_t rd;
+// parsing the input file [OSM PBF format]
+
+    size_t        rd;
     unsigned char buf[8];
-    unsigned int hdsz;
-    struct pbf_params params;
+    unsigned int  hdsz;
+    pbf_params    params;
 
 /* initializing the PBF helper structure */
     params.user_data = user_data;

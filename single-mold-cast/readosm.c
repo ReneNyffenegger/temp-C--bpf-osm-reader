@@ -94,15 +94,15 @@ static int test_endianness () {
 //     return input;
 // }
 
-static void destroy_osm_file (readosm_file * input) {
-
-/* destroying the OSM input file struct */
-    if (input) {
-          if (input->in)
-              fclose (input->in);
-          free (input);
-      }
-}
+// static void destroy_osm_file (readosm_file * input) {
+// 
+// /* destroying the OSM input file struct */
+//     if (input) {
+//           if (input->in)
+//               fclose (input->in);
+//           free (input);
+//       }
+// }
 
 // /* READOSM_DECLARE */ int readosm_open (const char *path, readosm_file **osm_handle) {
 // 

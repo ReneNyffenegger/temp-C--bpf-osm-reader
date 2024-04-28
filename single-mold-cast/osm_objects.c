@@ -57,18 +57,15 @@
 #include "readosm.h"
 #include "readosm_internals.h"
 
-static void
-release_internal_tag (readosm_internal_tag * tag)
-{
-/* freeing an internal TAG object */
-    if (tag->key)
-	free (tag->key);
-    if (tag->value)
-	free (tag->value);
+static void release_internal_tag (readosm_internal_tag * tag) {
+// freeing an internal TAG object
+//
+    if (tag->key  ) free (tag->key  );
+    if (tag->value) free (tag->value);
 }
 
-READOSM_PRIVATE void
-release_internal_tag_block (readosm_internal_tag_block * tag_blk, int destroy)
+/* READOSM_PRIVATE */
+void release_internal_tag_block (readosm_internal_tag_block * tag_blk, int destroy)
 {
 /* freeing an internal TAG block */
     int i_tag;
@@ -76,8 +73,7 @@ release_internal_tag_block (readosm_internal_tag_block * tag_blk, int destroy)
 	release_internal_tag (tag_blk->tags + i_tag);
     if (destroy)
 	free (tag_blk);
-    else
-      {
+    else {
 	  tag_blk->next_item = 0;
 	  tag_blk->next = NULL;
       }
