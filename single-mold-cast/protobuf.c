@@ -525,14 +525,14 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
  / for more details please see:
  / https://developers.google.com/protocol-buffers/docs/encoding
 */
-    unsigned char *ptr = start;
-    unsigned char c;
-    unsigned int v32;
-    unsigned long long v64;
-    unsigned int value32 = 0x00000000;
-    unsigned long long value64 = 0x0000000000000000;
-    four_byte_value endian4;
-    eight_byte_value endian8;
+    unsigned char      *ptr = start;
+    unsigned char       c;
+    unsigned int        v32;
+    unsigned long long  v64;
+    unsigned int        value32 = 0x00000000;
+    unsigned long long  value64 = 0x0000000000000000;
+    four_byte_value     endian4;
+    eight_byte_value    endian8;
     int next;
     int count = 0;
     int neg;
@@ -546,7 +546,9 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
               next = 1;
           else
               next = 0;
+
           c &= 0x7f;
+
           switch (variant->type) {
 
             case READOSM_VAR_INT32:
@@ -561,14 +563,14 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
                   case 4: memset (endian4.bytes, 0x00, 4); if (variant->little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value << 28; v32 &= READOSM_MASK32_5; value32 |= v32; break;
                   default:
                       return NULL;
-                  };
+                };
                 break;
 
             case READOSM_VAR_INT64:
             case READOSM_VAR_UINT64:
             case READOSM_VAR_SINT64:
-                switch (count)
-                  {
+                switch (count) {
+
                   case 0: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value      ; v64 &= READOSM_MASK64_1; value64 |= v64; break;
                   case 1: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value <<  7; v64 &= READOSM_MASK64_2; value64 |= v64; break;
                   case 2: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 14; v64 &= READOSM_MASK64_3; value64 |= v64; break;
@@ -581,7 +583,7 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
                   case 9: memset (endian8.bytes, 0x00, 8); if (variant->little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 63; v64 &= READOSM_MASK64_A; value64 |= v64; break;
                   default:
                       return NULL;
-                  };
+                };
                 break;
             };
           count++;
@@ -606,6 +608,7 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
                neg = 1;
            else
                neg = -1;
+
            v32 = (value32 + 1) / 2;
            variant->value.int32_value = v32 * neg;
            variant->valid = 1;
@@ -960,10 +963,11 @@ parse_string_table (readosm_string_table * string_table,
     return 0;
 }
 
-static int
-parse_pbf_node_infos (readosm_packed_infos * packed_infos,
-                      unsigned char *start, unsigned char *stop,
-                      char little_endian_cpu)
+static int parse_pbf_node_infos (
+   readosm_packed_infos *packed_infos,
+   unsigned char        *start,
+   unsigned char        *stop,
+            char         little_endian_cpu)
 {
 /* 
  / attempting to parse a valid PBF DenseInfos
@@ -992,8 +996,8 @@ parse_pbf_node_infos (readosm_packed_infos * packed_infos,
 
 /* initializing empty packed objects */
     init_uint32_packed (&packed_u32);
-    init_int32_packed (&packed_32);
-    init_int64_packed (&packed_64);
+    init_int32_packed  (&packed_32);
+    init_int64_packed  (&packed_64);
 
 /* initializing an empty variant field */
     init_variant (&variant, little_endian_cpu);
@@ -1013,191 +1017,13 @@ parse_pbf_node_infos (readosm_packed_infos * packed_infos,
           base = parse_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
+
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* versions: *not* delta encoded */
-                if (!parse_uint32_packed
-                    (&packed_u32, variant.pointer,
-                     variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                count = 0;
-                pu32 = packed_u32.first;
-                while (pu32)
-                  {
-                      count++;
-                      pu32 = pu32->next;
-                  }
-                packed_infos->ver_count = count;
-                if (packed_infos->versions != NULL)
-                  {
-                      free (packed_infos->versions);
-                      packed_infos->versions = NULL;
-                  }
-                if (count > 0)
-                  {
-                      packed_infos->versions = malloc (sizeof (int) * count);
-                      count = 0;
-                      pu32 = packed_u32.first;
-                      while (pu32)
-                        {
-                            *(packed_infos->versions + count) = pu32->value;
-                            count++;
-                            pu32 = pu32->next;
-                        }
-                  }
-                reset_uint32_packed (&packed_u32);
-            }
-          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* timestamps: delta encoded */
-                int delta = 0;
-                if (!parse_sint32_packed
-                    (&packed_32, variant.pointer,
-                     variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                count = 0;
-                p32 = packed_32.first;
-                while (p32)
-                  {
-                      count++;
-                      p32 = p32->next;
-                  }
-                packed_infos->tim_count = count;
-                if (packed_infos->timestamps != NULL)
-                  {
-                      free (packed_infos->timestamps);
-                      packed_infos->timestamps = NULL;
-                  }
-                if (count > 0)
-                  {
-                      packed_infos->timestamps = malloc (sizeof (int) * count);
-                      count = 0;
-                      p32 = packed_32.first;
-                      while (p32)
-                        {
-                            delta += p32->value;
-                            *(packed_infos->timestamps + count) = delta;
-                            count++;
-                            p32 = p32->next;
-                        }
-                  }
-                reset_int32_packed (&packed_32);
-            }
-          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* changesets: delta encoded */
-                long long delta = 0;
-                if (!parse_sint64_packed
-                    (&packed_64, variant.pointer,
-                     variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                count = 0;
-                p64 = packed_64.first;
-                while (p64)
-                  {
-                      count++;
-                      p64 = p64->next;
-                  }
-                packed_infos->cng_count = count;
-                if (packed_infos->changesets != NULL)
-                  {
-                      free (packed_infos->changesets);
-                      packed_infos->changesets = NULL;
-                  }
-                if (count > 0)
-                  {
-                      packed_infos->changesets =
-                          malloc (sizeof (long long) * count);
-                      count = 0;
-                      p64 = packed_64.first;
-                      while (p64)
-                        {
-                            delta += p64->value;
-                            *(packed_infos->changesets + count) = delta;
-                            count++;
-                            p64 = p64->next;
-                        }
-                  }
-                reset_int64_packed (&packed_64);
-            }
-          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* uids: delta encoded */
-                int delta = 0;
-                if (!parse_sint32_packed
-                    (&packed_32, variant.pointer,
-                     variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                count = 0;
-                p32 = packed_32.first;
-                while (p32)
-                  {
-                      count++;
-                      p32 = p32->next;
-                  }
-                packed_infos->uid_count = count;
-                if (packed_infos->uids != NULL)
-                  {
-                      free (packed_infos->uids);
-                      packed_infos->uids = NULL;
-                  }
-                if (count > 0)
-                  {
-                      packed_infos->uids = malloc (sizeof (int) * count);
-                      count = 0;
-                      p32 = packed_32.first;
-                      while (p32)
-                        {
-                            delta += p32->value;
-                            *(packed_infos->uids + count) = delta;
-                            count++;
-                            p32 = p32->next;
-                        }
-                  }
-                reset_int32_packed (&packed_32);
-            }
-          if (variant.field_id == 5 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* user-names: delta encoded (index to StringTable) */
-                int delta = 0;
-                if (!parse_sint32_packed
-                    (&packed_32, variant.pointer,
-                     variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                count = 0;
-                p32 = packed_32.first;
-                while (p32)
-                  {
-                      count++;
-                      p32 = p32->next;
-                  }
-                packed_infos->usr_count = count;
-                if (packed_infos->users != NULL)
-                  {
-                      free (packed_infos->users);
-                      packed_infos->users = NULL;
-                  }
-                if (count > 0)
-                  {
-                      packed_infos->users = malloc (sizeof (int) * count);
-                      count = 0;
-                      p32 = packed_32.first;
-                      while (p32)
-                        {
-                            delta += p32->value;
-                            *(packed_infos->users + count) = delta;
-                            count++;
-                            p32 = p32->next;
-                        }
-                  }
-                reset_int32_packed (&packed_32);
-            }
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) { /* versions: *not* delta encoded */                                         if (!parse_uint32_packed (&packed_u32, variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; pu32 = packed_u32.first; while (pu32) { count++; pu32 = pu32->next; } packed_infos->ver_count = count; if (packed_infos->versions   != NULL) { free (packed_infos->versions  ); packed_infos->versions   = NULL; } if (count > 0) { packed_infos->versions   = malloc (sizeof (int      ) * count); count = 0; pu32 = packed_u32.first; while (pu32) {              *(packed_infos->versions + count) = pu32->value;     count++; pu32 = pu32->next;} } reset_uint32_packed (&packed_u32); }
+          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) { /* timestamps: delta encoded */                        int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->tim_count = count; if (packed_infos->timestamps != NULL) { free (packed_infos->timestamps); packed_infos->timestamps = NULL; } if (count > 0) { packed_infos->timestamps = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->timestamps + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
+          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) { /* changesets: delta encoded */                        long long delta = 0; if (!parse_sint64_packed (&packed_64 , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; p64  = packed_64.first ; while (p64 ) { count++; p64  = p64->next;  } packed_infos->cng_count = count; if (packed_infos->changesets != NULL) { free (packed_infos->changesets); packed_infos->changesets = NULL; } if (count > 0) { packed_infos->changesets = malloc (sizeof (long long) * count); count = 0; p64  = packed_64.first ; while (p64)  { delta += p64->value; *(packed_infos->changesets + count) = delta; count++; p64  = p64->next; } } reset_int64_packed  (&packed_64);  }
+          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) { /* uids: delta encoded */                              int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->uid_count = count; if (packed_infos->uids       != NULL) { free (packed_infos->uids      ); packed_infos->uids       = NULL; } if (count > 0) { packed_infos->uids       = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->uids       + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
+          if (variant.field_id == 5 && variant.type == READOSM_LEN_BYTES) { /* user-names: delta encoded (index to StringTable) */ int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->usr_count = count; if (packed_infos->users      != NULL) { free (packed_infos->users     ); packed_infos->users      = NULL; } if (count > 0) { packed_infos->users      = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->users      + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
           if (base > stop)
               break;
       }
@@ -2336,10 +2162,8 @@ static int parse_osm_data (
     return 0;
 }
 
-/*READOSM_PRIVATE*/
 int parse_osm_pbf (
    const readosm_file       *input,
-// const void               *user_data,
    readosm_node_callback     node_fnct,
    readosm_way_callback      way_fnct,
    readosm_relation_callback relation_fnct)
