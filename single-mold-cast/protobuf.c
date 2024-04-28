@@ -1009,9 +1009,8 @@ static int parse_pbf_node_infos (
     add_variant_hints (&variant, READOSM_LEN_BYTES, 6);
 
 /* reading the DenseInfo block */
-    while (1)
-      {
-          /* resetting an empty variant field */
+    while (1) {
+       // resetting an empty variant field */
           reset_variant (&variant);
 
           base = parse_field (start, stop, &variant);
@@ -1103,64 +1102,22 @@ static int parse_pbf_nodes (
     add_variant_hints (&variant, READOSM_LEN_BYTES, 10);
 
 /* reading the Node */
-    while (1)
-      {
+    while (1) {
           /* resetting an empty variant field */
           reset_variant (&variant);
 
           base = parse_field (start, stop, &variant);
+
           if (base == NULL && variant.valid == 0)
               goto error;
+
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* NODE IDs */
-                if (!parse_sint64_packed
-                    (&packed_ids, variant.pointer,
-                     variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                array_from_int64_packed (&packed_ids);
-            }
-          if (variant.field_id == 5 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* DenseInfos */
-                if (!parse_pbf_node_infos (&packed_infos,
-                                           variant.pointer,
-                                           variant.pointer + variant.length - 1,
-                                           variant.little_endian_cpu))
-                    goto error;
-            }
-          if (variant.field_id == 8 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* latitudes */
-                if (!parse_sint64_packed
-                    (&packed_lats, variant.pointer,
-                     variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                array_from_int64_packed (&packed_lats);
-            }
-          if (variant.field_id == 9 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* longitudes */
-                if (!parse_sint64_packed
-                    (&packed_lons, variant.pointer,
-                     variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                array_from_int64_packed (&packed_lons);
-            }
-          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* packes-keys */
-                if (!parse_uint32_packed
-                    (&packed_keys, variant.pointer,
-                     variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                array_from_uint32_packed (&packed_keys);
-            }
+
+          if (variant.field_id ==  1 && variant.type == READOSM_LEN_BYTES) { /* NODE IDs    */ if (!parse_sint64_packed  (&packed_ids  , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
+          if (variant.field_id ==  5 && variant.type == READOSM_LEN_BYTES) { /* DenseInfos  */ if (!parse_pbf_node_infos (&packed_infos, variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error;                                         }
+          if (variant.field_id ==  8 && variant.type == READOSM_LEN_BYTES) { /* latitudes   */ if (!parse_sint64_packed  (&packed_lats , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
+          if (variant.field_id ==  9 && variant.type == READOSM_LEN_BYTES) { /* longitudes  */ if (!parse_sint64_packed  (&packed_lons , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
+          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES) { /* packes-keys */ if (!parse_uint32_packed  (&packed_keys , variant.pointer, variant.pointer + variant.length - 1, variant.little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
           if (base > stop)
               break;
       }
@@ -1178,13 +1135,14 @@ static int parse_pbf_nodes (
         && packed_ids.count == packed_infos.uid_count
         && packed_ids.count == packed_infos.usr_count)
       {
-          /* from PackedInfos */
-          valid = 1;
+        // from PackedInfos
+          valid           = 1;
           fromPackedInfos = 1;
       }
 
     if (!valid)
         goto error;
+
     else {
           /*
              / all right, we now have the same item count anywhere
@@ -1225,8 +1183,8 @@ static int parse_pbf_nodes (
                       delta_lat += *(packed_lats.values + base + i);
                       delta_lon += *(packed_lons.values + base + i);
                       nd->id = delta_id;
-                      /* latitudes and longitudes require to be rescaled as DOUBLEs */
-                      nd->latitude = delta_lat / 10000000.0;
+                  /* latitudes and longitudes require to be rescaled as DOUBLEs */
+                      nd->latitude  = delta_lat / 10000000.0;
                       nd->longitude = delta_lon / 10000000.0;
                       if (fromPackedInfos)
                         {
@@ -1270,12 +1228,12 @@ static int parse_pbf_nodes (
                                     }
                               }
                         }
-                      for (; i_keys < packed_keys.count; i_keys++)
-                        {
-                            /* decoding packed-keys */
+
+                      for (; i_keys < packed_keys.count; i_keys++) {
+                          // decoding packed-keys
                             int is = *(packed_keys.values + i_keys);
-                            if (is == 0)
-                              {
+
+                            if (is == 0) {
                                   /* next Node */
                                   i_keys++;
                                   break;
