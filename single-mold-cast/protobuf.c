@@ -616,7 +616,7 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
 }
 
 static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, readosm_variant * variant) {
-/* 
+ /* 
  / attempting to read some bytes from PBF
  / Strings and alike are encoded in PBF using a two steps approach:
  / - an INT32 field declares the expected length
@@ -631,8 +631,8 @@ static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, re
     varlen.type = READOSM_VAR_UINT32;
 
     ptr = read_var (ptr, stop, &varlen);
-    if (varlen.valid)
-      {
+
+    if (varlen.valid) {
           len = varlen.value.uint32_value;
           if ((ptr + len - 1) > stop)
               return NULL;
@@ -646,27 +646,26 @@ static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, re
 
 static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *start, unsigned char *stop, char little_endian_cpu) {
 
-/* parsing a uint32 packed object */
+ // parsing a uint32 packed object
     unsigned char *ptr = start;
     readosm_variant variant;
 
-/* initializing an empty variant field (length) */
+ // initializing an empty variant field (length) 
     init_variant (&variant, little_endian_cpu);
     variant.type = READOSM_VAR_UINT32;
 
-    while (1)
-      {
-          ptr = read_var (start, stop, &variant);
-          if (variant.valid)
-            {
-                append_uint32_packed (packed, variant.value.uint32_value);
-                if (ptr > stop)
-                    break;
-                start = ptr;
-                continue;
-            }
-          return 0;
-      }
+    while (1) {
+       ptr = read_var (start, stop, &variant);
+       if (variant.valid)
+         {
+             append_uint32_packed (packed, variant.value.uint32_value);
+             if (ptr > stop)
+                 break;
+             start = ptr;
+             continue;
+         }
+       return 0;
+    }
     return 1;
 }
 

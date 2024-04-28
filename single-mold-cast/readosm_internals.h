@@ -75,10 +75,12 @@ typedef struct readosm_internal_tag_struct {
 
 typedef struct readosm_internal_tag_block readosm_internal_tag_block;
 struct  readosm_internal_tag_block {
-/* a struct wrapping a block of TAG items */
+ //
+ // a struct wrapping a block of TAG items
+ //
     readosm_internal_tag tags[READOSM_BLOCK_SZ];        /* array of Tags */
-    int next_item;              /* index to next free (unused) item */
-    readosm_internal_tag_block *next;     /* supporting linked list */
+    int next_item;                                      /* index to next free (unused) item */
+    readosm_internal_tag_block *next;                   /* supporting linked list */
 };
 
 typedef struct readosm_export_tag_struct
@@ -105,9 +107,8 @@ typedef struct /* readosm_internal_node_struct */ {
     readosm_internal_tag_block *last_tag;       /* of TAG blocks (first block is static) */
 } readosm_internal_node;
 
-typedef struct readosm_export_node_struct
-{
-/* a struct intended to export NODE items */
+typedef struct readosm_export_node_struct {
+ // a struct intended to export NODE items
     long long id;               /* NODE-ID (unique value) */
     double latitude;            /* geographic latitude */
     double longitude;           /* geographic longitude */
@@ -120,16 +121,16 @@ typedef struct readosm_export_node_struct
     readosm_export_tag *tags;   /* array of TAG items */
 } readosm_export_node;
 
-typedef struct readosm_internal_ref_struct
-{
-/* a block of WAY-ND items */
+typedef struct readosm_internal_ref_struct {
+
+ // a block of WAY-ND items
     long long node_refs[READOSM_BLOCK_SZ];      /* referenced NODE-ID array */
-    int next_item;              /* index to next free (unused) item */
+    int next_item;                              /* index to next free (unused) item */
     struct readosm_internal_ref_struct *next;   /* supporting linked list */
 } readosm_internal_ref;
 
-typedef struct readosm_internal_way_struct
-{
+typedef struct readosm_internal_way_struct {
+
 /* a struct wrapping WAY items */
     long long id;               /* WAY-ID (unique value) */
     int version;                /* version id */
@@ -201,9 +202,10 @@ typedef struct readosm_internal_relation_struct
     readosm_internal_tag_block *last_tag;       /* of TAG-blocks (first block is static) */
 } readosm_internal_relation;
 
-typedef struct readosm_export_relation_struct
-{
-/* a struct intended to export RELATION objects */
+typedef struct /* readosm_export_relation_struct */ {
+
+ // a struct intended to export RELATION objects */
+
     long long id;               /* RELATION-ID (unique value) */
     int version;                /* version id */
     long long changeset;        /* changeset id */
@@ -211,9 +213,9 @@ typedef struct readosm_export_relation_struct
     int uid;                    /* uid identifying the user */
     char *timestamp;            /* last modified timestamp */
     int member_count;           /* how many RELATION-MEMBER items are there */
-    readosm_export_member *members;     /* array of RELATION-MEMBER items */
-    int tag_count;              /* how many TAG items are there */
-    readosm_export_tag *tags;   /* array of TAG items */
+    readosm_export_member  *members;     /* array of RELATION-MEMBER items */
+    int                     tag_count;              /* how many TAG items are there */
+    readosm_export_tag     *tags;   /* array of TAG items */
 } readosm_export_relation;
 
 typedef union readosm_endian4_union
