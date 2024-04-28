@@ -77,122 +77,128 @@ extern "C"
 
 /* constants */
 /** information is not available */
-#define READOSM_UNDEFINED       -1234567890
+#define READOSM_UNDEFINED	-1234567890
 /** MemberType: NODE */
-#define READOSM_MEMBER_NODE     7361
+#define READOSM_MEMBER_NODE	7361
 /** MemberType: WAY */
 #define READOSM_MEMBER_WAY 6731
 /** MemberType: RELATION */
 #define READOSM_MEMBER_RELATION 3671
 
 /* Error codes */
-#define READOSM_OK                      0 /**< No error, success */
-#define READOSM_INVALID_SUFFIX          -1 /**< not .osm or .pbf suffix */
-#define READOSM_FILE_NOT_FOUND          -2 /**< .osm or .pbf file does not exist or is
-                                                not accessible for reading */
-#define READOSM_NULL_HANDLE             -3 /**< Null OSM_handle argument */
-#define READOSM_INVALID_HANDLE          -4 /**< Invalid OSM_handle argument */
-#define READOSM_INSUFFICIENT_MEMORY     -5 /**< some kind of memory allocation
+#define READOSM_OK			0 /**< No error, success */
+#define READOSM_INVALID_SUFFIX		-1 /**< not .osm or .pbf suffix */
+#define READOSM_FILE_NOT_FOUND		-2 /**< .osm or .pbf file does not exist or is
+						not accessible for reading */
+#define READOSM_NULL_HANDLE		-3 /**< Null OSM_handle argument */
+#define READOSM_INVALID_HANDLE		-4 /**< Invalid OSM_handle argument */
+#define READOSM_INSUFFICIENT_MEMORY	-5 /**< some kind of memory allocation
                                                 failure */
-// #define READOSM_CREATE_XML_PARSER_ERROR      -6 /**< cannot create the XML Parser */
-#define READOSM_READ_ERROR              -7 /**< read error */
-// #define READOSM_XML_ERROR            -8 /**< XML parser error */
-#define READOSM_INVALID_PBF_HEADER      -9 /**< invalid PBF header */
-#define READOSM_UNZIP_ERROR             -10 /**< unZip error */
-#define READOSM_ABORT                   -11 /**< user-required parser abort */
+// #define READOSM_CREATE_XML_PARSER_ERROR	-6 /**< cannot create the XML Parser */
+#define READOSM_READ_ERROR		-7 /**< read error */
+// #define READOSM_XML_ERROR		-8 /**< XML parser error */
+#define READOSM_INVALID_PBF_HEADER	-9 /**< invalid PBF header */
+#define READOSM_UNZIP_ERROR		-10 /**< unZip error */
+#define READOSM_ABORT			-11 /**< user-required parser abort */
 
-        /**
-         a struct representing a <b>key:value</b> pair, and wrapping an XML fragment like the following:
-        \verbatim
+	/**
+	 a struct representing a <b>key:value</b> pair, and wrapping an XML fragment like the following:
+	\verbatim
 <tag key="key-value" value="some-value" />
-        \endverbatim
-         */
+	\endverbatim
+	 */
     struct readosm_tag_struct
     {
 
-        const char *key; /**< the KEY */
-        const char *value; /**< the VALUE */
+	const char *key; /**< the KEY */
+	const char *value; /**< the VALUE */
     };
 
-        /**
+	/**
      Typedef for TAG structure.
      
      \sa readosm_tag_struct
      */
     typedef struct readosm_tag_struct readosm_tag;
 
-        /**
-         a struct representing a NODE object, and wrapping a complex XML fragment like the following:
-        \verbatim
+	/**
+	 a struct representing a NODE object, and wrapping a complex XML fragment like the following:
+	\verbatim
 <node id="12345" lat="6.66666" lon="7.77777" version="1" changeset="54321" user="some-user" uid="66" timestamp="2005-02-28T17:45:15Z">
-        <tag key="created_by" value="JOSM" />
-        <tag key="tourism" value="camp_site" />
+	<tag key="created_by" value="JOSM" />
+	<tag key="tourism" value="camp_site" />
 </node>
-        \endverbatim
-         */
-
-typedef struct /* readosm_node_struct */ {
-    const long long id;
-    const double    latitude;
-    const double    longitude;
-    const int       version;
-    const long long changeset;
-    const char     *user;
-    const int       uid;
-    const char     *timestamp;
-    const int       tag_count;
-    const readosm_tag *tags;
-} readosm_node;
-
-// typedef struct readosm_node_struct readosm_node;
-
-        /**
-         a struct representing a WAY object, and wrapping a complex XML fragment like the following:
-        \verbatim
-<way id="12345" version="1" changeset="54321" user="some-user" uid="66" timestamp="2005-02-28T17:45:15Z">
-        <nd ref="12345" />
-        <nd ref="12346" />
-        <nd ref="12347" />
-        <tag key="created_by" value="JOSM" />
-        <tag key="tourism" value="camp_site" />
-</way>
-        \endverbatim
-         */
-    struct readosm_way_struct {
-        const long long id; /**< WAY-ID (expected to be a unique value) */
-        const int version; /**< object version */
-        const long long changeset; /**< ChangeSet ID */
-        const char *user; /**< name of the User defining this WAY */
-        const int uid; /**< corresponding numeric UserID */
-        const char *timestamp; /**< when this WAY was defined */
-        const int node_ref_count; /**< number of referenced NODE-IDs (may be zero) */
-        const long long *node_refs; /**< array of NODE-IDs (may be NULL) */
-        const int tag_count; /**< number of associated TAGs (may be zero) */
-        const readosm_tag *tags; /**< array of TAG objects (may be NULL) */
+	\endverbatim
+	 */
+    struct readosm_node_struct
+    {
+	const long long id; /**< NODE-ID (expected to be a unique value) */
+	const double latitude; /**< geographic latitude */
+	const double longitude;	/**< geographic longitude */
+	const int version; /**< object version */
+	const long long changeset; /**< ChangeSet ID */
+	const char *user; /**< name of the User defining this NODE */
+	const int uid; /**< corresponding numeric UserID */
+	const char *timestamp; /**< when this NODE was defined */
+	const int tag_count; /**< number of associated TAGs (may be zero) */
+	const readosm_tag *tags; /**< array of TAG objects (may be NULL) */
     };
 
-        /**
+	/**
+     Typedef for NODE structure.
+     
+     \sa readosm_node_struct
+     */
+    typedef struct readosm_node_struct readosm_node;
+
+	/**
+	 a struct representing a WAY object, and wrapping a complex XML fragment like the following:
+	\verbatim
+<way id="12345" version="1" changeset="54321" user="some-user" uid="66" timestamp="2005-02-28T17:45:15Z">
+	<nd ref="12345" />
+	<nd ref="12346" />
+	<nd ref="12347" />
+	<tag key="created_by" value="JOSM" />
+	<tag key="tourism" value="camp_site" />
+</way>
+	\endverbatim
+	 */
+    struct readosm_way_struct
+    {
+	const long long id; /**< WAY-ID (expected to be a unique value) */
+	const int version; /**< object version */
+	const long long changeset; /**< ChangeSet ID */
+	const char *user; /**< name of the User defining this WAY */
+	const int uid; /**< corresponding numeric UserID */
+	const char *timestamp; /**< when this WAY was defined */
+	const int node_ref_count; /**< number of referenced NODE-IDs (may be zero) */
+	const long long *node_refs; /**< array of NODE-IDs (may be NULL) */
+	const int tag_count; /**< number of associated TAGs (may be zero) */
+	const readosm_tag *tags; /**< array of TAG objects (may be NULL) */
+    };
+
+	/**
      Typedef for WAY structure.
      
      \sa readosm_way_struct
      */
     typedef struct readosm_way_struct readosm_way;
 
-        /**
-         a struct representing a RELATION-MEMBER, and wrapping an XML fragment like the following:
-        \verbatim
+	/**
+	 a struct representing a RELATION-MEMBER, and wrapping an XML fragment like the following:
+	\verbatim
 <member type="some-type" ref="12345" role="some-role" />
-        \endverbatim
-         */
+	\endverbatim
+	 */
     struct readosm_member_struct
     {
 
-        const int member_type; /**< can be one of: READOSM_MEMBER_NODE, READOSM_MEMBER_WAY or READOSM_MEMBER_RELATION */
-        const long long id; /**< ID-value identifying the referenced object */
-        const char *role; /**< intended role for this reference */
+	const int member_type; /**< can be one of: READOSM_MEMBER_NODE, READOSM_MEMBER_WAY or READOSM_MEMBER_RELATION */
+	const long long id; /**< ID-value identifying the referenced object */
+	const char *role; /**< intended role for this reference */
     };
 
-        /**
+	/**
      Typedef for MEMBER structure.
      
      \sa readosm_member_struct
@@ -201,19 +207,19 @@ typedef struct /* readosm_node_struct */ {
 
 
 struct readosm_relation_struct {
-        const long long       id; /**< RELATION-ID (expected to be a unique value) */
-        const int             version;  /**< object version */
-        const long long       changeset; /**< ChangeSet ID */
-        const char           *user; /**< name of the User defining this RELATION */
-        const int             uid; /**< corresponding numeric UserID */
-        const char           *timestamp; /**< when this RELATION was defined */
-        const int             member_count;     /**< number of associated MEMBERs (may be zero) */
-        const readosm_member *members; /**< array of MEMBER objects (may be NULL) */
-        const int             tag_count; /**< number of associated TAGs (may be zero) */
-        const readosm_tag    *tags; /**< array of TAG objects (may be NULL) */
+	const long long       id; /**< RELATION-ID (expected to be a unique value) */
+	const int             version;  /**< object version */
+	const long long       changeset; /**< ChangeSet ID */
+	const char           *user; /**< name of the User defining this RELATION */
+	const int             uid; /**< corresponding numeric UserID */
+	const char           *timestamp; /**< when this RELATION was defined */
+	const int             member_count;	/**< number of associated MEMBERs (may be zero) */
+	const readosm_member *members; /**< array of MEMBER objects (may be NULL) */
+	const int             tag_count; /**< number of associated TAGs (may be zero) */
+	const readosm_tag    *tags; /**< array of TAG objects (may be NULL) */
     };
 
-        /**
+	/**
      Typedef for RELATION structure.
      
      \sa readosm_relation_struct
@@ -257,13 +263,13 @@ struct readosm_relation_struct {
      Close the .osm or .pbf file and release any allocated resource
 
     \param osm_handle the handle previously returned by readosm_open()
-        \param user_data pointer to some user-supplied data struct
-        \param node_fnct pointer to callback function intended to consume NODE objects 
-        (may be NULL if processing NODEs is not an interesting option)
-        \param way_fnct pointer to callback function intended to consume WAY objects 
-        (may be NULL if processing WAYs is not an interesting option)
-        \param relation_fnct pointer to callback function intended to consume RELATION objects 
-        (may be NULL if processing RELATIONs is not an interesting option)
+	\param user_data pointer to some user-supplied data struct
+	\param node_fnct pointer to callback function intended to consume NODE objects 
+	(may be NULL if processing NODEs is not an interesting option)
+	\param way_fnct pointer to callback function intended to consume WAY objects 
+	(may be NULL if processing WAYs is not an interesting option)
+	\param relation_fnct pointer to callback function intended to consume RELATION objects 
+	(may be NULL if processing RELATIONs is not an interesting option)
 
     \return READOSM_OK will be returned on success, otherwise any appropriate
      error code on failure.
@@ -272,30 +278,30 @@ struct readosm_relation_struct {
     and the handle will no longer be valid.
     */
 //    READOSM_DECLARE int readosm_parse (const void *osm_handle,
-//                                     const void *user_data,
-//                                     readosm_node_callback node_fnct,
-//                                     readosm_way_callback way_fnct,
-//                                     readosm_relation_callback relation_fnct);
+//				       const void *user_data,
+//				       readosm_node_callback node_fnct,
+//				       readosm_way_callback way_fnct,
+//				       readosm_relation_callback relation_fnct);
 
     /**
      Return the current ReadOSM version
      
      \return a text string corresponding the current ReadOSM version
-        */
+	*/
  // READOSM_DECLARE const char * readosm_version (void);
 
     /**
      Return the current libexpat version used by ReadOSM
      
      \return a text string corresponding the current Expat version
-        */
+	*/
 //  READOSM_DECLARE const char * readosm_expat_version (void);
 
     /**
      Return the current zlib version used by ReadOSM
      
      \return a text string corresponding the current zlib version
-        */
+	*/
 //    READOSM_DECLARE const char * readosm_zlib_version (void);
 
 int load_osm_pbf(const char* filename_pbf,
@@ -307,4 +313,4 @@ int load_osm_pbf(const char* filename_pbf,
 }
 #endif
 
-#endif                          /* _READOSM_H */
+#endif				/* _READOSM_H */

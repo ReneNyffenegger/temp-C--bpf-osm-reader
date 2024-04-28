@@ -1268,7 +1268,10 @@ static int parse_pbf_nodes (
                       for (i = 0; i < max_nodes; i++)
                         {
                             nd = nodes + i;
-                            ret = call_node_callback (g_cb_nod, nd);
+                            ret =
+                                call_node_callback (g_cb_nod, // params->node_callback,
+//                                                  0, // params->user_data,
+                                                    nd);
                             if (ret != READOSM_OK) {
                                   exit(42);
 //                                params->stop = 1;
