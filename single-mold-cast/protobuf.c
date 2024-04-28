@@ -820,6 +820,11 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, r
     return NULL;
 }
 
+readosm_node_callback        g_cb_nod;
+readosm_way_callback         g_cb_way;
+readosm_relation_callback    g_cb_rel;
+char                         g_little_endian_cpu;
+
 static int skip_osm_header (const readosm_file * input, unsigned int sz) {
 
 /*
@@ -840,7 +845,7 @@ static int skip_osm_header (const readosm_file * input, unsigned int sz) {
         goto error;
 
 /* initializing an empty variant field */
-    init_variant (&variant, input->little_endian_cpu);
+    init_variant (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 3);
@@ -1038,10 +1043,6 @@ static int parse_pbf_node_infos (
     return 0;
 }
 
-readosm_node_callback        g_cb_nod;
-readosm_way_callback         g_cb_way;
-readosm_relation_callback    g_cb_rel;
-char                         g_little_endian_cpu;
 
 static int parse_pbf_nodes (
                  readosm_string_table * strings,
@@ -1959,7 +1960,7 @@ static int parse_osm_data (
 
 
  // initializing an empty variant field
-    init_variant      (&variant, input->little_endian_cpu);
+    init_variant      (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 3);
@@ -2153,7 +2154,7 @@ int parse_osm_pbf (
     rd = fread (buf, 1, 4, input->in);
     if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
-    hdsz = get_header_size (buf, input->little_endian_cpu);
+    hdsz = get_header_size (buf, g_little_endian_cpu /* input->little_endian_cpu */);
 
 /* testing OSMHeader */
     if (!skip_osm_header (input, hdsz))
@@ -2172,7 +2173,7 @@ int parse_osm_pbf (
 
           if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
-          hdsz = get_header_size (buf, input->little_endian_cpu);
+          hdsz = get_header_size (buf, g_little_endian_cpu /* input->little_endian_cpu*/);
 
           /* parsing OSMData */
           if (!parse_osm_data (input, hdsz /*, &params */))

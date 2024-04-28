@@ -185,7 +185,9 @@ int load_osm_pbf(
 
 //  input->magic1 = READOSM_MAGIC_START;
 //  input->file_format = format;
-    osm_handle -> little_endian_cpu = test_endianness();
+//  osm_handle -> little_endian_cpu = test_endianness();
+    g_little_endian_cpu = test_endianness();
+
 //  osm_handle->magic2 = READOSM_MAGIC_END;
 
 

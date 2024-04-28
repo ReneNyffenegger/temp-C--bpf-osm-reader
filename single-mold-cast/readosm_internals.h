@@ -220,14 +220,9 @@ typedef struct /* readosm_export_relation_struct */ {
 
 
 
-typedef struct readosm_file_struct {
-
-/* a struct representing an OSM input file */
-//  int   magic1;               // magic signature #1
+typedef struct {
     FILE *in;                   // file handle */
-//  int   file_format;          // the actual file format
-    char  little_endian_cpu;    // actual CPU endianness
-//  int   magic2;               // magic signature
+//  char  little_endian_cpu;    // actual CPU endianness
 }
 readosm_file;
 
