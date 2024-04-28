@@ -65,19 +65,19 @@
 #define strcasecmp      _stricmp
 #endif /* not WIN32 */
 
-#include "endian.c"
+// #include "endian.c"
 
-// static int test_endianness () {
-// 
-// /* checks the current CPU endianness */
-//     readosm_endian4 endian4;
-//     endian4.bytes[0] = 0x01;
-//     endian4.bytes[1] = 0x00;
-//     endian4.bytes[2] = 0x00;
-//     endian4.bytes[3] = 0x00;
-//     if (endian4.uint32_value == 1) return READOSM_LITTLE_ENDIAN;
-//     return READOSM_BIG_ENDIAN;
-// }
+static int test_endianness () {
+
+/* checks the current CPU endianness */
+    readosm_endian4 endian4;
+    endian4.bytes[0] = 0x01;
+    endian4.bytes[1] = 0x00;
+    endian4.bytes[2] = 0x00;
+    endian4.bytes[3] = 0x00;
+    if (endian4.uint32_value == 1) return READOSM_LITTLE_ENDIAN;
+    return READOSM_BIG_ENDIAN;
+}
 
 static readosm_file * alloc_osm_file (int little_endian_cpu/*, int format*/) {
 
@@ -110,7 +110,7 @@ static void destroy_osm_file (readosm_file * input) {
 //  readosm_file *input;
 //  int len;
     int format;
-    int little_endian_cpu = determine_endianness();
+    int little_endian_cpu = test_endianness();
 
 //  *osm_handle = NULL;
 //  if (path == NULL || osm_handle == NULL)
@@ -173,7 +173,6 @@ int load_osm_pbf(const char* filename_pbf,
     int ret;
 
     ret = readosm_open(filename_pbf, /*(const readosm_file**)*/ &osm_handle);
-    kkkkkkkkkkkkkkkkkkkk
     if (ret != READOSM_OK) {
       fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
       goto stop;
