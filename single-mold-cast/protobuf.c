@@ -1334,11 +1334,15 @@ parse_pbf_node_infos (readosm_packed_infos * packed_infos,
     return 0;
 }
 
+readosm_node_callback        g_cb_nod;
+readosm_way_callback         g_cb_way;
+readosm_relation_callback    g_cb_rel;
+
 static int parse_pbf_nodes (readosm_string_table * strings,
                  unsigned char *start, unsigned char *stop,
-                 char little_endian_cpu,
+                 char little_endian_cpu
 //               pbf_params *params
-                 readosm_node_callback cb_node
+//               readosm_node_callback cb_node
                  )
 {
 /* 
@@ -1594,7 +1598,7 @@ static int parse_pbf_nodes (readosm_string_table * strings,
                         {
                             nd = nodes + i;
                             ret =
-                                call_node_callback (cb_node, // params->node_callback,
+                                call_node_callback (g_cb_nod, // params->node_callback,
                                                     0, // params->user_data,
                                                     nd);
                             if (ret != READOSM_OK) {
@@ -1747,8 +1751,8 @@ static int parse_pbf_way_info (
 
 static int parse_pbf_way (readosm_string_table * strings,
                unsigned char *start, unsigned char *stop,
-               char little_endian_cpu,
-               readosm_way_callback cb_way
+               char little_endian_cpu
+//             readosm_way_callback cb_way
                //  pbf_params *params
                )
 {
@@ -1865,7 +1869,7 @@ static int parse_pbf_way (readosm_string_table * strings,
 /* processing the WAY */
 //  if (params->way_callback != NULL && params->stop == 0)
 //    {
-          int ret = call_way_callback (cb_way /*params->way_callback*/, 0 /* params->user_data */, way);
+          int ret = call_way_callback (g_cb_way /* cb_way */ /*params->way_callback*/, 0 /* params->user_data */, way);
 
           if (ret != READOSM_OK)
               exit(43);
@@ -1976,8 +1980,8 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
 
 static int parse_pbf_relation (readosm_string_table * strings,
                     unsigned char *start, unsigned char *stop,
-                    char little_endian_cpu,
-                    readosm_relation_callback cb_relation
+                    char little_endian_cpu
+//                  readosm_relation_callback cb_relation
 //                  pbf_params *params
                     )
 {
@@ -2137,7 +2141,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
 /* processing the RELATION */
 //  if (params->relation_callback != NULL && params->stop == 0)
 //    {
-          int ret = call_relation_callback (cb_relation, // params->relation_callback,
+          int ret = call_relation_callback (g_cb_rel, // params->relation_callback,
                                             0, // params->user_data,
                                             relation);
           if (ret != READOSM_OK)
@@ -2157,6 +2161,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
     destroy_internal_relation (relation);
     return 0;
 }
+
 
 static int parse_primitive_group (
    readosm_string_table * strings,
@@ -2206,8 +2211,8 @@ static int parse_primitive_group (
                 if (!parse_pbf_nodes
                     (strings, variant.pointer,
                      variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu,
-                     params -> node_callback
+                     variant.little_endian_cpu
+//                   params -> node_callback
                      ))
                     goto error;
             }
@@ -2220,8 +2225,8 @@ static int parse_primitive_group (
                 if (!parse_pbf_way
                     (strings, variant.pointer,
                      variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu,
-                     params -> way_callback
+                     variant.little_endian_cpu
+//                   params -> way_callback
 //                   params
                      ))
                     goto error;
@@ -2236,8 +2241,8 @@ static int parse_primitive_group (
                 if (!parse_pbf_relation
                     (strings, variant.pointer,
                      variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu,
-                     params -> relation_callback
+                     variant.little_endian_cpu
+//                   params -> relation_callback
 //                   params
                      ))
                     goto error;
@@ -2457,7 +2462,12 @@ int parse_osm_pbf (
     unsigned int  hdsz;
     pbf_params    params;
 
-/* initializing the PBF helper structure */
+    g_cb_nod = node_fnct;
+    g_cb_way = way_fnct;
+    g_cb_rel = relation_fnct;
+
+// initializing the PBF helper structure
+
     params.user_data = user_data;
     params.node_callback = node_fnct;
     params.way_callback = way_fnct;
@@ -2497,9 +2507,8 @@ int parse_osm_pbf (
     return READOSM_OK;
 }
 
-READOSM_DECLARE const char *
-readosm_zlib_version (void)
-{
-/* returning the current zlib version string */
-    return zlibVersion ();
-}
+// READOSM_DECLARE const char *
+// readosm_zlib_version (void) {
+// /* returning the current zlib version string */
+//     return zlibVersion ();
+// }
