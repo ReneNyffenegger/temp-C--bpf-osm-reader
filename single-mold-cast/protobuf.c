@@ -2167,8 +2167,9 @@ static int parse_primitive_group (
    readosm_string_table * strings,
    unsigned char *start,
    unsigned char *stop,
-            char little_endian_cpu,
-          pbf_params *params)
+            char little_endian_cpu
+//        pbf_params *params
+)
 {
 /* 
  / attempting to parse a valid Primitive Group 
@@ -2410,13 +2411,16 @@ static int parse_osm_data (
                     goto error;
                 array_from_string_table (&string_table);
             }
-          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES)
-            {
-                /* the PrimitiveGroup to be parsed */
-                if (!parse_primitive_group
-                    (&string_table, variant.pointer,
+
+          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
+                // the PrimitiveGroup to be parsed
+                if (!parse_primitive_group (
+                    &string_table, variant.pointer,
                      variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu, params))
+                     variant.little_endian_cpu
+                     // , params
+                    ))
+
                     goto error;
             }
           if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32)
