@@ -1334,10 +1334,12 @@ parse_pbf_node_infos (readosm_packed_infos * packed_infos,
     return 0;
 }
 
-static int
-parse_pbf_nodes (readosm_string_table * strings,
+static int parse_pbf_nodes (readosm_string_table * strings,
                  unsigned char *start, unsigned char *stop,
-                 char little_endian_cpu, pbf_params *params)
+                 char little_endian_cpu,
+//               pbf_params *params
+                 readosm_node_callback cb_node
+                 )
 {
 /* 
  / attempting to parse a valid PBF DenseNodes 
@@ -1592,11 +1594,12 @@ parse_pbf_nodes (readosm_string_table * strings,
                         {
                             nd = nodes + i;
                             ret =
-                                call_node_callback (params->node_callback,
-                                                    params->user_data, nd);
-                            if (ret != READOSM_OK)
-                              {
-                                  params->stop = 1;
+                                call_node_callback (cb_node, // params->node_callback,
+                                                    0, // params->user_data,
+                                                    nd);
+                            if (ret != READOSM_OK) {
+                                  exit(42);
+//                                params->stop = 1;
                                   break;
                               }
                         }
@@ -2191,7 +2194,9 @@ static int parse_primitive_group (
                 if (!parse_pbf_nodes
                     (strings, variant.pointer,
                      variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu, params))
+                     variant.little_endian_cpu,
+                     params -> node_callback
+                     ))
                     goto error;
             }
 
