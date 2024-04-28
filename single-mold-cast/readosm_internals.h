@@ -122,15 +122,13 @@ typedef struct readosm_export_node_struct {
     readosm_export_tag *tags;   /* array of TAG items */
 } readosm_export_node;
 
-typedef struct readosm_internal_ref readosm_internal_ref;
-struct readosm_internal_ref {
+typedef struct readosm_internal_ref_struct {
 
  // a block of WAY-ND items
- //
     long long node_refs[READOSM_BLOCK_SZ];      /* referenced NODE-ID array */
     int next_item;                              /* index to next free (unused) item */
-    readosm_internal_ref *next;                 /* supporting linked list */
-};
+    struct readosm_internal_ref_struct *next;   /* supporting linked list */
+} readosm_internal_ref;
 
 typedef struct readosm_internal_way_struct {
 
