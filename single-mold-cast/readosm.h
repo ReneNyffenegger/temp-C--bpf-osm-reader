@@ -125,26 +125,19 @@ extern "C"
 </node>
         \endverbatim
          */
-    struct readosm_node_struct
-    {
-        const long long id; /**< NODE-ID (expected to be a unique value) */
-        const double latitude; /**< geographic latitude */
-        const double longitude; /**< geographic longitude */
-        const int version; /**< object version */
-        const long long changeset; /**< ChangeSet ID */
-        const char *user; /**< name of the User defining this NODE */
-        const int uid; /**< corresponding numeric UserID */
-        const char *timestamp; /**< when this NODE was defined */
-        const int tag_count; /**< number of associated TAGs (may be zero) */
-        const readosm_tag *tags; /**< array of TAG objects (may be NULL) */
-    };
+    typedef struct {
+        const long long     id; /**< NODE-ID (expected to be a unique value) */
+        const double        latitude; /**< geographic latitude */
+        const double        longitude; /**< geographic longitude */
+        const int           version; /**< object version */
+        const long long     changeset; /**< ChangeSet ID */
+        const char         *user; /**< name of the User defining this NODE */
+        const int           uid; /**< corresponding numeric UserID */
+        const char         *timestamp; /**< when this NODE was defined */
+        const int           tag_count; /**< number of associated TAGs (may be zero) */
+        const readosm_tag  *tags;
+    } readosm_node;
 
-        /**
-     Typedef for NODE structure.
-     
-     \sa readosm_node_struct
-     */
-    typedef struct readosm_node_struct readosm_node;
 
         /**
          a struct representing a WAY object, and wrapping a complex XML fragment like the following:
