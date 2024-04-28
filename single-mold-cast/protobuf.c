@@ -1747,7 +1747,10 @@ static int parse_pbf_way_info (
 
 static int parse_pbf_way (readosm_string_table * strings,
                unsigned char *start, unsigned char *stop,
-               char little_endian_cpu, pbf_params *params)
+               char little_endian_cpu,
+               readosm_way_callback cb_way
+               //  pbf_params *params
+               )
 {
 /* attempting to parse a valid PBF Way */
     readosm_variant variant;
@@ -1860,13 +1863,15 @@ static int parse_pbf_way (readosm_string_table * strings,
     finalize_variant (&variant);
 
 /* processing the WAY */
-    if (params->way_callback != NULL && params->stop == 0)
-      {
-          int ret =
-              call_way_callback (params->way_callback, params->user_data, way);
+//  if (params->way_callback != NULL && params->stop == 0)
+//    {
+          int ret = call_way_callback (cb_way /*params->way_callback*/, 0 /* params->user_data */, way);
+
           if (ret != READOSM_OK)
-              params->stop = 1;
-      }
+              exit(43);
+//            params->stop = 1;
+
+//      }
     destroy_internal_way (way);
     return 1;
 
@@ -1971,7 +1976,10 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
 
 static int parse_pbf_relation (readosm_string_table * strings,
                     unsigned char *start, unsigned char *stop,
-                    char little_endian_cpu, pbf_params *params)
+                    char little_endian_cpu,
+                    readosm_relation_callback cb_relation
+//                  pbf_params *params
+                    )
 {
 /* attempting to parse a valid PBF Relation */
     readosm_variant variant;
@@ -2127,13 +2135,15 @@ static int parse_pbf_relation (readosm_string_table * strings,
     finalize_variant (&variant);
 
 /* processing the RELATION */
-    if (params->relation_callback != NULL && params->stop == 0)
-      {
-          int ret = call_relation_callback (params->relation_callback,
-                                            params->user_data, relation);
+//  if (params->relation_callback != NULL && params->stop == 0)
+//    {
+          int ret = call_relation_callback (cb_relation, // params->relation_callback,
+                                            0, // params->user_data,
+                                            relation);
           if (ret != READOSM_OK)
-              params->stop = 1;
-      }
+              exit(44);
+//            params->stop = 1;
+//    }
     destroy_internal_relation (relation);
     return 1;
 
@@ -2187,10 +2197,12 @@ static int parse_primitive_group (
 
           start = base;
 
-          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
+          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) { // Dense nodes
                 /* DenseNodes */
-                if (params->node_callback == NULL)
-                    goto skip;  /* skipping: no node-callback */
+
+//              if (params->node_callback == NULL)
+//                  goto skip;  /* skipping: no node-callback */
+
                 if (!parse_pbf_nodes
                     (strings, variant.pointer,
                      variant.pointer + variant.length - 1,
@@ -2200,28 +2212,37 @@ static int parse_primitive_group (
                     goto error;
             }
 
-          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
-                /* Way */
-                if (params->way_callback == NULL)
-                    goto skip;  /* skipping: no way-callback */
+          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) { // Way
+
+//              if (params->way_callback == NULL)
+//                  goto skip;  /* skipping: no way-callback */
+
                 if (!parse_pbf_way
                     (strings, variant.pointer,
                      variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu, params))
+                     variant.little_endian_cpu,
+                     params -> way_callback
+//                   params
+                     ))
                     goto error;
             }
 
-          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) {
+          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) { // Relation
                 /* Relation */
-                if (params->relation_callback == NULL)
-                    goto skip;  /* skipping: no relation-callback */
+
+//              if (params->relation_callback == NULL)
+//                  goto skip;  /* skipping: no relation-callback */
 
                 if (!parse_pbf_relation
                     (strings, variant.pointer,
                      variant.pointer + variant.length - 1,
-                     variant.little_endian_cpu, params))
+                     variant.little_endian_cpu,
+                     params -> relation_callback
+//                   params
+                     ))
                     goto error;
             }
+
         skip:
           if (base > stop)
               break;
