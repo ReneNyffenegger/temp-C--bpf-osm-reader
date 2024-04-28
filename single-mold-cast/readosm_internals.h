@@ -107,6 +107,7 @@ typedef struct /* readosm_internal_node_struct */ {
     readosm_internal_tag_block *last_tag;       /* of TAG blocks (first block is static) */
 } readosm_internal_node;
 
+
 typedef struct readosm_export_node_struct {
  // a struct intended to export NODE items
     long long id;               /* NODE-ID (unique value) */
