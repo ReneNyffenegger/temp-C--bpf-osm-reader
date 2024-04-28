@@ -2122,29 +2122,36 @@ static int parse_osm_data (
     return 0;
 }
 
+// unsigned int read_header_size(FILE* f, char) {
+//     unsigned char buf[4];
+// 
+//     rd = fread (buf, 1, 4, f);
+//     if (rd != 4) exit(44); // return READOSM_INVALID_PBF_HEADER;
+//     return get_header_size(buf, 
+// 
+// }
+
 int parse_osm_pbf (
+
    const readosm_file       *input,
-   readosm_node_callback     node_fnct,
-   readosm_way_callback      way_fnct,
-   readosm_relation_callback relation_fnct)
+   readosm_node_callback     cb_nod,
+   readosm_way_callback      cb_way,
+   readosm_relation_callback cb_rel)
 {
 
 // parsing the input file [OSM PBF format]
 
     size_t        rd;
-    unsigned char buf[8];
+    unsigned char buf[4];
     unsigned int  hdsz;
-//  pbf_params    params;
 
-    g_cb_nod = node_fnct;
-    g_cb_way = way_fnct;
-    g_cb_rel = relation_fnct;
+    g_cb_nod = cb_nod;
+    g_cb_way = cb_way;
+    g_cb_rel = cb_rel;
 
  // reading BlobHeader size: OSMHeader */
     rd = fread (buf, 1, 4, input->in);
-
-    if (rd != 4)
-        return READOSM_INVALID_PBF_HEADER;
+    if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
     hdsz = get_header_size (buf, input->little_endian_cpu);
 
@@ -2163,8 +2170,7 @@ int parse_osm_pbf (
           if (rd == 0 && feof (input->in))
               break;
 
-          if (rd != 4)
-              return READOSM_INVALID_PBF_HEADER;
+          if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
           hdsz = get_header_size (buf, input->little_endian_cpu);
 
