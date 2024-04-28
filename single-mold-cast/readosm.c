@@ -62,7 +62,7 @@
 #include "readosm_internals.h"
 
 #ifdef _WIN32
-#define strcasecmp	_stricmp
+#define strcasecmp      _stricmp
 #endif /* not WIN32 */
 
 static int
@@ -75,83 +75,85 @@ test_endianness ()
     endian4.bytes[2] = 0x00;
     endian4.bytes[3] = 0x00;
     if (endian4.uint32_value == 1)
-	return READOSM_LITTLE_ENDIAN;
+        return READOSM_LITTLE_ENDIAN;
     return READOSM_BIG_ENDIAN;
 }
 
-static readosm_file *
-alloc_osm_file (int little_endian_cpu, int format)
-{
+static readosm_file * alloc_osm_file (int little_endian_cpu/*, int format*/) {
+
 /* allocating and initializing the OSM input file struct */
     readosm_file *input = malloc (sizeof (readosm_file));
     if (!input)
-	return NULL;
-    input->magic1 = READOSM_MAGIC_START;
-    input->file_format = format;
+        return NULL;
+
+//  input->magic1 = READOSM_MAGIC_START;
+//  input->file_format = format;
     input->little_endian_cpu = little_endian_cpu;
-    input->magic2 = READOSM_MAGIC_END;
+//  input->magic2 = READOSM_MAGIC_END;
     input->in = NULL;
     return input;
 }
 
-static void
-destroy_osm_file (readosm_file * input)
-{
+static void destroy_osm_file (readosm_file * input) {
+
 /* destroying the OSM input file struct */
-    if (input)
-      {
-	  if (input->in)
-	      fclose (input->in);
-	  free (input);
+    if (input) {
+          if (input->in)
+              fclose (input->in);
+          free (input);
       }
 }
 
-READOSM_DECLARE int
-readosm_open (const char *path, const readosm_file **osm_handle)
-{
-/* opening and initializing the OSM input file */
+/* READOSM_DECLARE */ int readosm_open (const char *path, const readosm_file **osm_handle) {
+
+// opening and initializing the OSM input file 
     readosm_file *input;
-    int len;
+//  int len;
     int format;
     int little_endian_cpu = test_endianness ();
 
     *osm_handle = NULL;
     if (path == NULL || osm_handle == NULL)
-	return READOSM_NULL_HANDLE;
+        return READOSM_NULL_HANDLE;
 
-    len = strlen (path);
-    if (len > 4 && strcasecmp (path + len - 4, ".osm") == 0)
-	format = READOSM_OSM_FORMAT;
-    else if (len > 4 && strcasecmp (path + len - 4, ".pbf") == 0)
-	format = READOSM_PBF_FORMAT;
-    else
-	return READOSM_INVALID_SUFFIX;
+//  len = strlen (path);
+
+//  if (len > 4 && strcasecmp (path + len - 4, ".osm") == 0)
+//      format = READOSM_OSM_FORMAT;
+
+//  else if (len > 4 && strcasecmp (path + len - 4, ".pbf") == 0)
+//      format = READOSM_PBF_FORMAT;
+
+//  else
+//      return READOSM_INVALID_SUFFIX;
 
 /* allocating the OSM input file struct */
-    input = alloc_osm_file (little_endian_cpu, format);
+    input = alloc_osm_file (little_endian_cpu/*, format*/);
+
     if (!input)
-	return READOSM_INSUFFICIENT_MEMORY;
+        return READOSM_INSUFFICIENT_MEMORY;
+
     *osm_handle = input;
 
     input->in = fopen (path, "rb");
     if (input->in == NULL)
-	return READOSM_FILE_NOT_FOUND;
+        return READOSM_FILE_NOT_FOUND;
 
     return READOSM_OK;
 }
 
-READOSM_DECLARE int
-readosm_close (const void *osm_handle)
-{
-/* attempting to destroy the OSM input file */
+/* READOSM_DECLARE */
+int readosm_close (const void *osm_handle) {
+
+// attempting to destroy the OSM input file 
+//
     readosm_file *input = (readosm_file *) osm_handle;
     if (!input)
-	return READOSM_NULL_HANDLE;
-    if ((input->magic1 == READOSM_MAGIC_START)
-	&& input->magic2 == READOSM_MAGIC_END)
-	;
-    else
-	return READOSM_INVALID_HANDLE;
+        return READOSM_NULL_HANDLE;
+
+//  if ((input->magic1 == READOSM_MAGIC_START) && input->magic2 == READOSM_MAGIC_END) ;
+//  else
+//      return READOSM_INVALID_HANDLE;
 
 /* destroying the workbook */
     destroy_osm_file (input);
