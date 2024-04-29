@@ -2137,57 +2137,57 @@ static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
 // 
 // }
 
-int parse_osm_pbf (
-
-// const readosm_file       *input,
-// readosm_node_callback     cb_nod,
-// readosm_way_callback      cb_way,
-// readosm_relation_callback cb_rel
-)
-{
-
-// parsing the input file [OSM PBF format]
-
-    size_t        rd;
-    unsigned char buf[4];
-    unsigned int  hdsz;
-
-//  g_cb_nod = cb_nod;
-//  g_cb_way = cb_way;
-//  g_cb_rel = cb_rel;
-
- // reading BlobHeader size: OSMHeader */
-    rd = fread (buf, 1, 4, g_pbf_file);
-    if (rd != 4) return READOSM_INVALID_PBF_HEADER;
-
-    hdsz = get_header_size (buf /*, g_little_endian_cpu*/ /* input->little_endian_cpu */);
-
-/* testing OSMHeader */
-    if (!skip_osm_header (/*input,*/ hdsz))
-        return READOSM_INVALID_PBF_HEADER;
-
-/* 
- / the PBF file is internally organized as a collection
- / of many subsequent OSMData blocks 
-*/
-    while (1) {
-
-          rd = fread (buf, 1, 4, g_pbf_file);
-
-          if (rd == 0 && feof (g_pbf_file))
-              break;
-
-          if (rd != 4) return READOSM_INVALID_PBF_HEADER;
-
-          hdsz = get_header_size (buf /*, g_little_endian_cpu */ /* input->little_endian_cpu*/);
-
-          /* parsing OSMData */
-          if (!parse_osm_data (/*input,*/ hdsz /*, &params */))
-
-              return READOSM_INVALID_PBF_HEADER;
-    }
-    return READOSM_OK;
-}
+// int parse_osm_pbf (
+// 
+// // const readosm_file       *input,
+// // readosm_node_callback     cb_nod,
+// // readosm_way_callback      cb_way,
+// // readosm_relation_callback cb_rel
+// )
+// {
+// 
+// // parsing the input file [OSM PBF format]
+// 
+//     size_t        rd;
+//     unsigned char buf[4];
+//     unsigned int  hdsz;
+// 
+// //  g_cb_nod = cb_nod;
+// //  g_cb_way = cb_way;
+// //  g_cb_rel = cb_rel;
+// 
+//  // reading BlobHeader size: OSMHeader */
+//     rd = fread (buf, 1, 4, g_pbf_file);
+//     if (rd != 4) return READOSM_INVALID_PBF_HEADER;
+// 
+//     hdsz = get_header_size (buf /*, g_little_endian_cpu*/ /* input->little_endian_cpu */);
+// 
+// /* testing OSMHeader */
+//     if (!skip_osm_header (/*input,*/ hdsz))
+//         return READOSM_INVALID_PBF_HEADER;
+// 
+// /* 
+//  / the PBF file is internally organized as a collection
+//  / of many subsequent OSMData blocks 
+// */
+//     while (1) {
+// 
+//           rd = fread (buf, 1, 4, g_pbf_file);
+// 
+//           if (rd == 0 && feof (g_pbf_file))
+//               break;
+// 
+//           if (rd != 4) return READOSM_INVALID_PBF_HEADER;
+// 
+//           hdsz = get_header_size (buf /*, g_little_endian_cpu */ /* input->little_endian_cpu*/);
+// 
+//           /* parsing OSMData */
+//           if (!parse_osm_data (/*input,*/ hdsz /*, &params */))
+// 
+//               return READOSM_INVALID_PBF_HEADER;
+//     }
+//     return READOSM_OK;
+// }
 
 // READOSM_DECLARE const char *
 // readosm_zlib_version (void) {

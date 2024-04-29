@@ -179,11 +179,16 @@ int load_osm_pbf(
     readosm_relation_callback cb_rel
 ) {
 
+    size_t        rd;
+    unsigned char buf[4];
+    unsigned int  hdsz;
+
 //  readosm_file *osm_handle;
 
-    g_cb_nod = cb_nod;
-    g_cb_way = cb_way;
-    g_cb_rel = cb_rel;
+    g_cb_nod            = cb_nod;
+    g_cb_way            = cb_way;
+    g_cb_rel            = cb_rel;
+    g_little_endian_cpu = test_endianness();
 
 //  ret = readosm_open(filename_pbf, /*(const readosm_file**)*/ &osm_handle);
 
@@ -195,7 +200,6 @@ int load_osm_pbf(
 //  input->magic1 = READOSM_MAGIC_START;
 //  input->file_format = format;
 //  osm_handle -> little_endian_cpu = test_endianness();
-    g_little_endian_cpu = test_endianness();
 
 //  osm_handle->magic2 = READOSM_MAGIC_END;
 
@@ -211,23 +215,65 @@ int load_osm_pbf(
     if (g_pbf_file == NULL)
         return READOSM_FILE_NOT_FOUND;
 
+
+
+
+
+
+
  // if (ret != READOSM_OK) {
  //     fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
  //     goto stop;
  // }
 
-    int ret;
-    ret = parse_osm_pbf(/*osm_handle,*/  cb_nod, cb_way, cb_rel);
 
 
-    if (ret != READOSM_OK) {
-        fprintf (stderr, "PARSE error: %d\n", ret);
+
+
+//  int ret;
+//  ret = parse_osm_pbf(/*osm_handle,*/  cb_nod, cb_way, cb_rel);
+
+    rd = fread (buf, 1, 4, g_pbf_file);
+    if (rd != 4) return READOSM_INVALID_PBF_HEADER;
+
+    hdsz = get_header_size (buf /*, g_little_endian_cpu*/ /* input->little_endian_cpu */);
+
+/* testing OSMHeader */
+    if (!skip_osm_header (/*input,*/ hdsz))
+        return READOSM_INVALID_PBF_HEADER;
+
+// -------------------------------------------------------------------------------------------------------
+
+/* 
+ / the PBF file is internally organized as a collection
+ / of many subsequent OSMData blocks 
+*/
+    while (1) {
+
+          rd = fread (buf, 1, 4, g_pbf_file);
+
+          if (rd == 0 && feof (g_pbf_file))
+              break;
+
+          if (rd != 4) return READOSM_INVALID_PBF_HEADER;
+
+          hdsz = get_header_size (buf /*, g_little_endian_cpu */ /* input->little_endian_cpu*/);
+
+        // parsing OSMData
+          if (!parse_osm_data (/*input,*/ hdsz /*, &params */))
+              return READOSM_INVALID_PBF_HEADER;
     }
-    else {
-       fprintf (stderr, "Ok, OSM input file successfully parsed\n");
-    }
 
-  stop:
+// -------------------------------------------------------------------------------------------------------
+
+//  if (ret != READOSM_OK) {
+//      fprintf (stderr, "PARSE error: %d\n", ret);
+//  }
+//  else {
+//     fprintf (stderr, "Ok, OSM input file successfully parsed\n");
+//  }
+
+//stop:
 
     if (g_pbf_file)
        fclose (g_pbf_file);
