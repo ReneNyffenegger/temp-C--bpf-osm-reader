@@ -104,9 +104,11 @@ static int callback_node (/*const void *user_data,*/ const readosm_node *node) {
     static int callback_node_cnt = 0;
     callback_node_cnt ++;
 
+#ifdef TQ84_PRINT_STAT
     if (! (callback_node_cnt % 10000)) {
        printf("Nodes loaded: %d\n", callback_node_cnt);
     }
+#endif
 
 //  TQ84: commented
 //
@@ -249,7 +251,7 @@ static int callback_way (/*const void *user_data, */ const readosm_way * way) {
     static int callback_way_cnt = 0;
     callback_way_cnt ++;
 
-#if 0
+#if TQ84_PRINT_STAT
     if (! (callback_way_cnt % 10000)) {
        printf("Ways loaded: %d\n", callback_way_cnt);
     }
@@ -387,11 +389,6 @@ static int callback_relation (/*const void *user_data,*/ const readosm_relation 
 * a READ-ONLY object; you can can query any relation-related
 * value, but you cannot alter them.
 *
-************************************************
-*
-* this didactic sample will simply print the relation object
-* on the standard output adopting the appropriate OSM XML
-* notation
 */
     char buf[128];
     int i;
@@ -401,9 +398,11 @@ static int callback_relation (/*const void *user_data,*/ const readosm_relation 
     static int callback_rel_cnt = 0;
     callback_rel_cnt ++;
 
+#ifdef TQ84_PRINT_STAT
     if (! (callback_rel_cnt % 10000)) {
        printf("Relations loaded: %d\n", callback_rel_cnt);
     }
+#endif
 
 //  if (user_data != NULL) {
 //    user_data = NULL;    /* silencing stupid compiler warnings */

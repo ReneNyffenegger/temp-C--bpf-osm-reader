@@ -66,6 +66,12 @@
 #endif /* not WIN32 */
 
 // #include "endian.c"
+//
+
+// readosm_node_callback        g_cb_nod;
+// readosm_way_callback         g_cb_way;
+// readosm_relation_callback    g_cb_rel;
+// char                         g_little_endian_cpu;
 
 static int test_endianness () {
 

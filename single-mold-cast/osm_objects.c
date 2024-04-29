@@ -144,7 +144,7 @@ void init_internal_node (readosm_internal_node * node) {
     node->tag_count           = 0;
     node->first_tag.next_item = 0;
     node->first_tag.next      = NULL;
-    node->last_tag           = &(node->first_tag);
+    node->last_tag            = &(node->first_tag);
 }
 
 READOSM_PRIVATE
