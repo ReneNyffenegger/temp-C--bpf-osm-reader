@@ -1684,14 +1684,15 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
     return 0;
 }
 
-static int parse_pbf_relation (readosm_string_table * strings,
-                    unsigned char *start, unsigned char *stop,
-                    char little_endian_cpu
-//                  readosm_relation_callback cb_relation
-//                  pbf_params *params
-                    )
+static int parse_pbf_relation (
+       readosm_string_table * strings,
+       unsigned char         *start,
+       unsigned char         *stop,
+       char                   little_endian_cpu
+)
 {
-/* attempting to parse a valid PBF Relation */
+
+ // attempting to parse a valid PBF Relation
     readosm_variant variant;
     unsigned char *base = start;
     readosm_uint32_packed packed_keys;
@@ -1719,8 +1720,8 @@ static int parse_pbf_relation (readosm_string_table * strings,
     add_variant_hints (&variant, READOSM_LEN_BYTES, 10);
 
 /* reading the Relation */
-    while (1)
-      {
+    while (1) {
+
           /* resetting an empty variant field */
           reset_variant (&variant);
 
@@ -1728,63 +1729,13 @@ static int parse_pbf_relation (readosm_string_table * strings,
           if (base == NULL && variant.valid == 0)
               goto error;
           start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_VAR_INT64) {
-                /* RELATION ID */
-                relation->id = variant.value.int64_value;
-          }
-          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
-                /* KEYs are encoded as an array of StringTable index */
-                if (!parse_uint32_packed
-                    (&packed_keys, variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                array_from_uint32_packed (&packed_keys);
-          }
-          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
-                /* VALUEs are encoded as an array of StringTable index */
-                if (!parse_uint32_packed
-                    (&packed_values, variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                array_from_uint32_packed (&packed_values);
-          }
-          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) {
-                /* RELATION-INFO block */
-                if (!parse_pbf_relation_info
-                    (relation, strings, variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-          }
-          if (variant.field_id == 8 && variant.type == READOSM_LEN_BYTES) {
-             /* MEMBER-ROLEs are encoded as an array of StringTable index */
-                if (!parse_uint32_packed
-                    (&packed_roles, variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                array_from_uint32_packed (&packed_roles);
-          }
-          if (variant.field_id == 9 && variant.type == READOSM_LEN_BYTES) {
-             /* MEMBER-REFs are encoded as an array */
-                if (!parse_sint64_packed
-                    (&packed_refs, variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                array_from_int64_packed (&packed_refs);
-          }
-          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES) {
-                /* MEMBER-TYPEs are encoded as an array */
-                if (!parse_uint32_packed
-                    (&packed_types, variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu))
-                    goto error;
-                array_from_uint32_packed (&packed_types);
-          }
+          if (variant.field_id ==  1 && variant.type == READOSM_VAR_INT64) { /* RELATION ID */ relation->id = variant.value.int64_value; }
+          if (variant.field_id ==  2 && variant.type == READOSM_LEN_BYTES) { /* KEYs are encoded as an array of StringTable index         */ if (!parse_uint32_packed     (&packed_keys  ,          variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_uint32_packed (&packed_keys);   }
+          if (variant.field_id ==  3 && variant.type == READOSM_LEN_BYTES) { /* VALUEs are encoded as an array of StringTable index       */ if (!parse_uint32_packed     (&packed_values,          variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_uint32_packed (&packed_values); }
+          if (variant.field_id ==  4 && variant.type == READOSM_LEN_BYTES) { /* RELATION-INFO block                                       */ if (!parse_pbf_relation_info (relation      , strings, variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error;                                            }
+          if (variant.field_id ==  8 && variant.type == READOSM_LEN_BYTES) { /* MEMBER-ROLEs are encoded as an array of StringTable index */ if (!parse_uint32_packed     (&packed_roles ,          variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_uint32_packed (&packed_roles);  }
+          if (variant.field_id ==  9 && variant.type == READOSM_LEN_BYTES) { /* MEMBER-REFs are encoded as an array                       */ if (!parse_sint64_packed     (&packed_refs  ,          variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed  (&packed_refs);   }
+          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES) { /* MEMBER-TYPEs are encoded as an array                      */ if (!parse_uint32_packed     (&packed_types ,          variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_uint32_packed (&packed_types);  }
           if (base > stop)
               break;
       }
