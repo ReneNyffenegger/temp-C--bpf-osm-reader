@@ -170,6 +170,201 @@ static int test_endianness () {
 // }
 
 
+static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
+ // expecting to retrieve a valid OSMData header
+ //
+    int ok_header = 0;
+    int hdsz = 0;
+    size_t   rd;
+    unsigned char *buf = malloc (sz);
+    unsigned char *base = buf;
+    unsigned char *start = buf;
+    unsigned char *stop = buf + sz - 1;
+    unsigned char *zip_ptr = NULL;
+    int zip_sz = 0;
+    unsigned char *raw_ptr = NULL;
+    int raw_sz = 0;
+    readosm_variant variant;
+    readosm_string_table string_table;
+
+    printf("  parse_osm_data\n");
+
+    if (buf == NULL)
+        goto error;
+
+ // initializing an empty string list
+    init_string_table (&string_table);
+
+
+ // initializing an empty variant field
+    init_variant      (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
+    add_variant_hints (&variant, READOSM_VAR_INT32, 3);
+
+    rd = fread (buf, 1, sz, g_pbf_file/*, input->in*/);
+    if (rd != sz)
+        goto error;
+
+// reading the OSMData header
+    while (1) {
+          printf("  iterating\n");
+
+       // resetting an empty variant field
+          reset_variant (&variant);
+
+          base = parse_field (start, stop, &variant);
+
+          if (base == NULL && variant.valid == 0)
+              goto error;
+
+          start = base;
+
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 7) {
+                printf("     field_id = 1\n");
+                if (memcmp (variant.pointer, "OSMData", 7) == 0) ok_header = 1;
+          }
+
+          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
+              hdsz = variant.value.int32_value;
+              printf("     field_id = 3, hdsz = %d\n", hdsz);
+          }
+
+          if (base > stop)
+              break;
+
+    }
+
+    free (buf);
+    buf = NULL;
+    if (!ok_header || !hdsz)
+        goto error;
+
+    buf = malloc (hdsz);
+    base = buf;
+    start = buf;
+    stop = buf + hdsz - 1;
+    rd = fread (buf, 1, hdsz, g_pbf_file/*input->in*/);
+    if ((int) rd != hdsz)
+        goto error;
+
+ // uncompressing the OSMData zipped */
+    finalize_variant  (&variant);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+    add_variant_hints (&variant, READOSM_VAR_INT32, 2);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
+    while (1)
+      {
+       // resetting an empty variant field
+          reset_variant (&variant);
+
+          base = parse_field (start, stop, &variant);
+          if (base == NULL && variant.valid == 0)
+              goto error;
+
+          start = base;
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
+             // found an uncompressed block */
+                raw_sz = variant.str_len;
+                raw_ptr = malloc (raw_sz);
+                memcpy (raw_ptr, variant.pointer, raw_sz);
+          }
+          if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
+              // expected size of unZipped block */
+                raw_sz = variant.value.int32_value;
+          }
+          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
+              // found a ZIP-compressed block
+                zip_ptr = variant.pointer;
+                zip_sz = variant.str_len;
+          }
+          if (base > stop)
+              break;
+    }
+
+    if (zip_ptr != NULL && zip_sz != 0 && raw_sz != 0) {
+          /* unZipping a compressed block */
+          raw_ptr = malloc (raw_sz);
+          if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, raw_sz))
+              goto error;
+    }
+
+    free (buf);
+    buf = NULL;
+    if (raw_ptr == NULL || raw_sz == 0)
+        goto error;
+
+// parsing the PrimitiveBlock
+    base = raw_ptr;
+    start = raw_ptr;
+    stop = raw_ptr + raw_sz - 1;
+    finalize_variant (&variant);
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
+    add_variant_hints (&variant, READOSM_VAR_INT32, 17);
+    add_variant_hints (&variant, READOSM_VAR_INT32, 18);
+    add_variant_hints (&variant, READOSM_VAR_INT64, 19);
+    add_variant_hints (&variant, READOSM_VAR_INT64, 20);
+
+    while (1) {
+       // resetting an empty variant field
+          reset_variant (&variant);
+
+          base = parse_field (start, stop, &variant);
+          if (base == NULL && variant.valid == 0)
+              goto error;
+
+          start = base;
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
+             // the StringTable
+                if (!parse_string_table
+                    (&string_table, variant.pointer,
+                     variant.pointer + variant.str_len - 1,
+                     variant.little_endian_cpu))
+                    goto error;
+                array_from_string_table (&string_table);
+          }
+
+          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
+
+             // the PrimitiveGroup to be parsed
+                if (!parse_primitive_group (
+                    &string_table, variant.pointer,
+                     variant.pointer + variant.str_len - 1,
+                     variant.little_endian_cpu
+                     // , params
+                    ))
+
+                    goto error;
+          }
+
+          if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
+                /* assumed to be a termination marker (???) */
+                break;
+          }
+
+          if (base > stop)
+              break;
+      }
+
+    if (buf != NULL)
+        free (buf);
+    if (raw_ptr != NULL)
+        free (raw_ptr);
+    finalize_variant (&variant);
+    finalize_string_table (&string_table);
+    return 1;
+
+  error:
+    if (buf != NULL)
+        free (buf);
+    if (raw_ptr != NULL)
+        free (raw_ptr);
+    finalize_variant (&variant);
+    finalize_string_table (&string_table);
+    return 0;
+}
+
 int load_osm_pbf(
 
     const char* filename_pbf,
