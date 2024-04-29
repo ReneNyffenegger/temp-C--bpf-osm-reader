@@ -755,6 +755,7 @@ readosm_node_callback        g_cb_nod;
 readosm_way_callback         g_cb_way;
 readosm_relation_callback    g_cb_rel;
 char                         g_little_endian_cpu;
+FILE*                        g_pbf_file;
 
 static unsigned int get_header_size (unsigned char *buf /*, int little_endian_cpu*/) {
 //
@@ -825,7 +826,7 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, r
 }
 
 
-static int skip_osm_header (const readosm_file * input, unsigned int sz) {
+static int skip_osm_header (/*const readosm_file * input, */ unsigned int sz) {
 
 //
 // expecting to retrieve a valid OSMHeader header 
@@ -855,7 +856,7 @@ printf("skip_osm_header, sz = %d\n", sz);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 3);
 
-    rd = fread (buf, 1, sz, input->in);
+    rd = fread (buf, 1, sz, g_pbf_file/*, input->in*/);
     if (rd != sz)
         goto error;
 
@@ -900,7 +901,7 @@ printf("skip_osm_header, sz = %d\n", sz);
     start = buf;
     stop  = buf + hdsz - 1;
 
-    rd = fread (buf, 1, hdsz, input->in);
+    rd = fread (buf, 1, hdsz, g_pbf_file/*, input->in*/);
 
     if ((int) rd != hdsz)
         goto error;
@@ -1932,7 +1933,7 @@ static int parse_primitive_group (
     return 0;
 }
 
-static int parse_osm_data (const readosm_file * input, unsigned int sz) {
+static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
  // expecting to retrieve a valid OSMData header
  //
     int ok_header = 0;
@@ -1964,7 +1965,7 @@ static int parse_osm_data (const readosm_file * input, unsigned int sz) {
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 3);
 
-    rd = fread (buf, 1, sz, input->in);
+    rd = fread (buf, 1, sz, g_pbf_file/*, input->in*/);
     if (rd != sz)
         goto error;
 
@@ -2006,7 +2007,7 @@ static int parse_osm_data (const readosm_file * input, unsigned int sz) {
     base = buf;
     start = buf;
     stop = buf + hdsz - 1;
-    rd = fread (buf, 1, hdsz, input->in);
+    rd = fread (buf, 1, hdsz, g_pbf_file/*input->in*/);
     if ((int) rd != hdsz)
         goto error;
 
@@ -2138,10 +2139,11 @@ static int parse_osm_data (const readosm_file * input, unsigned int sz) {
 
 int parse_osm_pbf (
 
-   const readosm_file       *input,
-   readosm_node_callback     cb_nod,
-   readosm_way_callback      cb_way,
-   readosm_relation_callback cb_rel)
+// const readosm_file       *input,
+// readosm_node_callback     cb_nod,
+// readosm_way_callback      cb_way,
+// readosm_relation_callback cb_rel
+)
 {
 
 // parsing the input file [OSM PBF format]
@@ -2150,18 +2152,18 @@ int parse_osm_pbf (
     unsigned char buf[4];
     unsigned int  hdsz;
 
-    g_cb_nod = cb_nod;
-    g_cb_way = cb_way;
-    g_cb_rel = cb_rel;
+//  g_cb_nod = cb_nod;
+//  g_cb_way = cb_way;
+//  g_cb_rel = cb_rel;
 
  // reading BlobHeader size: OSMHeader */
-    rd = fread (buf, 1, 4, input->in);
+    rd = fread (buf, 1, 4, g_pbf_file);
     if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
     hdsz = get_header_size (buf /*, g_little_endian_cpu*/ /* input->little_endian_cpu */);
 
 /* testing OSMHeader */
-    if (!skip_osm_header (input, hdsz))
+    if (!skip_osm_header (/*input,*/ hdsz))
         return READOSM_INVALID_PBF_HEADER;
 
 /* 
@@ -2170,9 +2172,9 @@ int parse_osm_pbf (
 */
     while (1) {
 
-          rd = fread (buf, 1, 4, input->in);
+          rd = fread (buf, 1, 4, g_pbf_file);
 
-          if (rd == 0 && feof (input->in))
+          if (rd == 0 && feof (g_pbf_file))
               break;
 
           if (rd != 4) return READOSM_INVALID_PBF_HEADER;
@@ -2180,7 +2182,7 @@ int parse_osm_pbf (
           hdsz = get_header_size (buf /*, g_little_endian_cpu */ /* input->little_endian_cpu*/);
 
           /* parsing OSMData */
-          if (!parse_osm_data (input, hdsz /*, &params */))
+          if (!parse_osm_data (/*input,*/ hdsz /*, &params */))
 
               return READOSM_INVALID_PBF_HEADER;
     }

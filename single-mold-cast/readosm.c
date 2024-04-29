@@ -179,15 +179,18 @@ int load_osm_pbf(
     readosm_relation_callback cb_rel
 ) {
 
-    readosm_file *osm_handle;
+//  readosm_file *osm_handle;
 
+    g_cb_nod = cb_nod;
+    g_cb_way = cb_way;
+    g_cb_rel = cb_rel;
 
 //  ret = readosm_open(filename_pbf, /*(const readosm_file**)*/ &osm_handle);
 
 /* allocating and initializing the OSM input file struct */
-    osm_handle = malloc (sizeof (readosm_file));
-    if (!osm_handle)
-        return 999;
+//  osm_handle = malloc (sizeof (readosm_file));
+//  if (!osm_handle)
+//      return 999;
 
 //  input->magic1 = READOSM_MAGIC_START;
 //  input->file_format = format;
@@ -197,13 +200,15 @@ int load_osm_pbf(
 //  osm_handle->magic2 = READOSM_MAGIC_END;
 
 
-    if (! osm_handle)
-        return READOSM_INSUFFICIENT_MEMORY;
+//  if (! osm_handle)
+//      return READOSM_INSUFFICIENT_MEMORY;
 
 //  *osm_handle = input;
 
-    osm_handle->in = fopen(filename_pbf, "rb");
-    if (osm_handle->in == NULL)
+//  osm_handle->in = fopen(filename_pbf, "rb");
+    g_pbf_file = fopen(filename_pbf, "rb");
+
+    if (g_pbf_file == NULL)
         return READOSM_FILE_NOT_FOUND;
 
  // if (ret != READOSM_OK) {
@@ -212,7 +217,7 @@ int load_osm_pbf(
  // }
 
     int ret;
-    ret = parse_osm_pbf(osm_handle,  cb_nod, cb_way, cb_rel);
+    ret = parse_osm_pbf(/*osm_handle,*/  cb_nod, cb_way, cb_rel);
 
 
     if (ret != READOSM_OK) {
@@ -224,10 +229,10 @@ int load_osm_pbf(
 
   stop:
 
-    if (osm_handle->in)
-       fclose (osm_handle->in);
+    if (g_pbf_file)
+       fclose (g_pbf_file);
 
-    free (osm_handle);
+//  free (osm_handle);
 //  destroy_osm_file(osm_handle);
 //  readosm_close (osm_handle);
     return 0;
