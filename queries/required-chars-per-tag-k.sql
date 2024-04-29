@@ -1,7 +1,7 @@
 select
    k,
-   round(count(*) * length(k)/1024/1024,1) req_chars,
-   count(*)
+   printf('%8.3f', round(count(*) * length(k)/1024.0/1024.1,3)) req_chars,
+   printf('%9d', count(*)) cnt
 from
    tag
 group by
@@ -9,4 +9,4 @@ group by
 order by
    count(*) * length(k) desc
 limit
-   100;
+   60;

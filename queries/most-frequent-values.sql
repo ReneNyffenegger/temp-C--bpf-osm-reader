@@ -1,10 +1,10 @@
 select
    count(*) cnt,
-   k
+   v
 from
    tag
 group by
-   k
+   v
 order by
    count(*) desc
 limit 100;
