@@ -1,2 +1,2 @@
-579 rene @ big-dell 17:26:36 ~/github/osm/temp/bpf-osm-reader/single-mold-cast ls -l ~/osm/pbf/ch.db 
+579 rene @ big-dell 17:26:36 ~/github/osm/temp/pbf-osm-reader/single-mold-cast ls -l ~/osm/pbf/ch.db 
 -rw-r--r-- 1 rene rene 7523753984 Apr 28 17:26 /home/rene/osm/pbf/ch.db
