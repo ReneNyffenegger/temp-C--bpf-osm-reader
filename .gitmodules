@@ -1,6 +1,6 @@
 [submodule "clones/OSM-binary"]
-	path = clones/OSM-binary
+	path = v.1/clones/OSM-binary
 	url = https://github.com/scrosby/OSM-binary
 [submodule "clones/tiny-osmpbf"]
-	path = clones/tiny-osmpbf
+	path = v.1/clones/tiny-osmpbf
 	url = https://github.com/tyrasd/tiny-osmpbf
