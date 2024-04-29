@@ -142,36 +142,7 @@ typedef struct /* readosm_variant_struct */ {
 }
 readosm_variant;
 
-typedef struct readosm_string readosm_string;
-/* typedef */ struct /* readosm_string_struct */
-readosm_string
-{
- // a String into a PBF StringTable
-    char *string;               /* pointer to string value (NULL terminated string) */
-//  struct readosm_string_struct *next; /*  supporting linked list */
-           readosm_string        *next; /*  supporting linked list */
-}
-//readosm_string
-;
 
-typedef struct /* readosm_string_table_struct */ {
-
-/* a PBF StringTable
- / 
- / Remark: each PBF compressed block includes a StringTable
- / i.e. a centralized table where any string value used within
- / the compressed block itself appears only one time.
- / This is obviously intended so to minimize storage requirements.
- /
- / Individual objects within the PBF file will never directly
- / encode string values; they'll use instead the corresponding
- / index referencing the appropriate string within the StringTable.
-*/
-    readosm_string *first;      /* pointers supporting a linked list */
-    readosm_string *last;       /* of PBF string objects */
-    int             count;                  /* how many TAG items are there */
-    readosm_string **strings;   /* array of PBF string objects */
-} readosm_string_table;
 
 typedef struct readosm_uint32_struct
 {

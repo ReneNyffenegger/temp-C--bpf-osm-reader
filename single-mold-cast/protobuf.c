@@ -52,18 +52,41 @@
 
 #include <zlib.h>
 
-#if defined(_WIN32) && !defined(__MINGW32__)
-#include "config-msvc.h"
-#else
-// TQ84 #include "config.h"
-#endif
-
 #include "readosm.h"
 #include "readosm_internals.h"
 #include "readosm_protobuf.h"
 
 #define MAX_NODES 1024
 
+
+typedef struct pbf_string_table_elem pbf_string_table_elem;
+struct pbf_string_table_elem
+{
+ // a String into a PBF StringTable
+    char *string;                  // pointer to string value (NULL terminated string)
+          pbf_string_table_elem    *next; //  supporting linked lis
+}
+;
+
+typedef struct {
+
+// a PBF StringTable
+// 
+// Remark: each PBF compressed block includes a StringTable
+// i.e. a centralized table where any string value used within
+// the compressed block itself appears only one time.
+// This is obviously intended so to minimize storage requirements.
+//
+// Individual objects within the PBF file will never directly
+// encode string values; they'll use instead the corresponding
+// index referencing the appropriate string within the StringTable.
+//
+    pbf_string_table_elem  *first;      /* pointers supporting a linked list */
+    pbf_string_table_elem  *last;       /* of PBF string objects */
+    int              count;                  /* how many TAG items are there */
+    pbf_string_table_elem **strings;   /* array of PBF string objects */
+
+} readosm_string_table;
 
 typedef union /* readosm_endian4_union */ {
 
@@ -206,7 +229,7 @@ static void append_string_to_table (readosm_string_table * string_table,
                         readosm_variant * variant)
 {
 /* appending a string to a PBF StringTable object */
-    readosm_string *string = malloc (sizeof (readosm_string));
+    pbf_string_table_elem *string = malloc (sizeof (pbf_string_table_elem));
     string->string = malloc (variant->str_len + 1);
     memcpy (string->string, variant->pointer, variant->str_len);
     *(string->string + variant->str_len) = '\0';
@@ -218,12 +241,11 @@ static void append_string_to_table (readosm_string_table * string_table,
     string_table->last = string;
 }
 
-static void
-array_from_string_table (readosm_string_table * string_table)
-{
+static void array_from_string_table (readosm_string_table * string_table) {
+
 /* creating a pointer array supporting a StringTable object */
     int i;
-    readosm_string *string = string_table->first;
+    pbf_string_table_elem *string = string_table->first;
     while (string != NULL)
       {
           /* counting how many strings are into the table */
@@ -235,7 +257,7 @@ array_from_string_table (readosm_string_table * string_table)
 
 /* allocating the pointer array */
     string_table->strings =
-        malloc (sizeof (readosm_string *) * string_table->count);
+        malloc (sizeof (pbf_string_table_elem *) * string_table->count);
     i = 0;
     string = string_table->first;
     while (string != NULL)
@@ -251,8 +273,8 @@ static void
 finalize_string_table (readosm_string_table * string_table)
 {
 /* cleaning any memory allocation for a StringTable object */
-    readosm_string *string;
-    readosm_string *string_n;
+    pbf_string_table_elem *string;
+    pbf_string_table_elem *string_n;
     string = string_table->first;
     while (string)
       {
@@ -1242,7 +1264,7 @@ static int parse_pbf_nodes (
                             if (s_id > 0)
                               {
                                   /* retrieving user-names as strings (by index) */
-                                  readosm_string *s_ptr =
+                                  pbf_string_table_elem *s_ptr =
                                       *(strings->strings + s_id);
                                   int len = strlen (s_ptr->string);
                                   if (nd->user != NULL)
@@ -1266,13 +1288,13 @@ static int parse_pbf_nodes (
                               }
                             if (key == NULL)
                               {
-                                  readosm_string *s_ptr =
+                                  pbf_string_table_elem *s_ptr =
                                       *(strings->strings + is);
                                   key = s_ptr->string;
                               }
                             else
                               {
-                                  readosm_string *s_ptr =
+                                  pbf_string_table_elem *s_ptr =
                                       *(strings->strings + is);
                                   value = s_ptr->string;
                                   append_tag_to_node (nd, key, value);
@@ -1422,7 +1444,7 @@ static int parse_pbf_way_info (
                 userid = variant.value.int32_value;
                 if (userid > 0 && userid < strings->count)
                   {
-                      readosm_string *string = *(strings->strings + userid);
+                      pbf_string_table_elem *string = *(strings->strings + userid);
                       int len = strlen (string->string);
                       way->user = malloc (len + 1);
                       strcpy (way->user, string->string);
@@ -1543,8 +1565,8 @@ static int parse_pbf_way (readosm_string_table * strings,
             {
                 int i_key = *(packed_keys.values + i);
                 int i_val = *(packed_values.values + i);
-                readosm_string *s_key = *(strings->strings + i_key);
-                readosm_string *s_value = *(strings->strings + i_val);
+                pbf_string_table_elem *s_key = *(strings->strings + i_key);
+                pbf_string_table_elem *s_value = *(strings->strings + i_val);
                 append_tag_to_way (way, s_key->string, s_value->string);
             }
       }
@@ -1645,7 +1667,7 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
                 userid = variant.value.int32_value;
                 if (userid > 0 && userid < strings->count)
                   {
-                      readosm_string *string = *(strings->strings + userid);
+                      pbf_string_table_elem *string = *(strings->strings + userid);
                       int len = strlen (string->string);
                       relation->user = malloc (len + 1);
                       strcpy (relation->user, string->string);
@@ -1775,8 +1797,8 @@ static int parse_pbf_relation (readosm_string_table * strings,
             {
                 int i_key = *(packed_keys.values + i);
                 int i_val = *(packed_values.values + i);
-                readosm_string *s_key = *(strings->strings + i_key);
-                readosm_string *s_value = *(strings->strings + i_val);
+                pbf_string_table_elem *s_key = *(strings->strings + i_key);
+                pbf_string_table_elem *s_value = *(strings->strings + i_val);
                 append_tag_to_relation (relation, s_key->string, s_value->string);
             }
       }
@@ -1789,7 +1811,7 @@ static int parse_pbf_relation (readosm_string_table * strings,
           for (i = 0; i < packed_roles.count; i++) {
                 int xtype = READOSM_UNDEFINED;
                 int i_role = *(packed_roles.values + i);
-                readosm_string *s_role = *(strings->strings + i_role);
+                pbf_string_table_elem *s_role = *(strings->strings + i_role);
                 int type = *(packed_types.values + i);
                 delta += *(packed_refs.values + i);
 

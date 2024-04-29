@@ -48,22 +48,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(_WIN32) && !defined(__MINGW32__)
-#include "config-msvc.h"
-#else
-// #include "config.h"
-#endif
-
 #include "readosm.h"
 #include "protobuf.c"
 #include "osm_objects.c"
 
 #include "readosm.h"
 #include "readosm_internals.h"
-
-#ifdef _WIN32
-#define strcasecmp      _stricmp
-#endif /* not WIN32 */
 
 // #include "endian.c"
 //
@@ -172,19 +162,19 @@ static int test_endianness () {
 
 static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
  // expecting to retrieve a valid OSMData header
- //
+
     int ok_header = 0;
-    int hdsz = 0;
+    int hdsz      = 0;
     size_t   rd;
-    unsigned char *buf = malloc (sz);
-    unsigned char *base = buf;
-    unsigned char *start = buf;
-    unsigned char *stop = buf + sz - 1;
+    unsigned char *buf     = malloc (sz);
+    unsigned char *base    = buf;
+    unsigned char *start   = buf;
+    unsigned char *stop    = buf + sz - 1;
     unsigned char *zip_ptr = NULL;
     int zip_sz = 0;
-    unsigned char *raw_ptr = NULL;
-    int raw_sz = 0;
-    readosm_variant variant;
+    unsigned char       *raw_ptr = NULL;
+    int                  raw_sz = 0;
+    readosm_variant      variant;
     readosm_string_table string_table;
 
     printf("  parse_osm_data\n");
