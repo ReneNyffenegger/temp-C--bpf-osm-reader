@@ -114,34 +114,6 @@ typedef struct readosm_variant_hint_struct {
 readosm_variant_hint;
 
 
-typedef struct /* readosm_variant_struct */ {
-
- // a PBF Variant type wrapper
-
-    char          little_endian_cpu;     // actual CPU endianness
-
-    unsigned char type;         // current type
-    unsigned char field_id;     // field ID
-
-    union variant_value {
-
-        int                 int32_value;
-        unsigned int       uint32_value;
-        long long           int64_value;
-        unsigned long long uint64_value;
-        float               float_value;
-        double             double_value;
-    }
-    value;                      // The VARIANT value
-
-    size_t                str_len;     // length in bytes [for strings]
-    unsigned char        *pointer;     // pointer to String value
-    char                  valid;       // valid value
-    readosm_variant_hint *first;       // pointers supporting a linked list
-    readosm_variant_hint *last;        // of VariantHints items
-}
-readosm_variant;
-
 
 
 typedef struct readosm_uint32_struct

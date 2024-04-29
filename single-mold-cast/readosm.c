@@ -160,21 +160,23 @@ static int test_endianness () {
 // }
 
 
-static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
+static int parse_osm_data (unsigned int sz) {
+ //
  // expecting to retrieve a valid OSMData header
+ //
 
     int ok_header = 0;
     int hdsz      = 0;
-    size_t   rd;
-    unsigned char *buf     = malloc (sz);
-    unsigned char *base    = buf;
-    unsigned char *start   = buf;
-    unsigned char *stop    = buf + sz - 1;
-    unsigned char *zip_ptr = NULL;
-    int zip_sz = 0;
+    size_t               rd;
+    unsigned char       *buf     = malloc (sz);
+    unsigned char       *base    = buf;
+    unsigned char       *start   = buf;
+    unsigned char       *stop    = buf + sz - 1;
+    unsigned char       *zip_ptr = NULL;
+    int                  zip_sz  = 0;
     unsigned char       *raw_ptr = NULL;
-    int                  raw_sz = 0;
-    readosm_variant      variant;
+    int                  raw_sz  = 0;
+    pbf_field            variant;
 
 
     printf("  parse_osm_data\n");
@@ -189,8 +191,8 @@ static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
        readosm_string_table string_table;
        string_table.first_string   = NULL;
        string_table.last_string    = NULL;
-       string_table.count   =    0;
-       string_table.strings = NULL;
+       string_table.count          =    0;
+       string_table.strings        = NULL;
 // }
 
 
@@ -204,7 +206,11 @@ static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
     if (rd != sz)
         goto error;
 
-// reading the OSMData header
+     //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
+
+ //
+ // reading the OSMData header
+ //
     while (1) {
           printf("  iterating\n");
 
@@ -292,10 +298,13 @@ static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
     if (raw_ptr == NULL || raw_sz == 0)
         goto error;
 
-// parsing the PrimitiveBlock
-    base = raw_ptr;
+     //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
+
+ // parsing the PrimitiveBlock
+
+    base  = raw_ptr;
     start = raw_ptr;
-    stop = raw_ptr + raw_sz - 1;
+    stop  = raw_ptr + raw_sz - 1;
     finalize_variant (&variant);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
@@ -341,7 +350,7 @@ static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
           }
 
           if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
-                /* assumed to be a termination marker (???) */
+             // assumed to be a termination marker (???)
                 break;
           }
 

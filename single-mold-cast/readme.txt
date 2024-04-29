@@ -5,6 +5,9 @@ OSM PBF Format
      - and an application-generic part at ==> https://github.com/openstreetmap/OSM-binary
 
 
+   https://github.com/osmandapp/OsmAnd-resources/blob/master/protos/osmformat.proto 
+
+
 QuadTile
 --------
   QuadTiles are a geo-data storage/indexing strategy 

@@ -59,6 +59,43 @@
 #define MAX_NODES 1024
 
 
+typedef struct {
+
+ // a PBF Variant type wrapper
+
+    char          little_endian_cpu;     // actual CPU endianness
+
+
+//
+// A PBF field is prefixed by a single byte which 
+// stores both the FIELD ID (n bits )and the the FIELD type (8-n bites)
+// The function parse_field() splits the byte and assigns it to the following
+// two bytes:
+// 
+
+    unsigned char type;         // current type
+    unsigned char field_id;     // field ID
+
+    union variant_value {
+
+        int                 int32_value;
+        unsigned int       uint32_value;
+        long long           int64_value;
+        unsigned long long uint64_value;
+        float               float_value;
+        double             double_value;
+    }
+    value;                      // The VARIANT value
+
+    size_t                str_len;     // length in bytes [for strings]
+    unsigned char        *pointer;     // pointer to String value
+    char                  valid;       // valid value
+    readosm_variant_hint *first;       // pointers supporting a linked list
+    readosm_variant_hint *last;        // of VariantHints items
+}
+pbf_field;
+
+
 typedef struct pbf_string_table_elem pbf_string_table_elem;
 struct pbf_string_table_elem
 {
@@ -120,7 +157,7 @@ typedef union /* readosm_endian8_union */ {
 //     int stop;
 // } pbf_params;
 
-static void init_variant (readosm_variant * variant, int little_endian_cpu) {
+static void init_variant (pbf_field * variant, int little_endian_cpu) {
 
  // initializing an empty PBF Variant object
 
@@ -134,7 +171,7 @@ static void init_variant (readosm_variant * variant, int little_endian_cpu) {
     variant->last              = NULL;
 }
 
-static void reset_variant (readosm_variant * variant) {
+static void reset_variant (pbf_field * variant) {
 
  // resetting a PBF Variant object to its initial empty state */
     variant->type     = READOSM_VAR_UNDEFINED;
@@ -145,7 +182,7 @@ static void reset_variant (readosm_variant * variant) {
 }
 
 static void add_variant_hints (
-   readosm_variant * variant,
+   pbf_field * variant,
    unsigned char     expected_type,
    unsigned char     field_id)
 {
@@ -164,7 +201,7 @@ static void add_variant_hints (
 }
 
 static int
-find_type_hint (readosm_variant * variant, unsigned char field_id,
+find_type_hint (pbf_field * variant, unsigned char field_id,
                 unsigned char type, unsigned char *type_hint)
 {
 /* attempting to find the type hint for some PBF Variant field */
@@ -204,7 +241,7 @@ find_type_hint (readosm_variant * variant, unsigned char field_id,
     return 0;
 }
 
-static void finalize_variant (readosm_variant * variant) {
+static void finalize_variant (pbf_field * variant) {
 /* cleaning any memory allocation for a PBF Variant object */
     readosm_variant_hint *hint;
     readosm_variant_hint *hint_n;
@@ -229,7 +266,7 @@ static void finalize_variant (readosm_variant * variant) {
 
 static void append_string_to_table (
    readosm_string_table *string_table,
-   readosm_variant      *variant
+   pbf_field      *variant
 )
 {
  //
@@ -254,11 +291,11 @@ static void array_from_string_table (readosm_string_table * string_table) {
 // creating a pointer array supporting a StringTable object
 //
     int i;
-    pbf_string_table_elem *string = string_table->first_string;
-    while (string != NULL) {
+    pbf_string_table_elem *string_elem = string_table->first_string;
+    while (string_elem != NULL) {
        // counting how many strings are into the table
           string_table->count++;
-          string      = string->next_string;
+          string_elem      = string_elem->next_string;
     }
     if (string_table->count <= 0)
         return;
@@ -267,40 +304,41 @@ static void array_from_string_table (readosm_string_table * string_table) {
     string_table->strings = malloc (sizeof (pbf_string_table_elem *) * string_table->count);
 
     i = 0;
-    string = string_table->first_string;
-    while (string != NULL) {
+    string_elem = string_table->first_string;
+    while (string_elem != NULL) {
        // setting up pointers to strings */
-         *(string_table->strings + i) = string;
+         *(string_table->strings + i) = string_elem;
           i++;
-          string = string->next_string;
+          string_elem = string_elem->next_string;
     }
 }
 
 static void finalize_string_table (readosm_string_table * string_table) {
 
-/* cleaning any memory allocation for a StringTable object */
+ // cleaning any memory allocation for a StringTable object */
+ //
     pbf_string_table_elem *string;
     pbf_string_table_elem *string_n;
     string = string_table->first_string;
-    while (string)
-      {
+
+    while (string) {
           string_n = string->next_string;
           if (string->string)
               free (string->string);
           free (string);
           string = string_n;
-      }
+    }
+
     if (string_table->strings)
         free (string_table->strings);
 }
 
-static void
-init_uint32_packed (readosm_uint32_packed * packed)
-{
-/* initialing an empty PBF uint32 packed object */
-    packed->first = NULL;
-    packed->last = NULL;
-    packed->count = 0;
+static void init_uint32_packed (readosm_uint32_packed * packed) {
+
+// initialing an empty PBF uint32 packed object
+    packed->first  = NULL;
+    packed->last   = NULL;
+    packed->count  = 0;
     packed->values = NULL;
 }
 
@@ -533,7 +571,7 @@ static void finalize_packed_infos (readosm_packed_infos * packed) {
     if (packed->users     ) free (packed->users     );
 }
 
-static unsigned char * read_var (unsigned char *start, unsigned char *stop, readosm_variant *variant) {
+static unsigned char * read_var (unsigned char *start, unsigned char *stop, pbf_field *variant) {
 
 /* 
  / attempting to read a variable length base128 int 
@@ -666,7 +704,7 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, read
     return NULL;
 }
 
-static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, readosm_variant * variant) {
+static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, pbf_field * variant) {
  /* 
  / attempting to read some bytes from PBF
  / Strings and alike are encoded in PBF using a two steps approach:
@@ -674,7 +712,7 @@ static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, re
  / - then the string (no terminating NULL char) follows
 */
     unsigned char *ptr = start;
-    readosm_variant varlen;
+    pbf_field varlen;
     unsigned int len;
 
 /* initializing an empty variant field (length) */
@@ -700,7 +738,7 @@ static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *s
 
  // parsing a uint32 packed object
     unsigned char *ptr = start;
-    readosm_variant variant;
+    pbf_field variant;
 
  // initializing an empty variant field (length) 
     init_variant (&variant, little_endian_cpu);
@@ -724,7 +762,7 @@ static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *s
 static int parse_sint32_packed (readosm_int32_packed * packed, unsigned char *start, unsigned char *stop, char little_endian_cpu) {
 /* parsing an int32 packed object */
     unsigned char *ptr = start;
-    readosm_variant variant;
+    pbf_field variant;
 
 /* initializing an empty variant field (length) */
     init_variant (&variant, little_endian_cpu);
@@ -755,7 +793,7 @@ static int parse_sint64_packed (
  // parsing a sint64 packed object
  //
     unsigned char *ptr = start;
-    readosm_variant variant;
+    pbf_field variant;
 
  //
  // initializing an empty variant field (length) */
@@ -808,7 +846,7 @@ static unsigned int get_header_size (unsigned char *buf /*, int little_endian_cp
     return four_bytes.uint32_value;
 }
 
-static unsigned char * parse_field (unsigned char *start, unsigned char *stop, readosm_variant * variant) {
+static unsigned char * parse_field (unsigned char *start, unsigned char *stop, pbf_field * variant) {
 
  // attempting to parse a variant field
     unsigned char *ptr = start;
@@ -873,7 +911,7 @@ printf("skip_osm_header, sz = %d\n", sz);
     unsigned char *base  = buf;
     unsigned char *start = buf;
     unsigned char *stop  = buf + sz - 1;
-    readosm_variant variant;
+    pbf_field variant;
 
     if (buf == NULL)
         goto error;
@@ -984,7 +1022,7 @@ parse_string_table (readosm_string_table * string_table,
  / encode string values; they'll use instead the corresponding
  / index referencing the appropriate string within the StringTable.
 */
-    readosm_variant variant;
+    pbf_field variant;
     unsigned char *base = start;
 
 /* initializing an empty variant field */
@@ -1036,7 +1074,7 @@ static int parse_pbf_node_infos (
  / and individual values are usually encoded as DELTAs,
  / i.e. differences respect the immediately preceding value.
 */
-    readosm_variant variant;
+    pbf_field variant;
     unsigned char *base = start;
     readosm_uint32_packed packed_u32;
     readosm_uint32 *pu32;
@@ -1120,7 +1158,7 @@ static int parse_pbf_nodes (
  / any 0 value means that the current Node stops: next index
  / will be a key-index for the next Node item
 */
-    readosm_variant       variant;
+    pbf_field       variant;
     unsigned char *base = start;
     readosm_uint32_packed  packed_keys;
     readosm_int64_packed   packed_ids;
@@ -1382,7 +1420,7 @@ static int parse_pbf_way_info (
 
  // attempting to parse a valid PBF Way-Info 
 
-    readosm_variant variant;
+    pbf_field variant;
     unsigned char *base = start;
 
 /* initializing an empty variant field */
@@ -1475,7 +1513,7 @@ static int parse_pbf_way (readosm_string_table * strings,
                )
 {
 /* attempting to parse a valid PBF Way */
-    readosm_variant variant;
+    pbf_field variant;
     unsigned char *base = start;
     readosm_uint32_packed packed_keys;
     readosm_uint32_packed packed_values;
@@ -1612,7 +1650,7 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
                          unsigned char *stop, char little_endian_cpu)
 {
 /* attempting to parse a valid PBF RelationInfo */
-    readosm_variant variant;
+    pbf_field variant;
     unsigned char *base = start;
 
 /* initializing an empty variant field */
@@ -1699,7 +1737,7 @@ static int parse_pbf_relation (
 {
 
  // attempting to parse a valid PBF Relation
-    readosm_variant variant;
+    pbf_field variant;
     unsigned char *base = start;
     readosm_uint32_packed packed_keys;
     readosm_uint32_packed packed_values;
@@ -1832,7 +1870,7 @@ static int parse_primitive_group (
 // - WAYs
 // - RELATIONs
 //
-    readosm_variant variant;
+    pbf_field variant;
     unsigned char *base = start;
 
 /* initializing an empty variant field */
