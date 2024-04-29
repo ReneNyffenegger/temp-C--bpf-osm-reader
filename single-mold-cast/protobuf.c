@@ -63,8 +63,8 @@ typedef struct pbf_string_table_elem pbf_string_table_elem;
 struct pbf_string_table_elem
 {
  // a String into a PBF StringTable
-    char *string;                  // pointer to string value (NULL terminated string)
-          pbf_string_table_elem    *next; //  supporting linked lis
+    char                     *string;      // pointer to string value (NULL terminated string)
+    pbf_string_table_elem    *next_string; //  supporting linked lis
 }
 ;
 
@@ -81,10 +81,12 @@ typedef struct {
 // encode string values; they'll use instead the corresponding
 // index referencing the appropriate string within the StringTable.
 //
-    pbf_string_table_elem  *first;      /* pointers supporting a linked list */
-    pbf_string_table_elem  *last;       /* of PBF string objects */
-    int              count;                  /* how many TAG items are there */
-    pbf_string_table_elem **strings;   /* array of PBF string objects */
+    pbf_string_table_elem  *first_string;      // pointers supporting a linked list */
+    pbf_string_table_elem  *last_string;       // of PBF string objects */
+
+    int                     count;             // how many TAG items are there --- TODO: this is likely the number of strings!
+
+    pbf_string_table_elem **strings;           // array of PBF string objects (See array_from_string_table() )
 
 } readosm_string_table;
 
@@ -217,68 +219,72 @@ static void finalize_variant (readosm_variant * variant) {
     variant->last = NULL;
 }
 
-static void init_string_table (readosm_string_table * string_table) {
-/* initializing an empty PBF StringTable object */
-    string_table->first = NULL;
-    string_table->last = NULL;
-    string_table->count = 0;
-    string_table->strings = NULL;
-}
+// static void init_string_table (readosm_string_table * string_table) {
+// /* initializing an empty PBF StringTable object */
+//     string_table->first = NULL;
+//     string_table->last = NULL;
+//     string_table->count = 0;
+//     string_table->strings = NULL;
+// }
 
-static void append_string_to_table (readosm_string_table * string_table,
-                        readosm_variant * variant)
+static void append_string_to_table (
+   readosm_string_table *string_table,
+   readosm_variant      *variant
+)
 {
-/* appending a string to a PBF StringTable object */
+ //
+ // Append a string to a PBF StringTable object
+ //
+ 
     pbf_string_table_elem *string = malloc (sizeof (pbf_string_table_elem));
     string->string = malloc (variant->str_len + 1);
     memcpy (string->string, variant->pointer, variant->str_len);
     *(string->string + variant->str_len) = '\0';
-    string->next = NULL;
-    if (string_table->first == NULL)
-        string_table->first = string;
-    if (string_table->last != NULL)
-        string_table->last->next = string;
-    string_table->last = string;
+
+    string->next_string = NULL;
+
+    if (string_table->first_string == NULL) string_table->first_string             = string;
+    if (string_table->last_string  != NULL) string_table->last_string->next_string = string;
+
+    string_table->last_string = string;
 }
 
 static void array_from_string_table (readosm_string_table * string_table) {
-
-/* creating a pointer array supporting a StringTable object */
+//
+// creating a pointer array supporting a StringTable object
+//
     int i;
-    pbf_string_table_elem *string = string_table->first;
-    while (string != NULL)
-      {
-          /* counting how many strings are into the table */
+    pbf_string_table_elem *string = string_table->first_string;
+    while (string != NULL) {
+       // counting how many strings are into the table
           string_table->count++;
-          string = string->next;
-      }
+          string      = string->next_string;
+    }
     if (string_table->count <= 0)
         return;
 
-/* allocating the pointer array */
-    string_table->strings =
-        malloc (sizeof (pbf_string_table_elem *) * string_table->count);
+// allocating the pointer array
+    string_table->strings = malloc (sizeof (pbf_string_table_elem *) * string_table->count);
+
     i = 0;
-    string = string_table->first;
-    while (string != NULL)
-      {
-          /* setting up pointers to strings */
-          *(string_table->strings + i) = string;
+    string = string_table->first_string;
+    while (string != NULL) {
+       // setting up pointers to strings */
+         *(string_table->strings + i) = string;
           i++;
-          string = string->next;
-      }
+          string = string->next_string;
+    }
 }
 
-static void
-finalize_string_table (readosm_string_table * string_table)
-{
+static void finalize_string_table (readosm_string_table * string_table) {
+
 /* cleaning any memory allocation for a StringTable object */
     pbf_string_table_elem *string;
     pbf_string_table_elem *string_n;
-    string = string_table->first;
+    string = string_table->first_string;
     while (string)
       {
-          string_n = string->next;
+          string_n = string->next_string;
           if (string->string)
               free (string->string);
           free (string);

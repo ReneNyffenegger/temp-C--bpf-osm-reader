@@ -175,7 +175,7 @@ static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
     unsigned char       *raw_ptr = NULL;
     int                  raw_sz = 0;
     readosm_variant      variant;
-    readosm_string_table string_table;
+
 
     printf("  parse_osm_data\n");
 
@@ -183,7 +183,15 @@ static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
         goto error;
 
  // initializing an empty string list
-    init_string_table (&string_table);
+//     init_string_table (&string_table);
+//     static void init_string_table (readosm_string_table * string_table) {
+   /* initializing an empty PBF StringTable object */
+       readosm_string_table string_table;
+       string_table.first_string   = NULL;
+       string_table.last_string    = NULL;
+       string_table.count   =    0;
+       string_table.strings = NULL;
+// }
 
 
  // initializing an empty variant field
@@ -306,12 +314,16 @@ static int parse_osm_data (/*const readosm_file * input,*/ unsigned int sz) {
 
           start = base;
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
+
              // the StringTable
-                if (!parse_string_table
-                    (&string_table, variant.pointer,
+                if (!parse_string_table (
+                     &string_table,
+                     variant.pointer,
                      variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu))
-                    goto error;
+                     variant.little_endian_cpu
+                   ))
+                   goto error;
+
                 array_from_string_table (&string_table);
           }
 
