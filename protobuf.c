@@ -593,7 +593,7 @@ static void finalize_packed_infos (readosm_packed_infos * packed) {
     if (packed->users     ) free (packed->users     );
 }
 
-static unsigned char * read_var (unsigned char *start, unsigned char *stop, pbf_field *variant) {
+static unsigned char * read_integer_pbf_field (unsigned char *start, unsigned char *stop, pbf_field *variant) {
 
 /* 
  / attempting to read a variable length base128 int 
@@ -627,8 +627,11 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, pbf_
     int neg;
 
     while (1) {
-          if (ptr > stop)
+
+          if (ptr > stop) {
+              wrong_assumption("read_integer_pbf_field, ptr > stop");
               return NULL;
+          }
 
           c = *ptr++;
           if ((c & 0x80) == 0x80)
@@ -726,7 +729,7 @@ static unsigned char * read_var (unsigned char *start, unsigned char *stop, pbf_
     return NULL;
 }
 
-static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, pbf_field * variant) {
+static unsigned char * read_bytes_pbf_field (unsigned char *start, unsigned char *stop, pbf_field * variant) {
  /* 
  / attempting to read some bytes from PBF
  / Strings and alike are encoded in PBF using a two steps approach:
@@ -741,7 +744,7 @@ static unsigned char * read_bytes (unsigned char *start, unsigned char *stop, pb
     init_variant (&varlen, variant->little_endian_cpu);
     varlen.type = READOSM_VAR_UINT32;
 
-    ptr = read_var (ptr, stop, &varlen);
+    ptr = read_integer_pbf_field (ptr, stop, &varlen);
 
     if (varlen.valid) {
           len = varlen.value.uint32_value;
@@ -767,7 +770,7 @@ static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *s
     variant.type = READOSM_VAR_UINT32;
 
     while (1) {
-       ptr = read_var (start, stop, &variant);
+       ptr = read_integer_pbf_field (start, stop, &variant);
        if (variant.valid) {
              append_uint32_packed (packed, variant.value.uint32_value);
              if (ptr > stop)
@@ -791,7 +794,7 @@ static int parse_sint32_packed (readosm_int32_packed * packed, unsigned char *st
     variant.type = READOSM_VAR_SINT32;
 
     while (1) {
-          ptr = read_var (start, stop, &variant);
+          ptr = read_integer_pbf_field (start, stop, &variant);
           if (variant.valid) {
                 append_int32_packed (packed, variant.value.int32_value);
                 if (ptr > stop)
@@ -823,7 +826,7 @@ static int parse_sint64_packed (
     variant.type = READOSM_VAR_SINT64;
 
     while (1) {
-       ptr = read_var (start, stop, &variant);
+       ptr = read_integer_pbf_field (start, stop, &variant);
 
        if (variant.valid) {
           append_int64_packed (packed, variant.value.int64_value);
@@ -867,9 +870,13 @@ static unsigned int get_header_size (unsigned char *buf /*, int little_endian_cp
     return four_bytes.uint32_value;
 }
 
-static unsigned char * parse_field (unsigned char *start, unsigned char *stop, pbf_field * variant) {
+static unsigned char *parse_field (
+   unsigned char *start,
+   unsigned char *stop,
+   pbf_field * fld
+  ) {
 
- // attempting to parse a variant field
+ // attempting to parse a fld field
     unsigned char *ptr = start;
     unsigned char  type;
     unsigned char  field_id;
@@ -888,18 +895,18 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, p
 
    #ifdef TQ84_USE_PBF_FIELD_HINTS
 /* attempting to identify the field accordingly to declared hints */
-    if (!find_type_hint (variant, field_id, type, &type_hint)) {
+    if (!find_type_hint (fld, field_id, type, &type_hint)) {
         wrong_assumption("find_type_hint returned 0");
         return NULL;
     }
    #endif
 
-    variant->type = type_hint;
-    variant->field_id = field_id;
+    fld->type     = type_hint;
+    fld->field_id = field_id;
     ptr++;
 
 /* parsing the field value */
-    switch (variant->type) {
+    switch (fld->type) {
 
       case READOSM_VAR_INT32:
       case READOSM_VAR_INT64:
@@ -907,10 +914,10 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, p
       case READOSM_VAR_UINT64:
       case READOSM_VAR_SINT32:
       case READOSM_VAR_SINT64:
-           return read_var (ptr, stop, variant);
+           return read_integer_pbf_field (ptr, stop, fld);
 
       case READOSM_LEN_BYTES:
-           return read_bytes (ptr, stop, variant);
+           return read_bytes_pbf_field (ptr, stop, fld);
 
     };
     return NULL;
