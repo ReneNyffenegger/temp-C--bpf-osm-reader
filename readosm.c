@@ -150,7 +150,7 @@ static int parse_osm_data (unsigned int sz) {
        // resetting an empty variant field
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
 
           if (base == NULL && variant.valid == 0)
               goto error;
@@ -196,7 +196,7 @@ static int parse_osm_data (unsigned int sz) {
        // resetting an empty variant field
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
 
@@ -253,7 +253,7 @@ static int parse_osm_data (unsigned int sz) {
        // resetting an empty variant field
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
 
@@ -366,7 +366,7 @@ static int skip_osm_header (unsigned int sz) {
        // resetting an empty fld field
           reset_variant (&fld);
 
-          base = parse_field (start, stop, &fld);
+          base = read_pbf_field (start, stop, &fld);
           if (base == NULL && fld.valid == 0)
               goto error;
 
