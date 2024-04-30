@@ -58,12 +58,13 @@
 
 #define MAX_NODES 1024
 
-typedef struct readosm_variant_hint_struct {
+typedef struct pbf_field_hint pbf_field_hint;
+struct pbf_field_hint {
     unsigned char field_id;
     unsigned char expected_type;
-    struct        readosm_variant_hint_struct *next;   // Linked list
+    struct        pbf_field_hint *next;   // Linked list
 }
-readosm_variant_hint;
+;
 
 
 typedef struct {
@@ -99,8 +100,8 @@ typedef struct {
     char                  valid;       // valid value
 
    #ifdef TQ84_USE_PBF_FIELD_HINTS
-    readosm_variant_hint *first_hint;  // pointers supporting a linked list
-    readosm_variant_hint *last_hint;   // of VariantHints items
+    pbf_field_hint *first_hint;  // pointers supporting a linked list
+    pbf_field_hint *last_hint;   // of VariantHints items
    #endif
 }
 pbf_field;
@@ -204,7 +205,7 @@ static void add_variant_hints (
  //
  // adding a field hint to a PBF Variant object
  //
-    readosm_variant_hint *hint = malloc (sizeof (readosm_variant_hint));
+    pbf_field_hint *hint = malloc (sizeof (pbf_field_hint));
     hint->expected_type = expected_type;
     hint->field_id      = field_id;
     hint->next = NULL;
@@ -225,7 +226,7 @@ static int find_type_hint (
 {
 // attempting to find the type hint for some PBF Variant field */
 //
-    readosm_variant_hint *hint = variant->first_hint;
+    pbf_field_hint *hint = variant->first_hint;
     while (hint) {
       if (hint->field_id == field_id) {
 
@@ -261,8 +262,8 @@ static int find_type_hint (
 #ifdef TQ84_USE_PBF_FIELD_HINTS
 static void finalize_variant (pbf_field * variant) {
 /* cleaning any memory allocation for a PBF Variant object */
-    readosm_variant_hint *hint;
-    readosm_variant_hint *hint_n;
+    pbf_field_hint *hint;
+    pbf_field_hint *hint_n;
     hint = variant->first_hint;
 
     while (hint) {
