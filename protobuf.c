@@ -79,7 +79,7 @@ typedef struct {
 //
 // A PBF field is prefixed by a single byte which 
 // stores both the FIELD ID (n bits )and the the FIELD type (8-n bites)
-// The function parse_field() splits the byte and assigns it to the following
+// The function read_pbf_field() splits the byte and assigns it to the following
 // two bytes:
 // 
 
@@ -870,7 +870,7 @@ static unsigned int get_header_size (unsigned char *buf /*, int little_endian_cp
     return four_bytes.uint32_value;
 }
 
-static unsigned char *parse_field (
+static unsigned char *read_pbf_field (
    unsigned char *start,
    unsigned char *stop,
    pbf_field * fld
@@ -977,7 +977,7 @@ parse_string_table (readosm_string_table * string_table,
           /* resetting an empty variant field */
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
           start = base;
@@ -1052,7 +1052,7 @@ static int parse_pbf_node_infos (
        // resetting an empty variant field */
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
 
@@ -1146,7 +1146,7 @@ static int parse_pbf_nodes (
           /* resetting an empty variant field */
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
 
           if (base == NULL && variant.valid == 0)
               goto error;
@@ -1399,7 +1399,7 @@ static int parse_pbf_way_info (
        // resetting an empty variant field */
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
 
@@ -1506,7 +1506,7 @@ static int parse_pbf_way (readosm_string_table * strings,
           /* resetting an empty variant field */
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
           start = base;
@@ -1641,7 +1641,7 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
           /* resetting an empty variant field */
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
           start = base;
@@ -1748,7 +1748,7 @@ static int parse_pbf_relation (
           /* resetting an empty variant field */
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
           start = base;
@@ -1874,7 +1874,7 @@ static int parse_primitive_group (
        // resetting an empty variant field
           reset_variant (&variant);
 
-          base = parse_field (start, stop, &variant);
+          base = read_pbf_field (start, stop, &variant);
           if (base == NULL && variant.valid == 0)
               goto error;
 
