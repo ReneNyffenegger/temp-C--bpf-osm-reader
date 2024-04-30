@@ -91,7 +91,7 @@ static int test_endianness () {
 }
 
 
-static int parse_osm_data (unsigned int sz) {
+static int read_osm_data_block (unsigned int sz) {
  //
  // expecting to retrieve a valid OSMData header
  //
@@ -110,7 +110,7 @@ static int parse_osm_data (unsigned int sz) {
     pbf_field            variant;
 
 
-    verbose_1("  parse_osm_data\n");
+    verbose_1("  read_osm_data_block\n");
 
     if (buf == NULL)
         goto error;
@@ -145,7 +145,7 @@ static int parse_osm_data (unsigned int sz) {
  // reading the OSMData header
  //
     while (1) {
-          verbose_1("  iterating (parse_osm_data)\n");
+          verbose_1("    iterating (read_osm_data_block)\n");
 
        // resetting an empty variant field
           reset_variant (&variant);
@@ -158,13 +158,13 @@ static int parse_osm_data (unsigned int sz) {
           start = base;
 
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 7) {
-                verbose_1("     field_id = 1\n");
+                verbose_1("       field_id = 1\n");
                 if (memcmp (variant.pointer, "OSMData", 7) == 0) ok_header = 1;
           }
 
           if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
               hdsz = variant.value.int32_value;
-              verbose_1("     field_id = 3, hdsz = %d\n", hdsz);
+              verbose_1("       field_id = 3, hdsz = %d\n", hdsz);
           }
 
           if (base > stop)
@@ -319,7 +319,7 @@ static int parse_osm_data (unsigned int sz) {
 }
 
 
-static int skip_osm_header (unsigned int sz) {
+static int read_header_block (unsigned int sz) {
 
 //
 // expecting to retrieve a valid OSMHeader header 
@@ -328,10 +328,10 @@ static int skip_osm_header (unsigned int sz) {
 // the read file-pointer as appropriate
 //
 
-    verbose_1("  skip_osm_header, sz = %d\n", sz);
+    verbose_1("  read_header_block, sz = %d\n", sz);
 
     if (sz != 14) {
-       wrong_assumption("parameter sz of skip_osm_header was expected to be 14");
+       wrong_assumption("parameter sz of read_header_block was expected to be 14");
     }
 
     int ok_header = 0;
@@ -362,7 +362,7 @@ static int skip_osm_header (unsigned int sz) {
 // reading the OSMHeader header
 //
     while (1) {
-       verbose_1("    next iteration (skip_osm_header)\n");
+       verbose_1("    next iteration (read_header_block)\n");
        // resetting an empty fld field
           reset_variant (&fld);
 
@@ -452,22 +452,25 @@ int load_osm_pbf(
     if (g_pbf_file == NULL)
         return READOSM_FILE_NOT_FOUND;
 
+// ----- Header ------------------------------------------------------------------------------------------
+
     rd = fread (buf, 1, 4, g_pbf_file);
     if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
     hdsz = get_header_size (buf);
 
-/* testing OSMHeader */
-    if (!skip_osm_header (hdsz))
+    //  testing OSMHeader
+    if (!read_header_block (hdsz))
         return READOSM_INVALID_PBF_HEADER;
 
-// -------------------------------------------------------------------------------------------------------
+// ----- Data blocks -------------------------------------------------------------------------------------
 
-/* 
- / the PBF file is internally organized as a collection
- / of many subsequent OSMData blocks 
-*/
+// 
+// the PBF file is internally organized as a collection
+// of many subsequent OSMData blocks 
+//
     while (1) {
+       verbose_1("  iteration (load_osm_pbf)\n");
 
           rd = fread (buf, 1, 4, g_pbf_file);
 
@@ -475,30 +478,18 @@ int load_osm_pbf(
               break;
 
           if (rd != 4) return READOSM_INVALID_PBF_HEADER;
-
           hdsz = get_header_size (buf);
 
         // parsing OSMData
-          if (!parse_osm_data (hdsz))
+          if (!read_osm_data_block (hdsz))
               return READOSM_INVALID_PBF_HEADER;
     }
 
 // -------------------------------------------------------------------------------------------------------
 
-//  if (ret != READOSM_OK) {
-//      fprintf (stderr, "PARSE error: %d\n", ret);
-//  }
-//  else {
-//     fprintf (stderr, "Ok, OSM input file successfully parsed\n");
-//  }
-
-//stop:
 
     if (g_pbf_file)
        fclose (g_pbf_file);
 
-//  free (osm_handle);
-//  destroy_osm_file(osm_handle);
-//  readosm_close (osm_handle);
     return 0;
 }
