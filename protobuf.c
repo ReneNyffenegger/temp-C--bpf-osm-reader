@@ -200,45 +200,44 @@ static void add_variant_hints (
     variant->last = hint;
 }
 
-static int
-find_type_hint (pbf_field * variant, unsigned char field_id,
-                unsigned char type, unsigned char *type_hint)
+static int find_type_hint (
+   pbf_field     *variant,
+   unsigned char  field_id,
+   unsigned char  type,
+   unsigned char *type_hint)
 {
-/* attempting to find the type hint for some PBF Variant field */
+// attempting to find the type hint for some PBF Variant field */
+//
     readosm_variant_hint *hint = variant->first;
-    while (hint)
-      {
-          if (hint->field_id == field_id)
-            {
-                switch (type)
-                  {
-                  case 0:
-                      switch (hint->expected_type)
-                        {
-                        case READOSM_VAR_INT32:
-                        case READOSM_VAR_INT64:
-                        case READOSM_VAR_UINT32:
-                        case READOSM_VAR_UINT64:
-                        case READOSM_VAR_SINT32:
-                        case READOSM_VAR_SINT64:
-                        case READOSM_VAR_BOOL:
-                        case READOSM_VAR_ENUM:
-                            *type_hint = hint->expected_type;
-                            return 1;
-                        }
-                      break;
-                  case 2:
-                      if (hint->expected_type == READOSM_LEN_BYTES)
-                        {
-                            *type_hint = hint->expected_type;
-                            return 1;
-                        }
-                      break;
-                  };
-            }
-          hint = hint->next;
-      }
-    return 0;
+    while (hint) {
+      if (hint->field_id == field_id) {
+
+            switch (type) {
+              case 0:
+                  switch (hint->expected_type) {
+                    case READOSM_VAR_INT32:
+                    case READOSM_VAR_INT64:
+                    case READOSM_VAR_UINT32:
+                    case READOSM_VAR_UINT64:
+                    case READOSM_VAR_SINT32:
+                    case READOSM_VAR_SINT64:
+                    case READOSM_VAR_BOOL:
+                    case READOSM_VAR_ENUM:
+                        *type_hint = hint->expected_type;
+                        return 1;
+                    }
+                  break;
+              case 2:
+                  if (hint->expected_type == READOSM_LEN_BYTES) {
+                        *type_hint = hint->expected_type;
+                        return 1;
+                    }
+                  break;
+              };
+        }
+      hint = hint->next;
+   }
+   return 0;
 }
 
 static void finalize_variant (pbf_field * variant) {
@@ -246,14 +245,14 @@ static void finalize_variant (pbf_field * variant) {
     readosm_variant_hint *hint;
     readosm_variant_hint *hint_n;
     hint = variant->first;
-    while (hint)
-      {
+
+    while (hint) {
           hint_n = hint->next;
           free (hint);
           hint = hint_n;
       }
     variant->first = NULL;
-    variant->last = NULL;
+    variant->last  = NULL;
 }
 
 // static void init_string_table (readosm_string_table * string_table) {
@@ -866,8 +865,10 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, p
     field_id = (*ptr & 0xf8) >> 3;
 
 /* attempting to identify the field accordingly to declared hints */
-    if (!find_type_hint (variant, field_id, type, &type_hint))
+    if (!find_type_hint (variant, field_id, type, &type_hint)) {
+        wrong_assumption("find_type_hint returned 0");
         return NULL;
+    }
 
     variant->type = type_hint;
     variant->field_id = field_id;
@@ -901,7 +902,7 @@ static int skip_osm_header (/*const readosm_file * input, */ unsigned int sz) {
 // the read file-pointer as appropriate
 //
 
-printf("skip_osm_header, sz = %d\n", sz);
+    verbose_1("skip_osm_header, sz = %d\n", sz);
 
     int ok_header = 0;
     int hdsz = 0;
@@ -929,7 +930,7 @@ printf("skip_osm_header, sz = %d\n", sz);
 // reading the OSMHeader header
 //
     while (1) {
-       printf("  next iteration");
+       verbose_1("  next iteration");
        // resetting an empty variant field
           reset_variant (&variant);
 
@@ -940,18 +941,18 @@ printf("skip_osm_header, sz = %d\n", sz);
           start = base;
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 9) {
 
-                printf("    field_id == 1\n");
+                verbose_1("    field_id == 1\n");
                 if (memcmp (variant.pointer, "OSMHeader", 9) == 0)
                     ok_header = 1;
           }
 
           if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
               hdsz = variant.value.int32_value;
-              printf("    field_id == 3, hdsz = %d\n", hdsz);
+              verbose_1("    field_id == 3, hdsz = %d\n", hdsz);
           }
 
           if (base > stop) {
-              printf("    base > stop\n");
+              verbose_1("    base > stop\n");
               break;
           }
     }
@@ -1883,7 +1884,7 @@ static int parse_primitive_group (
 
 /* reading the Primitive Group */
 
-    printf("parse_primitive_group\n");
+    verbose_1("parse_primitive_group\n");
     while (1) {
 
        // resetting an empty variant field

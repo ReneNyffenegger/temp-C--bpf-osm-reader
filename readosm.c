@@ -48,6 +48,19 @@
 #include <stdio.h>
 #include <string.h>
 
+void wrong_assumption(char* txt) {
+   printf("\033[1;31m%s\033[0m\n", txt);
+   exit(1);
+}
+
+#define TQ84_VERBOSE_1
+
+#ifdef TQ84_VERBOSE_1
+#define verbose_1(...) printf(__VA_ARGS__)
+#else
+#define verbose_1(...)
+#endif
+
 #include "readosm.h"
 #include "protobuf.c"
 #include "osm_objects.c"
@@ -179,7 +192,7 @@ static int parse_osm_data (unsigned int sz) {
     pbf_field            variant;
 
 
-    printf("  parse_osm_data\n");
+    verbose_1("  parse_osm_data\n");
 
     if (buf == NULL)
         goto error;
@@ -212,7 +225,7 @@ static int parse_osm_data (unsigned int sz) {
  // reading the OSMData header
  //
     while (1) {
-          printf("  iterating\n");
+          verbose_1("  iterating\n");
 
        // resetting an empty variant field
           reset_variant (&variant);
@@ -225,13 +238,13 @@ static int parse_osm_data (unsigned int sz) {
           start = base;
 
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 7) {
-                printf("     field_id = 1\n");
+                verbose_1("     field_id = 1\n");
                 if (memcmp (variant.pointer, "OSMData", 7) == 0) ok_header = 1;
           }
 
           if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
               hdsz = variant.value.int32_value;
-              printf("     field_id = 3, hdsz = %d\n", hdsz);
+              verbose_1("     field_id = 3, hdsz = %d\n", hdsz);
           }
 
           if (base > stop)
