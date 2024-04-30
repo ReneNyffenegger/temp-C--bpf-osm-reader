@@ -762,19 +762,75 @@ static int read_header_block_v2 () {
        wrong_assumption("parameter sz of read_header_block was expected to be 14");
     }
 
-    int ok_header = 0;
+//  int ok_header = 0;
     int hdsz      = 0;
 
     unsigned char *buf   = malloc (sz);
+    if (buf == NULL)
+        goto error;
+
+    rd = fread (buf, 1, sz, g_pbf_file);
+    if (rd != sz)
+        goto error;
+
 //  unsigned char *base  = buf;
 //  unsigned char *start = buf;
 //  unsigned char *stop  = buf + sz - 1;
     unsigned char *cur   = buf;
     unsigned char *end   = buf + sz - 1;
+
+
+
+
+
+// -----------------------------------------------------------------------
+    pbf_field_v2    fld_block_name;
+
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
+
+    if (fld_block_name.field_id != 1) {
+       printf("field id = %d\n", fld_block_name.field_id);
+       wrong_assumption("field id");
+    }
+    if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
+       wrong_assumption("PROTOBUF_TYPE_LEN");
+    }
+    cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
+
+    if (fld_block_name.str_len == 9) {
+
+          verbose_1("      field_id == 1\n");
+          if (memcmp (fld_block_name.pointer, "OSMHeader", 9)) {
+              wrong_assumption("block name");
+          }
+    }
+
+// -----------------------------------------------------------------------
+    pbf_field_v2    fld_block_size;
+
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_size);
+    verbose_1("      read block size\n");
+
+    if (fld_block_size.field_id != 3) {
+       printf("field id = %d\n", fld_block_size.field_id);
+       wrong_assumption("field id != 3");
+    }
+    if (fld_block_size.protobuf_type != PROTOBUF_TYPE_VARINT) {
+       wrong_assumption("PROTOBUF_TYPE_VARINT");
+    }
+
+    cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &fld_block_size);
+    verbose_1("      read integer\n");
+
+    hdsz = fld_block_size.value.int32_value;
+    verbose_1("      hdsz = %d\n", hdsz);
+
+
+
+#if 0
+
     pbf_field      fld;
 
-    if (buf == NULL)
-        goto error;
 
  // initializing an empty fld field 
     init_variant (&fld, g_little_endian_cpu);
@@ -784,9 +840,6 @@ static int read_header_block_v2 () {
     add_variant_hints (&fld, READOSM_VAR_INT32, 3);
    #endif
 
-    rd = fread (buf, 1, sz, g_pbf_file);
-    if (rd != sz)
-        goto error;
 
 // reading the OSMHeader header
 //
@@ -824,12 +877,16 @@ static int read_header_block_v2 () {
           }
     }
 
+#endif
     free (buf);
+
 //  buf = NULL;
 
 
-    if (!ok_header || !hdsz)
+    if (!hdsz) {
+        wrong_assumption("ok header, hdsz");
         goto error;
+    }
 
 //
 //  Just SKIP OVER the rest of the header buffer!
@@ -842,26 +899,29 @@ static int read_header_block_v2 () {
 
     rd = fread (buf, 1, hdsz, g_pbf_file);
 
-    if ((int) rd != hdsz)
+    if ((int) rd != hdsz) {
+        wrong_assumption("rd != hdsz");
         goto error;
+    }
 
     if (buf != NULL)
         free (buf);
 
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&fld);
-   #endif
+// #ifdef TQ84_USE_PBF_FIELD_HINTS
+//  finalize_variant (&fld);
+// #endif
    
 // exit(100); // TQ84 - remove moe
+    verbose_1("       returning from read_header_block_v2\n");
     return 1;
 
   error:
     if (buf != NULL)
         free (buf);
 
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&fld);
-   #endif
+// #ifdef TQ84_USE_PBF_FIELD_HINTS
+//  finalize_variant (&fld);
+// #endif
     return 0;
 }
 
