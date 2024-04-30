@@ -847,10 +847,10 @@ readosm_relation_callback    g_cb_rel;
 char                         g_little_endian_cpu;
 FILE*                        g_pbf_file;
 
-static unsigned int get_header_size (unsigned char *buf /*, int little_endian_cpu*/) {
+static unsigned int get_header_size (unsigned char *buf) {
 //
 // retrieving the current header size 
-// please note: header sizes in PBF always are 4 bytes BIG endian encoded
+// please note: header sizes in PBF always are 4 bytes BIG endian encoded (network byte order)
 //
     four_byte_value four_bytes;
 

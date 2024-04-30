@@ -349,9 +349,11 @@ static int read_header_block (unsigned int sz) {
 
     size_t rd;
     unsigned char *buf   = malloc (sz);
-    unsigned char *base  = buf;
-    unsigned char *start = buf;
-    unsigned char *stop  = buf + sz - 1;
+//  unsigned char *base  = buf;
+//  unsigned char *start = buf;
+//  unsigned char *stop  = buf + sz - 1;
+    unsigned char *cur   = buf;
+    unsigned char *end   = buf + sz - 1;
     pbf_field      fld;
 
     if (buf == NULL)
@@ -376,11 +378,13 @@ static int read_header_block (unsigned int sz) {
        // resetting an empty fld field
           reset_variant (&fld);
 
-          base = read_pbf_field (start, stop, &fld);
-          if (base == NULL && fld.valid == 0)
+//        base = read_pbf_field (start, stop, &fld);
+          cur  = read_pbf_field (cur  , end , &fld);
+//        if (base == NULL && fld.valid == 0)
+          if (cur  == NULL && fld.valid == 0)
               goto error;
 
-          start = base;
+//        start = base;
           if (fld.field_id == 1 && fld.type == READOSM_LEN_BYTES && fld.str_len == 9) {
 
                 verbose_1("      field_id == 1\n");
@@ -392,27 +396,439 @@ static int read_header_block (unsigned int sz) {
               verbose_1("      field_id == 3, hdsz = %d\n", hdsz);
           }
           else {
+              wrong_assumption("else");
               verbose_1("      else\n");
           }
 
-          if (base > stop) {
+//        if (base > stop) {
+          if (cur  > end ) {
               verbose_1("      base > stop\n");
               break;
           }
     }
 
     free (buf);
-    buf = NULL;
+//  buf = NULL;
+
 
     if (!ok_header || !hdsz)
         goto error;
 
-    buf   = malloc (hdsz);
-    base  = buf;
-    start = buf;
-    stop  = buf + hdsz - 1;
+//
+//  Just SKIP OVER the rest of the header buffer!
+//
 
-    rd = fread (buf, 1, hdsz, g_pbf_file/*, input->in*/);
+    buf   = malloc (hdsz);
+//  base  = buf;
+//  start = buf;
+//  stop  = buf + hdsz - 1;
+
+    rd = fread (buf, 1, hdsz, g_pbf_file);
+
+    if ((int) rd != hdsz)
+        goto error;
+
+    if (buf != NULL)
+        free (buf);
+
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&fld);
+   #endif
+   
+// exit(100); // TQ84 - remove moe
+    return 1;
+
+  error:
+    if (buf != NULL)
+        free (buf);
+
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&fld);
+   #endif
+    return 0;
+}
+
+static unsigned int blob_size() {
+    size_t        rd;
+    unsigned char buf_4[4];
+
+    rd = fread (buf_4, 1, 4, g_pbf_file);
+    if (rd != 4) exit(80); // return READOSM_INVALID_PBF_HEADER;
+
+    return get_header_size (buf_4);
+
+}
+
+
+typedef struct {
+
+ // a PBF Variant type wrapper
+
+//  char          little_endian_cpu;     // actual CPU endianness
+//
+// A PBF field is prefixed by a single byte which 
+// stores both the FIELD ID (n bits )and the the FIELD type (8-n bites)
+// The function read_pbf_field() splits the byte and assigns it to the following
+// two bytes:
+// 
+
+    unsigned char type;         // current type
+    unsigned char field_id;     // field ID
+
+    union variant_value_v2 {
+
+        int                 int32_value;
+        unsigned int       uint32_value;
+        long long           int64_value;
+        unsigned long long uint64_value;
+        float               float_value;
+        double             double_value;
+    }
+    value;                      // The field value
+
+    size_t                str_len;     // length in bytes [for strings]
+    unsigned char        *pointer;     // pointer to String value
+    char                  valid;       // valid value
+
+}
+pbf_field_v2;
+
+   #define PROTOBUF_TYPE_VARINT 0
+// #define PROTOBUF_TYPE_I64    1  // Not currently referenced in this program
+   #define PROTOBUF_TYPE_LEN    2
+// #define PROTOBUF_TYPE_SGROUP 3  // Not currently referenced in this program / deprecated
+// #define PROTOBUF_TYPE_EGROUP 4  // Not currently referenced in this program / deprecated
+// #define PROTOBUF_TYPE_I32    5  // Not currently referenced in this program
+
+
+static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned char *stop, pbf_field_v2 *variant) {
+
+/* 
+ / attempting to read a variable length base128 int 
+ /
+ / PBF integers are encoded as base128, i.e. using 7 bits
+ / for each byte: if the most significant bit is 1, then
+ / a further byte is required to get the int value, and so
+ / on, until a byte having a 0 most significant bit is found.
+ /
+ / using this encoding little values simply require few bytes:
+ / as a worst case 5 bytes are required to encode int32, and
+ / 10 bytes to encode int64
+ /
+ / there is a further complication: negative value will always 
+ / require 5 or 10 bytes: thus SINT32 and SINT64 values are
+ / encoded using a "ZigZag" schema.
+ /
+ / for more details please see:
+ / https://developers.google.com/protocol-buffers/docs/encoding
+*/
+    unsigned char      *ptr = start;
+    unsigned char       c;
+    unsigned int        v32;
+    unsigned long long  v64;
+    unsigned int        value32 = 0x00000000;
+    unsigned long long  value64 = 0x0000000000000000;
+    four_byte_value     endian4;
+    eight_byte_value    endian8;
+    int next;
+    int count = 0;
+    int neg;
+
+    while (1) {
+
+          if (ptr > stop) {
+              wrong_assumption("read_integer_pbf_field, ptr > stop");
+              return NULL;
+          }
+
+          c = *ptr++;
+          if ((c & 0x80) == 0x80)
+              next = 1;
+          else
+              next = 0;
+
+          c &= 0x7f;
+
+          switch (variant->type) {
+
+            case READOSM_VAR_INT32:
+            case READOSM_VAR_UINT32:
+            case READOSM_VAR_SINT32:
+            
+                switch (count) {
+                  case 0: memset (endian4.bytes, 0x00, 4); if (g_little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value      ; v32 &= READOSM_MASK32_1; value32 |= v32; break;
+                  case 1: memset (endian4.bytes, 0x00, 4); if (g_little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value <<  7; v32 &= READOSM_MASK32_2; value32 |= v32; break;
+                  case 2: memset (endian4.bytes, 0x00, 4); if (g_little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value << 14; v32 &= READOSM_MASK32_3; value32 |= v32; break;
+                  case 3: memset (endian4.bytes, 0x00, 4); if (g_little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value << 21; v32 &= READOSM_MASK32_4; value32 |= v32; break;
+                  case 4: memset (endian4.bytes, 0x00, 4); if (g_little_endian_cpu) endian4.bytes[0] = c; else endian4.bytes[3] = c; v32 = endian4.uint32_value << 28; v32 &= READOSM_MASK32_5; value32 |= v32; break;
+                  default:
+                      return NULL;
+                };
+                break;
+
+            case READOSM_VAR_INT64:
+            case READOSM_VAR_UINT64:
+            case READOSM_VAR_SINT64:
+                switch (count) {
+
+                  case 0: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value      ; v64 &= READOSM_MASK64_1; value64 |= v64; break;
+                  case 1: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value <<  7; v64 &= READOSM_MASK64_2; value64 |= v64; break;
+                  case 2: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 14; v64 &= READOSM_MASK64_3; value64 |= v64; break;
+                  case 3: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 21; v64 &= READOSM_MASK64_4; value64 |= v64; break;
+                  case 4: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 28; v64 &= READOSM_MASK64_5; value64 |= v64; break;
+                  case 5: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 35; v64 &= READOSM_MASK64_6; value64 |= v64; break;
+                  case 6: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 42; v64 &= READOSM_MASK64_7; value64 |= v64; break;
+                  case 7: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 49; v64 &= READOSM_MASK64_8; value64 |= v64; break;
+                  case 8: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 56; v64 &= READOSM_MASK64_9; value64 |= v64; break;
+                  case 9: memset (endian8.bytes, 0x00, 8); if (g_little_endian_cpu) endian8.bytes[0] = c; else endian8.bytes[7] = c; v64 = endian8.uint64_value << 63; v64 &= READOSM_MASK64_A; value64 |= v64; break;
+                  default:
+                      return NULL;
+                };
+                break;
+            };
+          count++;
+          if (!next)
+              break;
+      }
+
+    switch (variant->type) {
+
+      case READOSM_VAR_INT32:
+           variant->value.int32_value = (int) value32;
+           variant->valid = 1;
+           return ptr;
+
+      case READOSM_VAR_UINT32:
+           variant->value.uint32_value = value32;
+           variant->valid = 1;
+           return ptr;
+
+      case READOSM_VAR_SINT32:
+           if ((value32 & 0x00000001) == 0)
+               neg = 1;
+           else
+               neg = -1;
+
+           v32 = (value32 + 1) / 2;
+           variant->value.int32_value = v32 * neg;
+           variant->valid = 1;
+           return ptr;
+
+      case READOSM_VAR_INT64:
+           variant->value.int64_value = (int) value64;
+           variant->valid = 1;
+           return ptr;
+
+      case READOSM_VAR_UINT64:
+           variant->value.uint64_value = value64;
+           variant->valid = 1;
+           return ptr;
+
+      case READOSM_VAR_SINT64:
+           if ((value64 & 0x0000000000000001) == 0)
+               neg = 1;
+           else
+               neg = -1;
+           v64 = (value64 + 1) / 2;
+           variant->value.int64_value = v64 * neg;
+           variant->valid = 1;
+           return ptr;
+      };
+    return NULL;
+}
+
+static unsigned char * read_bytes_pbf_field_v2 (unsigned char *start, unsigned char *stop, pbf_field_v2 *variant) {
+ /* 
+ / attempting to read some bytes from PBF
+ / Strings and alike are encoded in PBF using a two steps approach:
+ / - an INT32 field declares the expected length
+ / - then the string (no terminating NULL char) follows
+*/
+    unsigned char *ptr = start;
+    pbf_field varlen;
+    unsigned int len;
+
+/* initializing an empty variant field (length) */
+    init_variant (&varlen, g_little_endian_cpu);
+    varlen.type = READOSM_VAR_UINT32;
+
+    ptr = read_integer_pbf_field (ptr, stop, &varlen);
+
+    if (varlen.valid) {
+          len = varlen.value.uint32_value;
+          if ((ptr + len - 1) > stop)
+              return NULL;
+
+          variant->pointer = ptr;
+          variant->str_len = len;
+          variant->valid   = 1;
+          return ptr + len;
+      }
+    return NULL;
+}
+static unsigned char *read_pbf_field_v2 (
+   unsigned char *start,
+   unsigned char *stop,
+
+   pbf_field_v2  *fld
+  ) {
+
+ // attempting to parse a fld field
+ //
+    unsigned char *ptr = start;
+    unsigned char  type;
+    unsigned char  field_id;
+    unsigned char  type_hint;
+
+    if (ptr > stop) {
+        wrong_assumption("read_pbf_field: ptr > stop");
+        return NULL;
+    }
+
+/*
+ / any PBF field is prefixed by a single byte
+ / a bitwise mask is used so to store both the
+ / field-id and the field-type on a single byte
+*/
+//  type     =  *ptr & 0x07;
+//  field_id = (*ptr & 0xf8) >> 3;
+
+//q   #ifdef TQ84_USE_PBF_FIELD_HINTS
+//q/* attempting to identify the field accordingly to declared hints */
+//q    if (!find_type_hint (fld, field_id, type, &type_hint)) {
+//q        wrong_assumption("find_type_hint returned 0");
+//q        return NULL;
+//q    }
+//q   #endif
+
+    fld->type     = type_hint;
+    fld->field_id = field_id;
+    ptr++;
+
+/* parsing the field value */
+    switch (fld->type) {
+
+      case PROTOBUF_TYPE_VARINT:
+//    case READOSM_VAR_INT32:
+//    case READOSM_VAR_INT64:
+//    case READOSM_VAR_UINT32:
+//    case READOSM_VAR_UINT64:
+//    case READOSM_VAR_SINT32:
+//    case READOSM_VAR_SINT64:
+
+           return read_integer_pbf_field_v2 (ptr, stop, fld);
+            
+      case PROTOBUF_TYPE_LEN:
+//    case READOSM_LEN_BYTES:
+
+           return read_bytes_pbf_field_v2 (ptr, stop, fld);
+
+    };
+    return NULL;
+}
+
+
+
+
+static int read_header_block_v2 () {
+
+    unsigned int  sz;
+    size_t        rd;
+
+//
+// expecting to retrieve a valid OSMHeader header 
+// there is nothing really interesting here, so we'll
+// simply discard the whole block, simply advancing
+// the read file-pointer as appropriate
+//
+
+    verbose_1("  read_header_block, sz = %d\n", sz);
+
+    sz = blob_size();//get_header_size (buf_4);
+
+    if (sz != 14) {
+       wrong_assumption("parameter sz of read_header_block was expected to be 14");
+    }
+
+    int ok_header = 0;
+    int hdsz      = 0;
+
+    unsigned char *buf   = malloc (sz);
+//  unsigned char *base  = buf;
+//  unsigned char *start = buf;
+//  unsigned char *stop  = buf + sz - 1;
+    unsigned char *cur   = buf;
+    unsigned char *end   = buf + sz - 1;
+    pbf_field      fld;
+
+    if (buf == NULL)
+        goto error;
+
+ // initializing an empty fld field 
+    init_variant (&fld, g_little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    add_variant_hints (&fld, READOSM_LEN_BYTES, 1);
+    add_variant_hints (&fld, READOSM_LEN_BYTES, 2);
+    add_variant_hints (&fld, READOSM_VAR_INT32, 3);
+   #endif
+
+    rd = fread (buf, 1, sz, g_pbf_file);
+    if (rd != sz)
+        goto error;
+
+// reading the OSMHeader header
+//
+    while (1) {
+       verbose_1("    next iteration (read_header_block)\n");
+       // resetting an empty fld field
+          reset_variant (&fld);
+
+//        base = read_pbf_field (start, stop, &fld);
+          cur  = read_pbf_field (cur  , end , &fld);
+//        if (base == NULL && fld.valid == 0)
+          if (cur  == NULL && fld.valid == 0)
+              goto error;
+
+//        start = base;
+          if (fld.field_id == 1 && fld.type == READOSM_LEN_BYTES && fld.str_len == 9) {
+
+                verbose_1("      field_id == 1\n");
+                if (memcmp (fld.pointer, "OSMHeader", 9) == 0)
+                    ok_header = 1;
+          }
+          else if (fld.field_id == 3 && fld.type == READOSM_VAR_INT32) {
+              hdsz = fld.value.int32_value;
+              verbose_1("      field_id == 3, hdsz = %d\n", hdsz);
+          }
+          else {
+              wrong_assumption("else");
+              verbose_1("      else\n");
+          }
+
+//        if (base > stop) {
+          if (cur  > end ) {
+              verbose_1("      base > stop\n");
+              break;
+          }
+    }
+
+    free (buf);
+//  buf = NULL;
+
+
+    if (!ok_header || !hdsz)
+        goto error;
+
+//
+//  Just SKIP OVER the rest of the header buffer!
+//
+
+    buf   = malloc (hdsz);
+//  base  = buf;
+//  start = buf;
+//  stop  = buf + hdsz - 1;
+
+    rd = fread (buf, 1, hdsz, g_pbf_file);
 
     if ((int) rd != hdsz)
         goto error;
@@ -464,13 +880,15 @@ int load_osm_pbf(
 
 // ----- Header ------------------------------------------------------------------------------------------
 
+#if 0
     rd = fread (buf, 1, 4, g_pbf_file);
     if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
     hdsz = get_header_size (buf);
+#endif
 
-    //  testing OSMHeader
-    if (!read_header_block (hdsz))
+//  testing OSMHeader
+    if (!read_header_block_v2 ())
         return READOSM_INVALID_PBF_HEADER;
 
 // ----- Data blocks -------------------------------------------------------------------------------------
