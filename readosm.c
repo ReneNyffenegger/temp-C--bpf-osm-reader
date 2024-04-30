@@ -472,8 +472,9 @@ typedef struct {
 // two bytes:
 // 
 
-    unsigned char type;         // current type
-    unsigned char field_id;     // field ID
+//  unsigned char type;          // current type
+    unsigned char protobuf_type;
+    unsigned char field_id;      // field ID
 
     union variant_value_v2 {
 
@@ -488,8 +489,7 @@ typedef struct {
 
     size_t                str_len;     // length in bytes [for strings]
     unsigned char        *pointer;     // pointer to String value
-    char                  valid;       // valid value
-
+//  char                  valid;       // valid value
 }
 pbf_field_v2;
 
@@ -501,7 +501,7 @@ pbf_field_v2;
 // #define PROTOBUF_TYPE_I32    5  // Not currently referenced in this program
 
 
-static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned char *stop, pbf_field_v2 *variant) {
+static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned char *stop, unsigned char field_type, pbf_field_v2 *variant) {
 
 /* 
  / attempting to read a variable length base128 int 
@@ -549,7 +549,7 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
 
           c &= 0x7f;
 
-          switch (variant->type) {
+          switch (field_type /* variant->type*/) {
 
             case READOSM_VAR_INT32:
             case READOSM_VAR_UINT32:
@@ -591,16 +591,16 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
               break;
       }
 
-    switch (variant->type) {
+    switch (field_type /* variant->type */) {
 
       case READOSM_VAR_INT32:
            variant->value.int32_value = (int) value32;
-           variant->valid = 1;
+//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_UINT32:
            variant->value.uint32_value = value32;
-           variant->valid = 1;
+//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_SINT32:
@@ -611,17 +611,17 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
 
            v32 = (value32 + 1) / 2;
            variant->value.int32_value = v32 * neg;
-           variant->valid = 1;
+//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_INT64:
            variant->value.int64_value = (int) value64;
-           variant->valid = 1;
+//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_UINT64:
            variant->value.uint64_value = value64;
-           variant->valid = 1;
+//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_SINT64:
@@ -631,9 +631,11 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
                neg = -1;
            v64 = (value64 + 1) / 2;
            variant->value.int64_value = v64 * neg;
-           variant->valid = 1;
+//         variant->valid = 1;
            return ptr;
       };
+    wrong_assumption("xyz");
+    exit(100);
     return NULL;
 }
 
@@ -661,29 +663,32 @@ static unsigned char * read_bytes_pbf_field_v2 (unsigned char *start, unsigned c
 
           variant->pointer = ptr;
           variant->str_len = len;
-          variant->valid   = 1;
+//        variant->valid   = 1;
           return ptr + len;
       }
+    wrong_assumption("bla bla");
     return NULL;
 }
-static unsigned char *read_pbf_field_v2 (
-   unsigned char *start,
-   unsigned char *stop,
+static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
+   unsigned char *ptr,
+// unsigned char *start,
+// unsigned char *stop,
 
    pbf_field_v2  *fld
-  ) {
+  )
+  {
 
  // attempting to parse a fld field
  //
-    unsigned char *ptr = start;
-    unsigned char  type;
-    unsigned char  field_id;
-    unsigned char  type_hint;
+//  unsigned char *ptr = start;
+//  unsigned char  protobuf_type;
+//  unsigned char  field_id;
+//  unsigned char  type_hint;
 
-    if (ptr > stop) {
-        wrong_assumption("read_pbf_field: ptr > stop");
-        return NULL;
-    }
+//  if (ptr > stop) {
+//      wrong_assumption("read_pbf_field: ptr > stop");
+//      return NULL;
+//  }
 
 /*
  / any PBF field is prefixed by a single byte
@@ -693,6 +698,9 @@ static unsigned char *read_pbf_field_v2 (
 //  type     =  *ptr & 0x07;
 //  field_id = (*ptr & 0xf8) >> 3;
 
+    fld -> protobuf_type     =  *ptr & 0x07;
+    fld -> field_id          = (*ptr & 0xf8) >> 3;
+
 //q   #ifdef TQ84_USE_PBF_FIELD_HINTS
 //q/* attempting to identify the field accordingly to declared hints */
 //q    if (!find_type_hint (fld, field_id, type, &type_hint)) {
@@ -701,9 +709,13 @@ static unsigned char *read_pbf_field_v2 (
 //q    }
 //q   #endif
 
-    fld->type     = type_hint;
-    fld->field_id = field_id;
+//  fld->type     = type_hint;
+//  fld->field_id = field_id;
+//  ptr++;
+
     ptr++;
+    return ptr;
+#if 0
 
 /* parsing the field value */
     switch (fld->type) {
@@ -725,13 +737,13 @@ static unsigned char *read_pbf_field_v2 (
 
     };
     return NULL;
+#endif
 }
 
 
 
 
 static int read_header_block_v2 () {
-
     unsigned int  sz;
     size_t        rd;
 
