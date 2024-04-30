@@ -58,6 +58,13 @@
 
 #define MAX_NODES 1024
 
+typedef struct readosm_variant_hint_struct {
+    unsigned char field_id;
+    unsigned char expected_type;
+    struct        readosm_variant_hint_struct *next;   // Linked list
+}
+readosm_variant_hint;
+
 
 typedef struct {
 
@@ -90,8 +97,11 @@ typedef struct {
     size_t                str_len;     // length in bytes [for strings]
     unsigned char        *pointer;     // pointer to String value
     char                  valid;       // valid value
-    readosm_variant_hint *first;       // pointers supporting a linked list
-    readosm_variant_hint *last;        // of VariantHints items
+
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    readosm_variant_hint *first_hint;  // pointers supporting a linked list
+    readosm_variant_hint *last_hint;   // of VariantHints items
+   #endif
 }
 pbf_field;
 
@@ -167,8 +177,12 @@ static void init_variant (pbf_field * variant, int little_endian_cpu) {
     variant->str_len           =    0;
     variant->pointer           = NULL;
     variant->valid             =    0;
-    variant->first             = NULL;
-    variant->last              = NULL;
+
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    variant->first_hint        = NULL;
+    variant->last_hint         = NULL;
+   #endif
+
 }
 
 static void reset_variant (pbf_field * variant) {
@@ -181,8 +195,9 @@ static void reset_variant (pbf_field * variant) {
     variant->valid    = 0;
 }
 
+#ifdef TQ84_USE_PBF_FIELD_HINTS
 static void add_variant_hints (
-   pbf_field * variant,
+   pbf_field        *variant,
    unsigned char     expected_type,
    unsigned char     field_id)
 {
@@ -194,12 +209,14 @@ static void add_variant_hints (
     hint->field_id      = field_id;
     hint->next = NULL;
 
-    if (variant->first == NULL) variant->first      = hint;
-    if (variant->last  != NULL) variant->last->next = hint;
+    if (variant->first_hint == NULL) variant->first_hint      = hint;
+    if (variant->last_hint  != NULL) variant->last_hint->next = hint;
 
-    variant->last = hint;
+    variant->last_hint = hint;
 }
+#endif
 
+#ifdef TQ84_USE_PBF_FIELD_HINTS
 static int find_type_hint (
    pbf_field     *variant,
    unsigned char  field_id,
@@ -208,7 +225,7 @@ static int find_type_hint (
 {
 // attempting to find the type hint for some PBF Variant field */
 //
-    readosm_variant_hint *hint = variant->first;
+    readosm_variant_hint *hint = variant->first_hint;
     while (hint) {
       if (hint->field_id == field_id) {
 
@@ -234,26 +251,29 @@ static int find_type_hint (
                     }
                   break;
               };
-        }
+      }
       hint = hint->next;
    }
    return 0;
 }
+#endif
 
+#ifdef TQ84_USE_PBF_FIELD_HINTS
 static void finalize_variant (pbf_field * variant) {
 /* cleaning any memory allocation for a PBF Variant object */
     readosm_variant_hint *hint;
     readosm_variant_hint *hint_n;
-    hint = variant->first;
+    hint = variant->first_hint;
 
     while (hint) {
           hint_n = hint->next;
           free (hint);
           hint = hint_n;
       }
-    variant->first = NULL;
-    variant->last  = NULL;
+    variant->first_hint = NULL;
+    variant->last_hint  = NULL;
 }
+#endif
 
 // static void init_string_table (readosm_string_table * string_table) {
 // /* initializing an empty PBF StringTable object */
@@ -919,9 +939,11 @@ static int skip_osm_header (/*const readosm_file * input, */ unsigned int sz) {
 
  // initializing an empty variant field 
     init_variant (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 3);
+   #endif
 
     rd = fread (buf, 1, sz, g_pbf_file/*, input->in*/);
     if (rd != sz)
@@ -1028,7 +1050,9 @@ parse_string_table (readosm_string_table * string_table,
 
 /* initializing an empty variant field */
     init_variant (&variant, little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+   #endif
 
 /* reading the StringTable */
     while (1)
@@ -1092,12 +1116,14 @@ static int parse_pbf_node_infos (
 
 /* initializing an empty variant field */
     init_variant (&variant, little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 4);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 5);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 6);
+   #endif
 
 /* reading the DenseInfo block */
     while (1) {
@@ -1180,11 +1206,13 @@ static int parse_pbf_nodes (
 
 /* initializing an empty variant field */
     init_variant (&variant, little_endian_cpu);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 5);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 8);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 9);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  5);
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  8);
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  9);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 10);
+   #endif
 
 /* reading the Node */
     while (1) {
@@ -1426,12 +1454,14 @@ static int parse_pbf_way_info (
 
 /* initializing an empty variant field */
     init_variant (&variant, little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_VAR_INT32, 1);
     add_variant_hints (&variant, READOSM_VAR_INT32, 2);
     add_variant_hints (&variant, READOSM_VAR_INT64, 3);
     add_variant_hints (&variant, READOSM_VAR_INT32, 4);
     add_variant_hints (&variant, READOSM_VAR_INT32, 5);
     add_variant_hints (&variant, READOSM_VAR_INT32, 6);
+   #endif
 
 /* reading the WayInfo */
     while (1) {
@@ -1528,11 +1558,13 @@ static int parse_pbf_way (readosm_string_table * strings,
 
 /* initializing an empty variant field */
     init_variant (&variant, little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_VAR_INT64, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 4);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 8);
+   #endif
 
 /* reading the Way */
     while (1)
@@ -1656,12 +1688,14 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
 
 /* initializing an empty variant field */
     init_variant (&variant, little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_VAR_INT32, 1);
     add_variant_hints (&variant, READOSM_VAR_INT32, 2);
     add_variant_hints (&variant, READOSM_VAR_INT64, 3);
     add_variant_hints (&variant, READOSM_VAR_INT32, 4);
     add_variant_hints (&variant, READOSM_VAR_INT32, 5);
     add_variant_hints (&variant, READOSM_VAR_INT32, 6);
+   #endif
 
 /* reading the RelationInfo */
     while (1)
@@ -1752,10 +1786,11 @@ static int parse_pbf_relation (
     init_uint32_packed (&packed_values);
     init_uint32_packed (&packed_roles);
     init_uint32_packed (&packed_types);
-    init_int64_packed (&packed_refs);
+    init_int64_packed  (&packed_refs);
 
 /* initializing an empty variant field */
     init_variant (&variant, little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_VAR_INT64, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
@@ -1763,6 +1798,7 @@ static int parse_pbf_relation (
     add_variant_hints (&variant, READOSM_LEN_BYTES, 8);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 9);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 10);
+   #endif
 
 /* reading the Relation */
     while (1) {
@@ -1876,11 +1912,13 @@ static int parse_primitive_group (
 
 /* initializing an empty variant field */
     init_variant      (&variant, little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 4);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 5);
+   #endif
 
 /* reading the Primitive Group */
 

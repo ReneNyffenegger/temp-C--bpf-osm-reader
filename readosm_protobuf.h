@@ -105,14 +105,6 @@ typedef struct /* readosm_packed_infos_struct */ {
     int       *users;                 // indexes to access corresponding Strings in StringTable */
 } readosm_packed_infos;
 
-typedef struct readosm_variant_hint_struct {
- // VariantHints for PBF parsing
-    unsigned char field_id;
-    unsigned char expected_type;
-    struct        readosm_variant_hint_struct *next;   /* supporting linked list */
-}
-readosm_variant_hint;
-
 
 
 

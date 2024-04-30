@@ -53,7 +53,10 @@ void wrong_assumption(char* txt) {
    exit(1);
 }
 
-#define TQ84_VERBOSE_1
+
+#define TQ84_USE_PBF_FIELD_HINTS
+
+// #define TQ84_VERBOSE_1
 
 #ifdef TQ84_VERBOSE_1
 #define verbose_1(...) printf(__VA_ARGS__)
@@ -87,90 +90,6 @@ static int test_endianness () {
     if (endian4.uint32_value == 1) return READOSM_LITTLE_ENDIAN;
     return READOSM_BIG_ENDIAN;
 }
-
-// static readosm_file * alloc_osm_file (int little_endian_cpu/*, int format*/) {
-// 
-// /* allocating and initializing the OSM input file struct */
-//     readosm_file *input = malloc (sizeof (readosm_file));
-//     if (!input)
-//         return NULL;
-// 
-// //  input->magic1 = READOSM_MAGIC_START;
-// //  input->file_format = format;
-//     input->little_endian_cpu = little_endian_cpu;
-// //  input->magic2 = READOSM_MAGIC_END;
-//     input->in = NULL;
-//     return input;
-// }
-
-// static void destroy_osm_file (readosm_file * input) {
-// 
-// /* destroying the OSM input file struct */
-//     if (input) {
-//           if (input->in)
-//               fclose (input->in);
-//           free (input);
-//       }
-// }
-
-// /* READOSM_DECLARE */ int readosm_open (const char *path, readosm_file **osm_handle) {
-// 
-// // opening and initializing the OSM input file 
-// //  readosm_file *input;
-// //  int len;
-//     int format;
-//     int little_endian_cpu = test_endianness();
-// 
-// //  *osm_handle = NULL;
-// //  if (path == NULL || osm_handle == NULL)
-// //      return READOSM_NULL_HANDLE;
-// 
-// //  len = strlen (path);
-// 
-// //  if (len > 4 && strcasecmp (path + len - 4, ".osm") == 0)
-// //      format = READOSM_OSM_FORMAT;
-// 
-// //  else if (len > 4 && strcasecmp (path + len - 4, ".pbf") == 0)
-// //      format = READOSM_PBF_FORMAT;
-// 
-// //  else
-// //      return READOSM_INVALID_SUFFIX;
-// 
-// /* allocating the OSM input file struct */
-// //  input = alloc_osm_file (little_endian_cpu/*, format*/);
-//    *osm_handle = alloc_osm_file (little_endian_cpu/*, format*/);
-// 
-//     if (! *osm_handle)
-//         return READOSM_INSUFFICIENT_MEMORY;
-// 
-// //  *osm_handle = input;
-// 
-//    ( *osm_handle)->in = fopen(path, "rb");
-// //  input->in = fopen (path, "rb");
-//     if ((*osm_handle)->in == NULL)
-//         return READOSM_FILE_NOT_FOUND;
-// 
-//     return READOSM_OK;
-// }
-
-/* READOSM_DECLARE */
-// int readosm_close (const void *osm_handle) {
-// 
-// // attempting to destroy the OSM input file 
-// //
-//     readosm_file *input = (readosm_file *) osm_handle;
-//     if (!input)
-//         return READOSM_NULL_HANDLE;
-// 
-// //  if ((input->magic1 == READOSM_MAGIC_START) && input->magic2 == READOSM_MAGIC_END) ;
-// //  else
-// //      return READOSM_INVALID_HANDLE;
-// 
-// /* destroying the workbook */
-//     destroy_osm_file (input);
-// 
-//     return READOSM_OK;
-// }
 
 
 static int parse_osm_data (unsigned int sz) {
@@ -211,9 +130,11 @@ static int parse_osm_data (unsigned int sz) {
 
  // initializing an empty variant field
     init_variant      (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 3);
+   #endif
 
     rd = fread (buf, 1, sz, g_pbf_file/*, input->in*/);
     if (rd != sz)
@@ -267,9 +188,11 @@ static int parse_osm_data (unsigned int sz) {
 
  // uncompressing the OSMData zipped */
     finalize_variant  (&variant);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_VAR_INT32, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
+   #endif
     while (1)
       {
        // resetting an empty variant field
@@ -319,12 +242,14 @@ static int parse_osm_data (unsigned int sz) {
     start = raw_ptr;
     stop  = raw_ptr + raw_sz - 1;
     finalize_variant (&variant);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 17);
     add_variant_hints (&variant, READOSM_VAR_INT32, 18);
     add_variant_hints (&variant, READOSM_VAR_INT64, 19);
     add_variant_hints (&variant, READOSM_VAR_INT64, 20);
+   #endif
 
     while (1) {
        // resetting an empty variant field
