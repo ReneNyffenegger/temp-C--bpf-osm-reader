@@ -328,7 +328,7 @@ static int skip_osm_header (unsigned int sz) {
 // the read file-pointer as appropriate
 //
 
-    verbose_1("skip_osm_header, sz = %d\n", sz);
+    verbose_1("  skip_osm_header, sz = %d\n", sz);
 
     if (sz != 14) {
        wrong_assumption("parameter sz of skip_osm_header was expected to be 14");
@@ -362,7 +362,7 @@ static int skip_osm_header (unsigned int sz) {
 // reading the OSMHeader header
 //
     while (1) {
-       verbose_1("  next iteration");
+       verbose_1("    next iteration (skip_osm_header)\n");
        // resetting an empty fld field
           reset_variant (&fld);
 
@@ -373,20 +373,20 @@ static int skip_osm_header (unsigned int sz) {
           start = base;
           if (fld.field_id == 1 && fld.type == READOSM_LEN_BYTES && fld.str_len == 9) {
 
-                verbose_1("    field_id == 1\n");
+                verbose_1("      field_id == 1\n");
                 if (memcmp (fld.pointer, "OSMHeader", 9) == 0)
                     ok_header = 1;
           }
           else if (fld.field_id == 3 && fld.type == READOSM_VAR_INT32) {
               hdsz = fld.value.int32_value;
-              verbose_1("    field_id == 3, hdsz = %d\n", hdsz);
+              verbose_1("      field_id == 3, hdsz = %d\n", hdsz);
           }
           else {
-              verbose_1("    else\n");
+              verbose_1("      else\n");
           }
 
           if (base > stop) {
-              verbose_1("    base > stop\n");
+              verbose_1("      base > stop\n");
               break;
           }
     }
@@ -440,7 +440,7 @@ int load_osm_pbf(
     unsigned char buf[4];
     unsigned int  hdsz;
 
-//  readosm_file *osm_handle;
+    verbose_1("load_osm_pbf\n");
 
     g_cb_nod            = cb_nod;
     g_cb_way            = cb_way;
@@ -476,10 +476,10 @@ int load_osm_pbf(
 
           if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
-          hdsz = get_header_size (buf /*, g_little_endian_cpu */ /* input->little_endian_cpu*/);
+          hdsz = get_header_size (buf);
 
         // parsing OSMData
-          if (!parse_osm_data (/*input,*/ hdsz /*, &params */))
+          if (!parse_osm_data (hdsz))
               return READOSM_INVALID_PBF_HEADER;
     }
 

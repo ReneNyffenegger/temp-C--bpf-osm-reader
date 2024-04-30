@@ -882,8 +882,10 @@ static unsigned char *read_pbf_field (
     unsigned char  field_id;
     unsigned char  type_hint;
 
-    if (ptr > stop)
+    if (ptr > stop) {
+        wrong_assumption("read_pbf_field: ptr > stop");
         return NULL;
+    }
 
 /*
  / any PBF field is prefixed by a single byte
@@ -1868,7 +1870,7 @@ static int parse_primitive_group (
 
 /* reading the Primitive Group */
 
-    verbose_1("parse_primitive_group\n");
+    verbose_1("    parse_primitive_group\n");
     while (1) {
 
        // resetting an empty variant field
@@ -1893,31 +1895,21 @@ static int parse_primitive_group (
 
           if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) { // Way
 
-//              if (params->way_callback == NULL)
-//                  goto skip;  /* skipping: no way-callback */
 
                 if (!parse_pbf_way
                     (strings, variant.pointer,
                      variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu
-//                   params -> way_callback
-//                   params
                      ))
                     goto error;
             }
 
           if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) { // Relation
-                /* Relation */
-
-//              if (params->relation_callback == NULL)
-//                  goto skip;  /* skipping: no relation-callback */
 
                 if (!parse_pbf_relation
                     (strings, variant.pointer,
                      variant.pointer + variant.str_len - 1,
                      variant.little_endian_cpu
-//                   params -> relation_callback
-//                   params
                      ))
                     goto error;
             }
