@@ -54,9 +54,8 @@ void wrong_assumption(char* txt) {
 }
 
 
-#define TQ84_USE_PBF_FIELD_HINTS
-
-// #define TQ84_VERBOSE_1
+   #define TQ84_USE_PBF_FIELD_HINTS
+   #define TQ84_VERBOSE_1
 
 #ifdef TQ84_VERBOSE_1
 #define verbose_1(...) printf(__VA_ARGS__)
@@ -146,7 +145,7 @@ static int parse_osm_data (unsigned int sz) {
  // reading the OSMData header
  //
     while (1) {
-          verbose_1("  iterating\n");
+          verbose_1("  iterating (parse_osm_data)\n");
 
        // resetting an empty variant field
           reset_variant (&variant);
@@ -187,14 +186,13 @@ static int parse_osm_data (unsigned int sz) {
         goto error;
 
  // uncompressing the OSMData zipped */
-    finalize_variant  (&variant);
    #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant  (&variant);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_VAR_INT32, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
    #endif
-    while (1)
-      {
+    while (1) {
        // resetting an empty variant field
           reset_variant (&variant);
 
@@ -241,8 +239,8 @@ static int parse_osm_data (unsigned int sz) {
     base  = raw_ptr;
     start = raw_ptr;
     stop  = raw_ptr + raw_sz - 1;
-    finalize_variant (&variant);
    #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&variant);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 17);
@@ -300,7 +298,10 @@ static int parse_osm_data (unsigned int sz) {
         free (buf);
     if (raw_ptr != NULL)
         free (raw_ptr);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
+
     finalize_string_table (&string_table);
     return 1;
 
@@ -309,8 +310,120 @@ static int parse_osm_data (unsigned int sz) {
         free (buf);
     if (raw_ptr != NULL)
         free (raw_ptr);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
+
     finalize_string_table (&string_table);
+    return 0;
+}
+
+
+static int skip_osm_header (unsigned int sz) {
+
+//
+// expecting to retrieve a valid OSMHeader header 
+// there is nothing really interesting here, so we'll
+// simply discard the whole block, simply advancing
+// the read file-pointer as appropriate
+//
+
+    verbose_1("skip_osm_header, sz = %d\n", sz);
+
+    if (sz != 14) {
+       wrong_assumption("parameter sz of skip_osm_header was expected to be 14");
+    }
+
+    int ok_header = 0;
+    int hdsz      = 0;
+
+    size_t rd;
+    unsigned char *buf   = malloc (sz);
+    unsigned char *base  = buf;
+    unsigned char *start = buf;
+    unsigned char *stop  = buf + sz - 1;
+    pbf_field      fld;
+
+    if (buf == NULL)
+        goto error;
+
+ // initializing an empty fld field 
+    init_variant (&fld, g_little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    add_variant_hints (&fld, READOSM_LEN_BYTES, 1);
+    add_variant_hints (&fld, READOSM_LEN_BYTES, 2);
+    add_variant_hints (&fld, READOSM_VAR_INT32, 3);
+   #endif
+
+    rd = fread (buf, 1, sz, g_pbf_file);
+    if (rd != sz)
+        goto error;
+
+// reading the OSMHeader header
+//
+    while (1) {
+       verbose_1("  next iteration");
+       // resetting an empty fld field
+          reset_variant (&fld);
+
+          base = parse_field (start, stop, &fld);
+          if (base == NULL && fld.valid == 0)
+              goto error;
+
+          start = base;
+          if (fld.field_id == 1 && fld.type == READOSM_LEN_BYTES && fld.str_len == 9) {
+
+                verbose_1("    field_id == 1\n");
+                if (memcmp (fld.pointer, "OSMHeader", 9) == 0)
+                    ok_header = 1;
+          }
+          else if (fld.field_id == 3 && fld.type == READOSM_VAR_INT32) {
+              hdsz = fld.value.int32_value;
+              verbose_1("    field_id == 3, hdsz = %d\n", hdsz);
+          }
+          else {
+              verbose_1("    else\n");
+          }
+
+          if (base > stop) {
+              verbose_1("    base > stop\n");
+              break;
+          }
+    }
+
+    free (buf);
+    buf = NULL;
+
+    if (!ok_header || !hdsz)
+        goto error;
+
+    buf   = malloc (hdsz);
+    base  = buf;
+    start = buf;
+    stop  = buf + hdsz - 1;
+
+    rd = fread (buf, 1, hdsz, g_pbf_file/*, input->in*/);
+
+    if ((int) rd != hdsz)
+        goto error;
+
+    if (buf != NULL)
+        free (buf);
+
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&fld);
+   #endif
+   
+// exit(100); // TQ84 - remove moe
+    return 1;
+
+  error:
+    if (buf != NULL)
+        free (buf);
+
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&fld);
+   #endif
     return 0;
 }
 
@@ -334,56 +447,18 @@ int load_osm_pbf(
     g_cb_rel            = cb_rel;
     g_little_endian_cpu = test_endianness();
 
-//  ret = readosm_open(filename_pbf, /*(const readosm_file**)*/ &osm_handle);
-
-/* allocating and initializing the OSM input file struct */
-//  osm_handle = malloc (sizeof (readosm_file));
-//  if (!osm_handle)
-//      return 999;
-
-//  input->magic1 = READOSM_MAGIC_START;
-//  input->file_format = format;
-//  osm_handle -> little_endian_cpu = test_endianness();
-
-//  osm_handle->magic2 = READOSM_MAGIC_END;
-
-
-//  if (! osm_handle)
-//      return READOSM_INSUFFICIENT_MEMORY;
-
-//  *osm_handle = input;
-
-//  osm_handle->in = fopen(filename_pbf, "rb");
     g_pbf_file = fopen(filename_pbf, "rb");
 
     if (g_pbf_file == NULL)
         return READOSM_FILE_NOT_FOUND;
 
-
-
-
-
-
-
- // if (ret != READOSM_OK) {
- //     fprintf (stderr, "OPEN error: %d (filename_pbf = %s)\n", ret, filename_pbf);
- //     goto stop;
- // }
-
-
-
-
-
-//  int ret;
-//  ret = parse_osm_pbf(/*osm_handle,*/  cb_nod, cb_way, cb_rel);
-
     rd = fread (buf, 1, 4, g_pbf_file);
     if (rd != 4) return READOSM_INVALID_PBF_HEADER;
 
-    hdsz = get_header_size (buf /*, g_little_endian_cpu*/ /* input->little_endian_cpu */);
+    hdsz = get_header_size (buf);
 
 /* testing OSMHeader */
-    if (!skip_osm_header (/*input,*/ hdsz))
+    if (!skip_osm_header (hdsz))
         return READOSM_INVALID_PBF_HEADER;
 
 // -------------------------------------------------------------------------------------------------------

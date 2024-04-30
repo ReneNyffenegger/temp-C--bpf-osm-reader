@@ -58,13 +58,15 @@
 
 #define MAX_NODES 1024
 
+#ifdef TQ84_USE_PBF_FIELD_HINTS
 typedef struct pbf_field_hint pbf_field_hint;
 struct pbf_field_hint {
     unsigned char field_id;
     unsigned char expected_type;
     struct        pbf_field_hint *next;   // Linked list
-}
-;
+};
+#endif
+
 
 
 typedef struct {
@@ -206,9 +208,9 @@ static void add_variant_hints (
  // adding a field hint to a PBF Variant object
  //
     pbf_field_hint *hint = malloc (sizeof (pbf_field_hint));
-    hint->expected_type = expected_type;
-    hint->field_id      = field_id;
-    hint->next = NULL;
+    hint->expected_type  = expected_type;
+    hint->field_id       = field_id;
+    hint->next           = NULL;
 
     if (variant->first_hint == NULL) variant->first_hint      = hint;
     if (variant->last_hint  != NULL) variant->last_hint->next = hint;
@@ -790,16 +792,15 @@ static int parse_sint32_packed (readosm_int32_packed * packed, unsigned char *st
 
     while (1) {
           ptr = read_var (start, stop, &variant);
-          if (variant.valid)
-            {
+          if (variant.valid) {
                 append_int32_packed (packed, variant.value.int32_value);
                 if (ptr > stop)
                     break;
                 start = ptr;
                 continue;
-            }
+          }
           return 0;
-      }
+     }
     return 1;
 }
 
@@ -885,11 +886,13 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, p
     type     =  *ptr & 0x07;
     field_id = (*ptr & 0xf8) >> 3;
 
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
 /* attempting to identify the field accordingly to declared hints */
     if (!find_type_hint (variant, field_id, type, &type_hint)) {
         wrong_assumption("find_type_hint returned 0");
         return NULL;
     }
+   #endif
 
     variant->type = type_hint;
     variant->field_id = field_id;
@@ -914,100 +917,6 @@ static unsigned char * parse_field (unsigned char *start, unsigned char *stop, p
 }
 
 
-static int skip_osm_header (/*const readosm_file * input, */ unsigned int sz) {
-
-//
-// expecting to retrieve a valid OSMHeader header 
-// there is nothing really interesting here, so we'll
-// simply discard the whole block, simply advancing
-// the read file-pointer as appropriate
-//
-
-    verbose_1("skip_osm_header, sz = %d\n", sz);
-
-    int ok_header = 0;
-    int hdsz = 0;
-
-    size_t rd;
-    unsigned char *buf   = malloc (sz);
-    unsigned char *base  = buf;
-    unsigned char *start = buf;
-    unsigned char *stop  = buf + sz - 1;
-    pbf_field variant;
-
-    if (buf == NULL)
-        goto error;
-
- // initializing an empty variant field 
-    init_variant (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 3);
-   #endif
-
-    rd = fread (buf, 1, sz, g_pbf_file/*, input->in*/);
-    if (rd != sz)
-        goto error;
-
-// reading the OSMHeader header
-//
-    while (1) {
-       verbose_1("  next iteration");
-       // resetting an empty variant field
-          reset_variant (&variant);
-
-          base = parse_field (start, stop, &variant);
-          if (base == NULL && variant.valid == 0)
-              goto error;
-
-          start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 9) {
-
-                verbose_1("    field_id == 1\n");
-                if (memcmp (variant.pointer, "OSMHeader", 9) == 0)
-                    ok_header = 1;
-          }
-
-          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
-              hdsz = variant.value.int32_value;
-              verbose_1("    field_id == 3, hdsz = %d\n", hdsz);
-          }
-
-          if (base > stop) {
-              verbose_1("    base > stop\n");
-              break;
-          }
-    }
-
-    free (buf);
-    buf = NULL;
-
-    if (!ok_header || !hdsz)
-        goto error;
-
-    buf   = malloc (hdsz);
-    base  = buf;
-    start = buf;
-    stop  = buf + hdsz - 1;
-
-    rd = fread (buf, 1, hdsz, g_pbf_file/*, input->in*/);
-
-    if ((int) rd != hdsz)
-        goto error;
-
-    if (buf != NULL)
-        free (buf);
-
-    finalize_variant (&variant);
-    return 1;
-
-  error:
-    if (buf != NULL)
-        free (buf);
-    finalize_variant (&variant);
-    return 0;
-}
 
 static int
 unzip_compressed_block (unsigned char *zip_ptr, unsigned int zip_sz,
@@ -1071,11 +980,16 @@ parse_string_table (readosm_string_table * string_table,
               break;
       }
 
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
     return 1;
 
   error:
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
+
     return 0;
 }
 
@@ -1147,14 +1061,19 @@ static int parse_pbf_node_infos (
     finalize_uint32_packed (&packed_u32);
     finalize_int32_packed (&packed_32);
     finalize_int64_packed (&packed_64);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
+
     return 1;
 
   error:
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
     finalize_uint32_packed (&packed_u32);
-    finalize_int32_packed (&packed_32);
-    finalize_int64_packed (&packed_64);
+    finalize_int32_packed  (&packed_32);
+    finalize_int64_packed  (&packed_64);
     return 0;
 }
 
@@ -1416,22 +1335,25 @@ static int parse_pbf_nodes (
     finalize_int64_packed (&packed_lats);
     finalize_int64_packed (&packed_lons);
     finalize_packed_infos (&packed_infos);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
     return 1;
 
   error:
-    finalize_uint32_packed (&packed_keys);
+    finalize_uint32_packed(&packed_keys);
     finalize_int64_packed (&packed_ids);
     finalize_int64_packed (&packed_lats);
     finalize_int64_packed (&packed_lons);
     finalize_packed_infos (&packed_infos);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
-    if (nodes != NULL)
-      {
+   #endif
+
+    if (nodes != NULL) {
           readosm_internal_node *nd;
           int i;
-          for (i = 0; i < nd_count; i++)
-            {
+          for (i = 0; i < nd_count; i++) {
                 nd = nodes + i;
                 destroy_internal_node (nd);
             }
@@ -1529,11 +1451,15 @@ static int parse_pbf_way_info (
           if (base > stop)
               break;
       }
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
     return 1;
 
   error:
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
     return 0;
 }
 
@@ -1654,7 +1580,9 @@ static int parse_pbf_way (readosm_string_table * strings,
     finalize_uint32_packed (&packed_keys);
     finalize_uint32_packed (&packed_values);
     finalize_int64_packed (&packed_refs);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
 
 /* processing the WAY */
 //  if (params->way_callback != NULL && params->stop == 0)
@@ -1672,8 +1600,10 @@ static int parse_pbf_way (readosm_string_table * strings,
   error:
     finalize_uint32_packed (&packed_keys);
     finalize_uint32_packed (&packed_values);
-    finalize_int64_packed (&packed_refs);
+    finalize_int64_packed  (&packed_refs);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
     destroy_internal_way (way);
     return 0;
 }
@@ -1756,11 +1686,15 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
           if (base > stop)
               break;
       }
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
     return 1;
 
   error:
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
     return 0;
 }
 
@@ -1866,7 +1800,9 @@ static int parse_pbf_relation (
     finalize_uint32_packed (&packed_roles);
     finalize_uint32_packed (&packed_types);
     finalize_int64_packed (&packed_refs);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
 
 /* processing the RELATION */
 //  if (params->relation_callback != NULL && params->stop == 0)
@@ -1887,7 +1823,9 @@ static int parse_pbf_relation (
     finalize_uint32_packed (&packed_roles);
     finalize_uint32_packed (&packed_types);
     finalize_int64_packed (&packed_refs);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
     destroy_internal_relation (relation);
     return 0;
 }
@@ -1982,78 +1920,16 @@ static int parse_primitive_group (
               break;
       }
 
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
+
     return 1;
 
   error:
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
+   #endif
+
     return 0;
 }
-
-
-// unsigned int read_header_size(FILE* f, char) {
-//     unsigned char buf[4];
-// 
-//     rd = fread (buf, 1, 4, f);
-//     if (rd != 4) exit(44); // return READOSM_INVALID_PBF_HEADER;
-//     return get_header_size(buf, 
-// 
-// }
-
-// int parse_osm_pbf (
-// 
-// // const readosm_file       *input,
-// // readosm_node_callback     cb_nod,
-// // readosm_way_callback      cb_way,
-// // readosm_relation_callback cb_rel
-// )
-// {
-// 
-// // parsing the input file [OSM PBF format]
-// 
-//     size_t        rd;
-//     unsigned char buf[4];
-//     unsigned int  hdsz;
-// 
-// //  g_cb_nod = cb_nod;
-// //  g_cb_way = cb_way;
-// //  g_cb_rel = cb_rel;
-// 
-//  // reading BlobHeader size: OSMHeader */
-//     rd = fread (buf, 1, 4, g_pbf_file);
-//     if (rd != 4) return READOSM_INVALID_PBF_HEADER;
-// 
-//     hdsz = get_header_size (buf /*, g_little_endian_cpu*/ /* input->little_endian_cpu */);
-// 
-// /* testing OSMHeader */
-//     if (!skip_osm_header (/*input,*/ hdsz))
-//         return READOSM_INVALID_PBF_HEADER;
-// 
-// /* 
-//  / the PBF file is internally organized as a collection
-//  / of many subsequent OSMData blocks 
-// */
-//     while (1) {
-// 
-//           rd = fread (buf, 1, 4, g_pbf_file);
-// 
-//           if (rd == 0 && feof (g_pbf_file))
-//               break;
-// 
-//           if (rd != 4) return READOSM_INVALID_PBF_HEADER;
-// 
-//           hdsz = get_header_size (buf /*, g_little_endian_cpu */ /* input->little_endian_cpu*/);
-// 
-//           /* parsing OSMData */
-//           if (!parse_osm_data (/*input,*/ hdsz /*, &params */))
-// 
-//               return READOSM_INVALID_PBF_HEADER;
-//     }
-//     return READOSM_OK;
-// }
-
-// READOSM_DECLARE const char *
-// readosm_zlib_version (void) {
-// /* returning the current zlib version string */
-//     return zlibVersion ();
-// }
