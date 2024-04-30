@@ -99,18 +99,18 @@ static int read_osm_data_block (unsigned int sz) {
     int ok_header = 0;
     int hdsz      = 0;
     size_t               rd;
-    unsigned char       *buf     = malloc (sz);
-    unsigned char       *base    = buf;
-    unsigned char       *start   = buf;
-    unsigned char       *stop    = buf + sz - 1;
-    unsigned char       *zip_ptr = NULL;
-    int                  zip_sz  = 0;
-    unsigned char       *raw_ptr = NULL;
-    int                  raw_sz  = 0;
+    unsigned char       *buf                = malloc (sz);
+    unsigned char       *base               = buf;
+    unsigned char       *start              = buf;
+    unsigned char       *stop               = buf + sz - 1;
+    unsigned char       *zip_ptr            = NULL;
+    int                  zip_sz             = 0;
+    unsigned char       *raw_ptr            = NULL;
+    int                  sz_no_compression  = 0;
     pbf_field            variant;
 
 
-    verbose_1("  read_osm_data_block\n");
+    verbose_1("  read_osm_data_block sz = %d\n", sz);
 
     if (buf == NULL)
         goto error;
@@ -135,7 +135,7 @@ static int read_osm_data_block (unsigned int sz) {
     add_variant_hints (&variant, READOSM_VAR_INT32, 3);
    #endif
 
-    rd = fread (buf, 1, sz, g_pbf_file/*, input->in*/);
+    rd = fread (buf, 1, sz, g_pbf_file);
     if (rd != sz)
         goto error;
 
@@ -177,15 +177,15 @@ static int read_osm_data_block (unsigned int sz) {
     if (!ok_header || !hdsz)
         goto error;
 
-    buf = malloc (hdsz);
-    base = buf;
+    buf   = malloc (hdsz);
+    base  = buf;
     start = buf;
-    stop = buf + hdsz - 1;
-    rd = fread (buf, 1, hdsz, g_pbf_file/*input->in*/);
+    stop  = buf + hdsz - 1;
+    rd    = fread (buf, 1, hdsz, g_pbf_file);
     if ((int) rd != hdsz)
         goto error;
 
- // uncompressing the OSMData zipped */
+// uncompressing the OSMData zipped */
    #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant  (&variant);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
@@ -193,6 +193,7 @@ static int read_osm_data_block (unsigned int sz) {
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
    #endif
     while (1) {
+          verbose_1("    iterating again (read_osm_data_block)\n");
        // resetting an empty variant field
           reset_variant (&variant);
 
@@ -203,33 +204,40 @@ static int read_osm_data_block (unsigned int sz) {
           start = base;
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
              // found an uncompressed block */
-                raw_sz = variant.str_len;
-                raw_ptr = malloc (raw_sz);
-                memcpy (raw_ptr, variant.pointer, raw_sz);
+                verbose_1("      uncompressed block\n");
+                wrong_assumption("uncompressed block don't exist");
+                sz_no_compression = variant.str_len;
+                raw_ptr = malloc (sz_no_compression);
+                memcpy (raw_ptr, variant.pointer, sz_no_compression);
           }
+
           if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
-              // expected size of unZipped block */
-                raw_sz = variant.value.int32_value;
+
+             // expected size of unZipped block */
+                sz_no_compression = variant.value.int32_value;
+                verbose_1("      size of uncompressed block %d\n", sz_no_compression);
           }
+
           if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
-              // found a ZIP-compressed block
+                verbose_1("      zipped block\n");
+             // found a ZIP-compressed block
                 zip_ptr = variant.pointer;
-                zip_sz = variant.str_len;
+                zip_sz  = variant.str_len;
           }
           if (base > stop)
               break;
     }
 
-    if (zip_ptr != NULL && zip_sz != 0 && raw_sz != 0) {
+    if (zip_ptr != NULL && zip_sz != 0 && sz_no_compression != 0) {
           /* unZipping a compressed block */
-          raw_ptr = malloc (raw_sz);
-          if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, raw_sz))
+          raw_ptr = malloc (sz_no_compression);
+          if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, sz_no_compression))
               goto error;
     }
 
     free (buf);
     buf = NULL;
-    if (raw_ptr == NULL || raw_sz == 0)
+    if (raw_ptr == NULL || sz_no_compression == 0)
         goto error;
 
      //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
@@ -238,7 +246,7 @@ static int read_osm_data_block (unsigned int sz) {
 
     base  = raw_ptr;
     start = raw_ptr;
-    stop  = raw_ptr + raw_sz - 1;
+    stop  = raw_ptr + sz_no_compression - 1;
    #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
@@ -296,8 +304,10 @@ static int read_osm_data_block (unsigned int sz) {
 
     if (buf != NULL)
         free (buf);
+
     if (raw_ptr != NULL)
         free (raw_ptr);
+
    #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
    #endif
