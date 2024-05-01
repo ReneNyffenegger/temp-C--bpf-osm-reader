@@ -49,7 +49,9 @@
 #include <string.h>
 
 
-unsigned int max_buffer_size = 0;
+unsigned int    cur_uncompressed_buffer_size = 0;
+unsigned char  *ptr_uncompressed_buffer      = NULL;
+
 
 void wrong_assumption(char* txt) {
    printf("\033[1;31m%s\033[0m\n", txt);
@@ -362,10 +364,10 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
     }
     verbose_1("    sz = %d\n", sz);
 
-if (sz > max_buffer_size) {
-  max_buffer_size = sz;
-  printf("max_buffer_size = %d\n", max_buffer_size);
-}
+// if (sz > max_buffer_size) {
+//   max_buffer_size = sz;
+//   printf("max_buffer_size = %d\n", max_buffer_size);
+// }
 
     int ok_header = 0;
     int hdsz      = 0;
@@ -376,7 +378,7 @@ if (sz > max_buffer_size) {
     unsigned char       *stop               = buf + sz - 1;
     unsigned char       *zip_ptr            = NULL;
     int                  zip_sz             = 0;
-    unsigned char       *raw_ptr            = NULL;
+//  unsigned char       *raw_ptr            = NULL;
     int                  sz_no_compression  = 0;
     pbf_field            variant;
 
@@ -452,10 +454,6 @@ if (sz > max_buffer_size) {
 
      //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
 
-if (hdsz > max_buffer_size) {
-  max_buffer_size = hdsz;
-  printf("max_buffer_size = %d\n", max_buffer_size);
-}
     buf   = malloc (hdsz);
     base  = buf;
     start = buf;
@@ -486,8 +484,17 @@ if (hdsz > max_buffer_size) {
                 verbose_1("      uncompressed block\n");
                 wrong_assumption("uncompressed block don't exist");
                 sz_no_compression = variant.str_len;
-                raw_ptr = malloc (sz_no_compression);
-                memcpy (raw_ptr, variant.pointer, sz_no_compression);
+
+                if (sz_no_compression > cur_uncompressed_buffer_size) {
+                   printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
+                   free(ptr_uncompressed_buffer);
+                   cur_uncompressed_buffer_size = sz_no_compression;
+                   ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
+                }
+//              raw_ptr = malloc (sz_no_compression);
+
+//              memcpy (raw_ptr, variant.pointer, sz_no_compression);
+                memcpy (ptr_uncompressed_buffer, variant.pointer, sz_no_compression);
           }
 
           if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
@@ -508,19 +515,30 @@ if (hdsz > max_buffer_size) {
     }
 
     if (zip_ptr != NULL && zip_sz != 0 && sz_no_compression != 0) {
-          /* unZipping a compressed block */
-          raw_ptr = malloc (sz_no_compression);
+    // unzip a compressed block
+
+//        raw_ptr = malloc (sz_no_compression);
+          if (sz_no_compression > cur_uncompressed_buffer_size) {
+             printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
+             free(ptr_uncompressed_buffer);
+             cur_uncompressed_buffer_size = sz_no_compression;
+             ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
+          }
+//              raw_ptr = malloc (sz_no_compression);
+
 
                   
 //        if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, sz_no_compression))
 //            goto error;
           uLongf unc_size = sz_no_compression;
           int unc_ret = uncompress(
-              raw_ptr,   // dest
+//            raw_ptr,   // dest
+              ptr_uncompressed_buffer,   // dest
               &unc_size, // dest len: on entry, the value is the size of the dest buffer; on exit, value is the length of uncompressed data.
               zip_ptr,   // src
               zip_sz     // src len
-           ); 
+          ); 
+
           if (unc_ret != Z_OK || unc_size != sz_no_compression) {
               printf("Z_OK = %d, unc_ret = %d / Z_BUF_ERROR = %d, Z_MEM_ERROR = %d, Z_DATA_ERROR = %d\n", Z_OK, unc_ret, Z_BUF_ERROR, Z_MEM_ERROR, Z_DATA_ERROR);
               printf("unc_size = %d, zip_sz = %d\n", unc_size, zip_sz);
@@ -530,18 +548,22 @@ if (hdsz > max_buffer_size) {
 
     }
 
-    free (buf);
-    buf = NULL;
-    if (raw_ptr == NULL || sz_no_compression == 0)
-        goto error;
+//  free (buf);
+//  buf = NULL;
+//  if (raw_ptr == NULL || sz_no_compression == 0)
+//      goto error;
 
      //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
 
  // parsing the PrimitiveBlock
 
-    base  = raw_ptr;
-    start = raw_ptr;
-    stop  = raw_ptr + sz_no_compression - 1;
+//  base  = raw_ptr;
+//  start = raw_ptr;
+//  stop  = raw_ptr + sz_no_compression - 1;
+    base  = ptr_uncompressed_buffer;
+    start = ptr_uncompressed_buffer;
+    stop  = ptr_uncompressed_buffer + sz_no_compression - 1;
+
    #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
@@ -600,8 +622,8 @@ if (hdsz > max_buffer_size) {
     if (buf != NULL)
         free (buf);
 
-    if (raw_ptr != NULL)
-        free (raw_ptr);
+//  if (raw_ptr != NULL)
+//      free (raw_ptr);
 
    #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
@@ -613,8 +635,10 @@ if (hdsz > max_buffer_size) {
   error:
     if (buf != NULL)
         free (buf);
-    if (raw_ptr != NULL)
-        free (raw_ptr);
+
+//  if (raw_ptr != NULL)
+//      free (raw_ptr);
+
    #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
    #endif
@@ -1054,10 +1078,10 @@ static int read_header_block_v2() {
     int hdsz      = 0;
 
 
-if (sz > max_buffer_size) {
-  max_buffer_size = sz;
-  printf("max_buffer_size = %d\n", max_buffer_size);
-}
+// if (sz > max_buffer_size) {
+//   max_buffer_size = sz;
+//   printf("max_buffer_size = %d\n", max_buffer_size);
+// }
     unsigned char *buf   = malloc (sz);
     if (buf == NULL)
         goto error;
@@ -1182,10 +1206,10 @@ if (sz > max_buffer_size) {
 //  Just SKIP OVER the rest of the header buffer!
 //
 
-if (hdsz > max_buffer_size) {
-  max_buffer_size = hdsz;
-  printf("max_buffer_size = %d\n", max_buffer_size);
-}
+// if (hdsz > max_buffer_size) {
+//   max_buffer_size = hdsz;
+//   printf("max_buffer_size = %d\n", max_buffer_size);
+// }
     buf   = malloc (hdsz);
 
 //  base  = buf;
@@ -1263,9 +1287,11 @@ int load_osm_pbf(
 // 
 // the PBF file is internally organized as a collection
 // of many subsequent OSMData blocks 
-//
-//    while (1) {
-      while(read_osm_data_block_v2()) {
+
+    cur_uncompressed_buffer_size = 1 * 1000 * 1000;
+    ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
+
+    while(read_osm_data_block_v2()) {
        verbose_1("  iteration (load_osm_pbf)\n");
 
 #if 0
@@ -1282,6 +1308,7 @@ int load_osm_pbf(
               return READOSM_INVALID_PBF_HEADER;
 #endif
     }
+    free(ptr_uncompressed_buffer);
 
 // -------------------------------------------------------------------------------------------------------
 
