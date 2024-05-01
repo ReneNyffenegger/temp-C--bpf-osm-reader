@@ -51,6 +51,7 @@
 
 unsigned int    cur_uncompressed_buffer_size = 0;
 unsigned char  *ptr_uncompressed_buffer      = NULL;
+unsigned char  *ptr_uncompressed_buffer_cur  = NULL;
 
 
 void wrong_assumption(char* txt) {
@@ -60,7 +61,7 @@ void wrong_assumption(char* txt) {
 
 
    #define TQ84_USE_PBF_FIELD_HINTS
-   #define TQ84_VERBOSE_1
+// #define TQ84_VERBOSE_1
 
 #ifdef TQ84_VERBOSE_1
 #define verbose_1(...) printf(__VA_ARGS__)
@@ -350,6 +351,17 @@ static unsigned int blob_size() {
 
 }
 
+static int set_uncompressed_buffer(int req_uncompressed_buffer_size) {
+
+    if (req_uncompressed_buffer_size > cur_uncompressed_buffer_size) {
+       printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, req_uncompressed_buffer_size);
+       free(ptr_uncompressed_buffer);
+       cur_uncompressed_buffer_size = req_uncompressed_buffer_size;
+       ptr_uncompressed_buffer      = malloc(cur_uncompressed_buffer_size);
+    }
+    ptr_uncompressed_buffer_cur = ptr_uncompressed_buffer;
+}
+
 static int read_osm_data_block_v2 (/*unsigned int sz*/) {
  //
  // expecting to retrieve a valid OSMData header
@@ -381,10 +393,6 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
 //  unsigned char       *raw_ptr            = NULL;
     int                  sz_no_compression  = 0;
     pbf_field            variant;
-
-
-
-
 
 
     if (buf == NULL)
@@ -485,12 +493,15 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
                 wrong_assumption("uncompressed block don't exist");
                 sz_no_compression = variant.str_len;
 
-                if (sz_no_compression > cur_uncompressed_buffer_size) {
-                   printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
-                   free(ptr_uncompressed_buffer);
-                   cur_uncompressed_buffer_size = sz_no_compression;
-                   ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
-                }
+
+//              if (sz_no_compression > cur_uncompressed_buffer_size) {
+//                 printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
+//                 free(ptr_uncompressed_buffer);
+//                 cur_uncompressed_buffer_size = sz_no_compression;
+//                 ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
+//              }
+                set_uncompressed_buffer(sz_no_compression);
+
 //              raw_ptr = malloc (sz_no_compression);
 
 //              memcpy (raw_ptr, variant.pointer, sz_no_compression);
@@ -518,13 +529,14 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
     // unzip a compressed block
 
 //        raw_ptr = malloc (sz_no_compression);
-          if (sz_no_compression > cur_uncompressed_buffer_size) {
-             printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
-             free(ptr_uncompressed_buffer);
-             cur_uncompressed_buffer_size = sz_no_compression;
-             ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
-          }
-//              raw_ptr = malloc (sz_no_compression);
+//        if (sz_no_compression > cur_uncompressed_buffer_size) {
+//           printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
+//           free(ptr_uncompressed_buffer);
+//           cur_uncompressed_buffer_size = sz_no_compression;
+//           ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
+//        }
+          set_uncompressed_buffer(sz_no_compression);
+//        raw_ptr = malloc (sz_no_compression);
 
 
                   
@@ -1294,8 +1306,10 @@ int load_osm_pbf(
 // the PBF file is internally organized as a collection
 // of many subsequent OSMData blocks 
 
-    cur_uncompressed_buffer_size = 1 * 1000 * 1000;
-    ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
+//  cur_uncompressed_buffer_size = 1 * 1000 * 1000;
+//  ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
+
+    set_uncompressed_buffer(1 * 1000 * 1000);
 
     while(read_osm_data_block_v2()) {
        verbose_1("  iteration (load_osm_pbf)\n");
