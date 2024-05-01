@@ -1084,12 +1084,16 @@ static int read_header_block_v2() {
 //   printf("max_buffer_size = %d\n", max_buffer_size);
 // }
     unsigned char *buf   = malloc (sz);
-    if (buf == NULL)
-        goto error;
+    if (buf == NULL) {
+        wrong_assumption("buf");
+//      goto error;
+    }
 
     rd = fread (buf, 1, sz, g_pbf_file);
-    if (rd != sz)
-        goto error;
+    if (rd != sz) {
+       wrong_assumption("rd == sz");
+//     goto error;
+    }
 
 //  unsigned char *base  = buf;
 //  unsigned char *start = buf;
@@ -1200,32 +1204,33 @@ static int read_header_block_v2() {
 
     if (!hdsz) {
         wrong_assumption("ok header, hdsz");
-        goto error;
+//      goto error;
     }
 
 //
 //  Just SKIP OVER the rest of the header buffer!
 //
 
-// if (hdsz > max_buffer_size) {
-//   max_buffer_size = hdsz;
-//   printf("max_buffer_size = %d\n", max_buffer_size);
-// }
-    buf   = malloc (hdsz);
+    unsigned char *rest_of_header_buffer = malloc (hdsz);
+//  buf   = malloc (hdsz);
 
 //  base  = buf;
 //  start = buf;
 //  stop  = buf + hdsz - 1;
 
-    rd = fread (buf, 1, hdsz, g_pbf_file);
+//  rd = fread (buf, 1, hdsz, g_pbf_file);
+    rd = fread (rest_of_header_buffer, 1, hdsz, g_pbf_file);
 
+    if (!rd) {
+        wrong_assumption("rd");
+    }
     if ((int) rd != hdsz) {
         wrong_assumption("rd != hdsz");
-        goto error;
+//      goto error;
     }
 
-    if (buf != NULL)
-        free (buf);
+//  if (rest_of_header_buffer != NULL)
+    free (rest_of_header_buffer);
 
 // #ifdef TQ84_USE_PBF_FIELD_HINTS
 //  finalize_variant (&fld);
@@ -1235,14 +1240,14 @@ static int read_header_block_v2() {
     verbose_1("       returning from read_header_block_v2\n");
     return 1;
 
-  error:
-    if (buf != NULL)
-        free (buf);
+//error:
+//  if (buf != NULL)
+//      free (buf);
 
 // #ifdef TQ84_USE_PBF_FIELD_HINTS
 //  finalize_variant (&fld);
 // #endif
-    return 0;
+//  return 0;
 }
 
 int load_osm_pbf(
