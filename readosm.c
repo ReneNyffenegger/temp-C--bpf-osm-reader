@@ -60,7 +60,7 @@ void wrong_assumption(char* txt) {
 
 
    #define TQ84_USE_PBF_FIELD_HINTS
-// #define TQ84_VERBOSE_1
+   #define TQ84_VERBOSE_1
 
 #ifdef TQ84_VERBOSE_1
 #define verbose_1(...) printf(__VA_ARGS__)
@@ -612,6 +612,7 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
 
           if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
              // assumed to be a termination marker (???)
+                wrong_assumption("termination marker never reached");
                 break;
           }
 
