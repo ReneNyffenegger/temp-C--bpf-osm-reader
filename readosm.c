@@ -48,6 +48,9 @@
 #include <stdio.h>
 #include <string.h>
 
+
+unsigned int max_buffer_size = 0;
+
 void wrong_assumption(char* txt) {
    printf("\033[1;31m%s\033[0m\n", txt);
    exit(1);
@@ -55,7 +58,7 @@ void wrong_assumption(char* txt) {
 
 
    #define TQ84_USE_PBF_FIELD_HINTS
-   #define TQ84_VERBOSE_1
+// #define TQ84_VERBOSE_1
 
 #ifdef TQ84_VERBOSE_1
 #define verbose_1(...) printf(__VA_ARGS__)
@@ -359,6 +362,11 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
     }
     verbose_1("    sz = %d\n", sz);
 
+if (sz > max_buffer_size) {
+  max_buffer_size = sz;
+  printf("max_buffer_size = %d\n", max_buffer_size);
+}
+
     int ok_header = 0;
     int hdsz      = 0;
     size_t               rd;
@@ -442,6 +450,12 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
     if (!ok_header || !hdsz)
         goto error;
 
+     //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
+
+if (hdsz > max_buffer_size) {
+  max_buffer_size = hdsz;
+  printf("max_buffer_size = %d\n", max_buffer_size);
+}
     buf   = malloc (hdsz);
     base  = buf;
     start = buf;
@@ -496,8 +510,24 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
     if (zip_ptr != NULL && zip_sz != 0 && sz_no_compression != 0) {
           /* unZipping a compressed block */
           raw_ptr = malloc (sz_no_compression);
-          if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, sz_no_compression))
-              goto error;
+
+                  
+//        if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, sz_no_compression))
+//            goto error;
+          uLongf unc_size = sz_no_compression;
+          int unc_ret = uncompress(
+              raw_ptr,   // dest
+              &unc_size, // dest len: on entry, the value is the size of the dest buffer; on exit, value is the length of uncompressed data.
+              zip_ptr,   // src
+              zip_sz     // src len
+           ); 
+          if (unc_ret != Z_OK || unc_size != sz_no_compression) {
+              printf("Z_OK = %d, unc_ret = %d / Z_BUF_ERROR = %d, Z_MEM_ERROR = %d, Z_DATA_ERROR = %d\n", Z_OK, unc_ret, Z_BUF_ERROR, Z_MEM_ERROR, Z_DATA_ERROR);
+              printf("unc_size = %d, zip_sz = %d\n", unc_size, zip_sz);
+              wrong_assumption("uncompress");
+              exit(101);
+          }
+
     }
 
     free (buf);
@@ -1023,6 +1053,11 @@ static int read_header_block_v2() {
 //  int ok_header = 0;
     int hdsz      = 0;
 
+
+if (sz > max_buffer_size) {
+  max_buffer_size = sz;
+  printf("max_buffer_size = %d\n", max_buffer_size);
+}
     unsigned char *buf   = malloc (sz);
     if (buf == NULL)
         goto error;
@@ -1147,7 +1182,12 @@ static int read_header_block_v2() {
 //  Just SKIP OVER the rest of the header buffer!
 //
 
+if (hdsz > max_buffer_size) {
+  max_buffer_size = hdsz;
+  printf("max_buffer_size = %d\n", max_buffer_size);
+}
     buf   = malloc (hdsz);
+
 //  base  = buf;
 //  start = buf;
 //  stop  = buf + hdsz - 1;

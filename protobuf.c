@@ -927,6 +927,7 @@ static unsigned char *read_pbf_field (
 
 
 
+#if 0
 static int
 unzip_compressed_block (unsigned char *zip_ptr, unsigned int zip_sz,
                         unsigned char *raw_ptr, unsigned int raw_sz)
@@ -946,6 +947,8 @@ unzip_compressed_block (unsigned char *zip_ptr, unsigned int zip_sz,
         return 0;
     return 1;
 }
+#endif
+
 
 static int
 parse_string_table (readosm_string_table * string_table,
