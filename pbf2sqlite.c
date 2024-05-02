@@ -13,6 +13,8 @@
 
 #include "readosm.h"
 
+#define TQ84_PRINT_STAT
+
 #ifdef PBF2SQLITE
 
     sqlite3      *db;
@@ -101,12 +103,12 @@ static int callback_node (/*const void *user_data,*/ const readosm_node *node) {
     int i;
     const readosm_tag *tag;
 
-    static int callback_node_cnt = 0;
+#ifdef TQ84_PRINT_STAT
+    static unsigned long long callback_node_cnt = 0;
     callback_node_cnt ++;
 
-#ifdef TQ84_PRINT_STAT
     if (! (callback_node_cnt % 10000)) {
-       printf("Nodes loaded: %d\n", callback_node_cnt);
+       printf("Nodes loaded: %llu\n", callback_node_cnt);
     }
 #endif
 
@@ -248,12 +250,12 @@ static int callback_way (/*const void *user_data, */ const readosm_way * way) {
     int i;
     const readosm_tag *tag;
 
-    static int callback_way_cnt = 0;
+#ifdef TQ84_PRINT_STAT
+    static unsigned long long callback_way_cnt = 0;
     callback_way_cnt ++;
 
-#if TQ84_PRINT_STAT
     if (! (callback_way_cnt % 10000)) {
-       printf("Ways loaded: %d\n", callback_way_cnt);
+       printf("Ways loaded: %lluw\n", callback_way_cnt);
     }
 #endif
 
@@ -395,12 +397,12 @@ static int callback_relation (/*const void *user_data,*/ const readosm_relation 
     const readosm_member *member;
     const readosm_tag *tag;
 
-    static int callback_rel_cnt = 0;
+#ifdef TQ84_PRINT_STAT
+    static unsigned long long callback_rel_cnt = 0;
     callback_rel_cnt ++;
 
-#ifdef TQ84_PRINT_STAT
     if (! (callback_rel_cnt % 10000)) {
-       printf("Relations loaded: %d\n", callback_rel_cnt);
+       printf("Relations loaded: %&llu\n", callback_rel_cnt);
     }
 #endif
 
