@@ -107,8 +107,8 @@ static int callback_node (/*const void *user_data,*/ const readosm_node *node) {
     static unsigned long long callback_node_cnt = 0;
     callback_node_cnt ++;
 
-    if (! (callback_node_cnt % 10000)) {
-       printf("Nodes loaded: %llu\n", callback_node_cnt);
+    if (! (callback_node_cnt % (1000*1000))) {
+       printf("Nodes loaded: %llu M\n", callback_node_cnt/1000/1000);
     }
 #endif
 
@@ -254,8 +254,8 @@ static int callback_way (/*const void *user_data, */ const readosm_way * way) {
     static unsigned long long callback_way_cnt = 0;
     callback_way_cnt ++;
 
-    if (! (callback_way_cnt % 10000)) {
-       printf("Ways loaded: %lluw\n", callback_way_cnt);
+    if (! (callback_way_cnt % (1000*1000))) {
+       printf("Ways loaded: %llu M\n", callback_way_cnt/1000/1000);
     }
 #endif
 
@@ -401,8 +401,8 @@ static int callback_relation (/*const void *user_data,*/ const readosm_relation 
     static unsigned long long callback_rel_cnt = 0;
     callback_rel_cnt ++;
 
-    if (! (callback_rel_cnt % 10000)) {
-       printf("Relations loaded: %&llu\n", callback_rel_cnt);
+    if (! (callback_rel_cnt % (1000*1000))) {
+       printf("Relations loaded: %llu M\n", callback_rel_cnt / 1000*1000);
     }
 #endif
 
