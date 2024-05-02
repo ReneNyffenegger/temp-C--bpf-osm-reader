@@ -402,7 +402,7 @@ static int callback_relation (/*const void *user_data,*/ const readosm_relation 
     callback_rel_cnt ++;
 
     if (! (callback_rel_cnt % (1000*1000))) {
-       printf("Relations loaded: %llu M\n", callback_rel_cnt / 1000*1000);
+       printf("Relations loaded: %llu M\n", callback_rel_cnt/1000/1000);
     }
 #endif
 
