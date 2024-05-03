@@ -51,7 +51,7 @@
 
 unsigned int    cur_uncompressed_buffer_size = 0;
 unsigned char  *ptr_uncompressed_buffer      = NULL;
-unsigned char  *ptr_uncompressed_buffer_cur  = NULL;
+// unsigned char  *ptr_uncompressed_buffer_cur  = NULL;
 
 
 void wrong_assumption(char* txt) {
@@ -359,7 +359,7 @@ static int set_uncompressed_buffer(int req_uncompressed_buffer_size) {
        cur_uncompressed_buffer_size = req_uncompressed_buffer_size;
        ptr_uncompressed_buffer      = malloc(cur_uncompressed_buffer_size);
     }
-    ptr_uncompressed_buffer_cur = ptr_uncompressed_buffer;
+//    ptr_uncompressed_buffer_cur = ptr_uncompressed_buffer;
 }
 
 static int read_osm_data_block_v2 (/*unsigned int sz*/) {
