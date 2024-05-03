@@ -717,6 +717,56 @@ static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
 }
 
 
+int block_size(unsigned char* start, unsigned char* end, char* name)  { 
+
+    int ret;
+
+    pbf_field_v2    fld_block_name;
+
+    unsigned char* cur = start;
+
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
+
+    if (fld_block_name.field_id != 1) {
+       printf("field id = %d\n", fld_block_name.field_id);
+       wrong_assumption("field id");
+    }
+    if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
+       wrong_assumption("PROTOBUF_TYPE_LEN");
+    }
+    cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
+
+    if (fld_block_name.str_len == 9) {
+
+          verbose_1("      field_id == 1\n");
+          if (memcmp (fld_block_name.pointer, name, strlen(name))) {
+              wrong_assumption("block name");
+          }
+    }
+
+// -----------------------------------------------------------------------
+    pbf_field_v2    fld_block_size;
+
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_size);
+    verbose_1("      read block size\n");
+
+    if (fld_block_size.field_id != 3) {
+       printf("field id = %d\n", fld_block_size.field_id);
+       wrong_assumption("field id != 3");
+    }
+    if (fld_block_size.protobuf_type != PROTOBUF_TYPE_VARINT) {
+       wrong_assumption("PROTOBUF_TYPE_VARINT");
+    }
+
+    cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &fld_block_size);
+    verbose_1("      read integer\n");
+
+    ret = fld_block_size.value.int32_value;
+    verbose_1("      ret = %d\n", read);
+
+    return ret;
+
+}
 
 
 static int read_header_block_v2() {
@@ -756,6 +806,9 @@ static int read_header_block_v2() {
 
 // -----------------------------------------------------------------------
 
+    hdsz = block_size(cur, end, "OSMHeader");
+
+#ifdef AAA
     pbf_field_v2    fld_block_name;
 
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
@@ -797,6 +850,7 @@ static int read_header_block_v2() {
     hdsz = fld_block_size.value.int32_value;
     verbose_1("      hdsz = %d\n", hdsz);
 
+#endif
 
     free (buf);
 
@@ -837,7 +891,7 @@ static int read_osm_data_block_v2 () {
 
 
     int ok_header = 0;
-    int hdsz      = 0;
+    int hdsz ; //     = 0;
     size_t               rd;
     unsigned char       *buf                ; // = malloc (sz);
 
@@ -895,47 +949,10 @@ static int read_osm_data_block_v2 () {
 
      //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
 
-#if 0
- //
- // reading the OSMData header
- //
-    while (1) {
-          verbose_1("    iterating (read_osm_data_block)\n");
 
-       // resetting an empty variant field
-          reset_variant (&variant);
+    hdsz = block_size(cur, end, "OSMData");
 
-          cur = read_pbf_field (cur, end, &variant);
-
-          if (cur == NULL && variant.valid == 0) {
-             wrong_assumption("xyz");
-              goto error;
-          }
-
-//        start = base;
-
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 7) {
-                verbose_1("       field_id = 1\n");
-                if (memcmp (variant.pointer, "OSMData", 7) == 0) ok_header = 1;
-          }
-
-          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
-              hdsz = variant.value.int32_value;
-              verbose_1("       field_id = 3, hdsz = %d\n", hdsz);
-          }
-
-          if (cur > end)
-              break;
-
-    }
-
-    free (buf);
-    buf = NULL;
-    if (!ok_header || !hdsz)
-        goto error;
-
-#else
- // -------------------------------------------------------------------------
+#ifdef AAA
 
     pbf_field_v2    fld_block_name;
 
@@ -978,13 +995,14 @@ static int read_osm_data_block_v2 () {
     hdsz = fld_block_size.value.int32_value;
     verbose_1("      hdsz = %d\n", hdsz);
 
+#endif
+
     free (buf);
 
     if (!hdsz) {
         wrong_assumption("ok header, hdsz");
     }
 
-#endif
  // -------------------------------------------------------------------------
 
      //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
