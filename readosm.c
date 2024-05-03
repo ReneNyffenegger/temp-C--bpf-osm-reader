@@ -419,11 +419,14 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
    #endif
 
     rd = fread (buf, 1, sz, g_pbf_file);
-    if (rd != sz)
-        goto error;
+    if (rd != sz) {
+       wrong_assumption("fread is ok");
+//     goto error;
+    }
 
      //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
 
+#if 1
  //
  // reading the OSMData header
  //
@@ -454,6 +457,32 @@ static int read_osm_data_block_v2 (/*unsigned int sz*/) {
               break;
 
     }
+#endif
+ // -------------------------------------------------------------------------
+#if 0
+
+    pbf_field_v2 fld_block_name;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
+
+    if (fld_block_name.field_id != 1) {
+       printf("field id = %d\n", fld_block_name.field_id);
+       wrong_assumption("field id");
+    }
+    if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
+       wrong_assumption("PROTOBUF_TYPE_LEN");
+    }
+    cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
+
+    if (fld_block_name.str_len == 9) {
+
+          verbose_1("      field_id == 1\n");
+          if (memcmp (fld_block_name.pointer, "OSMHeader", 9)) {
+              wrong_assumption("block name");
+          }
+    }
+
+#endif
+ // -------------------------------------------------------------------------
 
     free (buf);
     buf = NULL;
@@ -996,73 +1025,22 @@ static unsigned char * read_bytes_pbf_field_v2 (unsigned char *start, unsigned c
 }
 static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
    unsigned char *ptr,
-// unsigned char *start,
-// unsigned char *stop,
-
    pbf_field_v2  *fld
 )
 {
 
- // attempting to parse a fld field
- //
-//  unsigned char *ptr = start;
-//  unsigned char  protobuf_type;
-//  unsigned char  field_id;
-//  unsigned char  type_hint;
 
-//  if (ptr > stop) {
-//      wrong_assumption("read_pbf_field: ptr > stop");
-//      return NULL;
-//  }
-
-/*
- / any PBF field is prefixed by a single byte
- / a bitwise mask is used so to store both the
- / field-id and the field-type on a single byte
-*/
-//  type     =  *ptr & 0x07;
-//  field_id = (*ptr & 0xf8) >> 3;
+//
+// any PBF field is prefixed by a single byte
+// a bitwise mask is used so to store both the
+// field-id and the field-type on a single byte
+//
 
     fld -> protobuf_type     =  *ptr & 0x07;
     fld -> field_id          = (*ptr & 0xf8) >> 3;
 
-//q   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//q/* attempting to identify the field accordingly to declared hints */
-//q    if (!find_type_hint (fld, field_id, type, &type_hint)) {
-//q        wrong_assumption("find_type_hint returned 0");
-//q        return NULL;
-//q    }
-//q   #endif
-
-//  fld->type     = type_hint;
-//  fld->field_id = field_id;
-//  ptr++;
-
     ptr++;
     return ptr;
-#if 0
-
-/* parsing the field value */
-    switch (fld->type) {
-
-      case PROTOBUF_TYPE_VARINT:
-//    case READOSM_VAR_INT32:
-//    case READOSM_VAR_INT64:
-//    case READOSM_VAR_UINT32:
-//    case READOSM_VAR_UINT64:
-//    case READOSM_VAR_SINT32:
-//    case READOSM_VAR_SINT64:
-
-           return read_integer_pbf_field_v2 (ptr, stop, fld);
-            
-      case PROTOBUF_TYPE_LEN:
-//    case READOSM_LEN_BYTES:
-
-           return read_bytes_pbf_field_v2 (ptr, stop, fld);
-
-    };
-    return NULL;
-#endif
 }
 
 
