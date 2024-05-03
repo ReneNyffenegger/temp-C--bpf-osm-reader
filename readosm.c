@@ -362,333 +362,6 @@ static int set_uncompressed_buffer(int req_uncompressed_buffer_size) {
 //    ptr_uncompressed_buffer_cur = ptr_uncompressed_buffer;
 }
 
-static int read_osm_data_block_v2 (/*unsigned int sz*/) {
- //
- // expecting to retrieve a valid OSMData header
- //
-
-    verbose_1("  read_osm_data_block\n");
-
-    unsigned int sz;
-    sz = blob_size();//get_header_size (buf_4);
-    if (!sz) {
-       return 0;
-    }
-    verbose_1("    sz = %d\n", sz);
-
-// if (sz > max_buffer_size) {
-//   max_buffer_size = sz;
-//   printf("max_buffer_size = %d\n", max_buffer_size);
-// }
-
-    int ok_header = 0;
-    int hdsz      = 0;
-    size_t               rd;
-    unsigned char       *buf                = malloc (sz);
-    unsigned char       *base               = buf;
-    unsigned char       *start              = buf;
-    unsigned char       *stop               = buf + sz - 1;
-    unsigned char       *zip_ptr            = NULL;
-    int                  zip_sz             = 0;
-//  unsigned char       *raw_ptr            = NULL;
-    int                  sz_no_compression  = 0;
-    pbf_field            variant;
-
-
-    if (buf == NULL)
-        goto error;
-
- // initializing an empty string list
-//     init_string_table (&string_table);
-//     static void init_string_table (readosm_string_table * string_table) {
-   /* initializing an empty PBF StringTable object */
-       readosm_string_table string_table;
-       string_table.first_string   = NULL;
-       string_table.last_string    = NULL;
-       string_table.count          =    0;
-       string_table.strings        = NULL;
-// }
-
-
- // initializing an empty variant field
-    init_variant      (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 3);
-   #endif
-
-    rd = fread (buf, 1, sz, g_pbf_file);
-    if (rd != sz) {
-       wrong_assumption("fread is ok");
-//     goto error;
-    }
-
-     //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
-
-#if 1
- //
- // reading the OSMData header
- //
-    while (1) {
-          verbose_1("    iterating (read_osm_data_block)\n");
-
-       // resetting an empty variant field
-          reset_variant (&variant);
-
-          base = read_pbf_field (start, stop, &variant);
-
-          if (base == NULL && variant.valid == 0)
-              goto error;
-
-          start = base;
-
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 7) {
-                verbose_1("       field_id = 1\n");
-                if (memcmp (variant.pointer, "OSMData", 7) == 0) ok_header = 1;
-          }
-
-          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
-              hdsz = variant.value.int32_value;
-              verbose_1("       field_id = 3, hdsz = %d\n", hdsz);
-          }
-
-          if (base > stop)
-              break;
-
-    }
-#endif
- // -------------------------------------------------------------------------
-#if 0
-
-    pbf_field_v2 fld_block_name;
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
-
-    if (fld_block_name.field_id != 1) {
-       printf("field id = %d\n", fld_block_name.field_id);
-       wrong_assumption("field id");
-    }
-    if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
-       wrong_assumption("PROTOBUF_TYPE_LEN");
-    }
-    cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
-
-    if (fld_block_name.str_len == 9) {
-
-          verbose_1("      field_id == 1\n");
-          if (memcmp (fld_block_name.pointer, "OSMHeader", 9)) {
-              wrong_assumption("block name");
-          }
-    }
-
-#endif
- // -------------------------------------------------------------------------
-
-    free (buf);
-    buf = NULL;
-    if (!ok_header || !hdsz)
-        goto error;
-
-     //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
-
-    buf   = malloc (hdsz);
-    base  = buf;
-    start = buf;
-    stop  = buf + hdsz - 1;
-    rd    = fread (buf, 1, hdsz, g_pbf_file);
-    if ((int) rd != hdsz)
-        goto error;
-
-// uncompressing the OSMData zipped */
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant  (&variant);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 2);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
-   #endif
-    while (1) {
-          verbose_1("    iterating again (read_osm_data_block)\n");
-       // resetting an empty variant field
-          reset_variant (&variant);
-
-          base = read_pbf_field (start, stop, &variant);
-          if (base == NULL && variant.valid == 0)
-              goto error;
-
-          start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
-             // found an uncompressed block */
-                verbose_1("      uncompressed block\n");
-                wrong_assumption("uncompressed block don't exist");
-                sz_no_compression = variant.str_len;
-
-
-//              if (sz_no_compression > cur_uncompressed_buffer_size) {
-//                 printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
-//                 free(ptr_uncompressed_buffer);
-//                 cur_uncompressed_buffer_size = sz_no_compression;
-//                 ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
-//              }
-                set_uncompressed_buffer(sz_no_compression);
-
-//              raw_ptr = malloc (sz_no_compression);
-
-//              memcpy (raw_ptr, variant.pointer, sz_no_compression);
-                memcpy (ptr_uncompressed_buffer, variant.pointer, sz_no_compression);
-          }
-
-          if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
-
-             // expected size of unZipped block */
-                sz_no_compression = variant.value.int32_value;
-                verbose_1("      size of uncompressed block %d\n", sz_no_compression);
-          }
-
-          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
-                verbose_1("      zipped block\n");
-             // found a ZIP-compressed block
-                zip_ptr = variant.pointer;
-                zip_sz  = variant.str_len;
-          }
-          if (base > stop)
-              break;
-    }
-
-    if (zip_ptr != NULL && zip_sz != 0 && sz_no_compression != 0) {
-    // unzip a compressed block
-
-//        raw_ptr = malloc (sz_no_compression);
-//        if (sz_no_compression > cur_uncompressed_buffer_size) {
-//           printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
-//           free(ptr_uncompressed_buffer);
-//           cur_uncompressed_buffer_size = sz_no_compression;
-//           ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
-//        }
-          set_uncompressed_buffer(sz_no_compression);
-//        raw_ptr = malloc (sz_no_compression);
-
-
-                  
-//        if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, sz_no_compression))
-//            goto error;
-          uLongf unc_size = sz_no_compression;
-          int unc_ret = uncompress(
-//            raw_ptr,   // dest
-              ptr_uncompressed_buffer,   // dest
-              &unc_size, // dest len: on entry, the value is the size of the dest buffer; on exit, value is the length of uncompressed data.
-              zip_ptr,   // src
-              zip_sz     // src len
-          ); 
-
-          if (unc_ret != Z_OK || unc_size != sz_no_compression) {
-              printf("Z_OK = %d, unc_ret = %d / Z_BUF_ERROR = %d, Z_MEM_ERROR = %d, Z_DATA_ERROR = %d\n", Z_OK, unc_ret, Z_BUF_ERROR, Z_MEM_ERROR, Z_DATA_ERROR);
-              printf("unc_size = %d, zip_sz = %d\n", unc_size, zip_sz);
-              wrong_assumption("uncompress");
-              exit(101);
-          }
-
-    }
-
-//  free (buf);
-//  buf = NULL;
-//  if (raw_ptr == NULL || sz_no_compression == 0)
-//      goto error;
-
-     //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
-
- // parsing the PrimitiveBlock
-
-//  base  = raw_ptr;
-//  start = raw_ptr;
-//  stop  = raw_ptr + sz_no_compression - 1;
-    base  = ptr_uncompressed_buffer;
-    start = ptr_uncompressed_buffer;
-    stop  = ptr_uncompressed_buffer + sz_no_compression - 1;
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 17);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 18);
-    add_variant_hints (&variant, READOSM_VAR_INT64, 19);
-    add_variant_hints (&variant, READOSM_VAR_INT64, 20);
-   #endif
-
-    while (1) {
-       // resetting an empty variant field
-          reset_variant (&variant);
-
-          base = read_pbf_field (start, stop, &variant);
-          if (base == NULL && variant.valid == 0)
-              goto error;
-
-          start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
-
-             // the StringTable
-                if (!parse_string_table (
-                     &string_table,
-                     variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu
-                   ))
-                   goto error;
-
-                array_from_string_table (&string_table);
-          }
-
-          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
-
-             // the PrimitiveGroup to be parsed
-                if (!parse_primitive_group (
-                    &string_table, variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu
-                     // , params
-                    ))
-
-                    goto error;
-          }
-
-          if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
-             // assumed to be a termination marker (???)
-                wrong_assumption("termination marker never reached");
-                break;
-          }
-
-          if (base > stop)
-              break;
-      }
-
-    if (buf != NULL)
-        free (buf);
-
-//  if (raw_ptr != NULL)
-//      free (raw_ptr);
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-   #endif
-
-    finalize_string_table (&string_table);
-    return 1;
-
-  error:
-    if (buf != NULL)
-        free (buf);
-
-//  if (raw_ptr != NULL)
-//      free (raw_ptr);
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-   #endif
-
-    finalize_string_table (&string_table);
-    wrong_assumption("neumond");
-    return 0;
-}
 
 
 #if 0
@@ -1065,29 +738,19 @@ static int read_header_block_v2() {
 //     wrong_assumption("parameter sz of read_header_block was expected to be 14");
 //  }
 
-//  int ok_header = 0;
     int hdsz      = 0;
 
 
-// if (sz > max_buffer_size) {
-//   max_buffer_size = sz;
-//   printf("max_buffer_size = %d\n", max_buffer_size);
-// }
     unsigned char *buf   = malloc (sz);
     if (buf == NULL) {
         wrong_assumption("buf");
-//      goto error;
     }
 
     rd = fread (buf, 1, sz, g_pbf_file);
     if (rd != sz) {
        wrong_assumption("rd == sz");
-//     goto error;
     }
 
-//  unsigned char *base  = buf;
-//  unsigned char *start = buf;
-//  unsigned char *stop  = buf + sz - 1;
     unsigned char *cur   = buf;
     unsigned char *end   = buf + sz - 1;
 
@@ -1135,80 +798,16 @@ static int read_header_block_v2() {
     verbose_1("      hdsz = %d\n", hdsz);
 
 
-
-#if 0
-
-    pbf_field      fld;
-
-
- // initializing an empty fld field 
-    init_variant (&fld, g_little_endian_cpu);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    add_variant_hints (&fld, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&fld, READOSM_LEN_BYTES, 2);
-    add_variant_hints (&fld, READOSM_VAR_INT32, 3);
-   #endif
-
-
-// reading the OSMHeader header
-//
-    while (1) {
-       verbose_1("    next iteration (read_header_block)\n");
-       // resetting an empty fld field
-          reset_variant (&fld);
-
-//        base = read_pbf_field (start, stop, &fld);
-          cur  = read_pbf_field (cur  , end , &fld);
-//        if (base == NULL && fld.valid == 0)
-          if (cur  == NULL && fld.valid == 0)
-              goto error;
-
-//        start = base;
-          if (fld.field_id == 1 && fld.type == READOSM_LEN_BYTES && fld.str_len == 9) {
-
-                verbose_1("      field_id == 1\n");
-                if (memcmp (fld.pointer, "OSMHeader", 9) == 0)
-                    ok_header = 1;
-          }
-          else if (fld.field_id == 3 && fld.type == READOSM_VAR_INT32) {
-              hdsz = fld.value.int32_value;
-              verbose_1("      field_id == 3, hdsz = %d\n", hdsz);
-          }
-          else {
-              wrong_assumption("else");
-              verbose_1("      else\n");
-          }
-
-//        if (base > stop) {
-          if (cur  > end ) {
-              verbose_1("      base > stop\n");
-              break;
-          }
-    }
-
-#endif
     free (buf);
-
-//  buf = NULL;
-
 
     if (!hdsz) {
         wrong_assumption("ok header, hdsz");
-//      goto error;
     }
 
 //
 //  Just SKIP OVER the rest of the header buffer!
 //
-
     unsigned char *rest_of_header_buffer = malloc (hdsz);
-//  buf   = malloc (hdsz);
-
-//  base  = buf;
-//  start = buf;
-//  stop  = buf + hdsz - 1;
-
-//  rd = fread (buf, 1, hdsz, g_pbf_file);
     rd = fread (rest_of_header_buffer, 1, hdsz, g_pbf_file);
 
     if (!rd) {
@@ -1216,28 +815,344 @@ static int read_header_block_v2() {
     }
     if ((int) rd != hdsz) {
         wrong_assumption("rd != hdsz");
-//      goto error;
     }
 
-//  if (rest_of_header_buffer != NULL)
     free (rest_of_header_buffer);
 
-// #ifdef TQ84_USE_PBF_FIELD_HINTS
-//  finalize_variant (&fld);
-// #endif
    
 // exit(100); // TQ84 - remove moe
     verbose_1("       returning from read_header_block_v2\n");
     return 1;
 
-//error:
-//  if (buf != NULL)
-//      free (buf);
+}
 
-// #ifdef TQ84_USE_PBF_FIELD_HINTS
-//  finalize_variant (&fld);
-// #endif
-//  return 0;
+
+static int read_osm_data_block_v2 () {
+ //
+ // expecting to retrieve a valid OSMData header
+ //
+
+    verbose_1("  read_osm_data_block\n");
+
+    unsigned int sz;
+    sz = blob_size();//get_header_size (buf_4);
+    if (!sz) {
+       return 0;
+    }
+    verbose_1("    sz = %d\n", sz);
+
+// if (sz > max_buffer_size) {
+//   max_buffer_size = sz;
+//   printf("max_buffer_size = %d\n", max_buffer_size);
+// }
+
+    int ok_header = 0;
+    int hdsz      = 0;
+    size_t               rd;
+    unsigned char       *buf                = malloc (sz);
+    unsigned char       *base               = buf;
+    unsigned char       *start              = buf;
+    unsigned char       *stop               = buf + sz - 1;
+    unsigned char       *zip_ptr            = NULL;
+    int                  zip_sz             = 0;
+//  unsigned char       *raw_ptr            = NULL;
+    int                  sz_no_compression  = 0;
+    pbf_field            variant;
+
+
+    if (buf == NULL)
+        goto error;
+
+ // initializing an empty string list
+//     init_string_table (&string_table);
+//     static void init_string_table (readosm_string_table * string_table) {
+   /* initializing an empty PBF StringTable object */
+       readosm_string_table string_table;
+       string_table.first_string   = NULL;
+       string_table.last_string    = NULL;
+       string_table.count          =    0;
+       string_table.strings        = NULL;
+// }
+
+
+ // initializing an empty variant field
+    init_variant      (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
+    add_variant_hints (&variant, READOSM_VAR_INT32, 3);
+   #endif
+
+    rd = fread (buf, 1, sz, g_pbf_file);
+    if (rd != sz) {
+       wrong_assumption("fread is ok");
+//     goto error;
+    }
+
+     //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
+
+#if 1
+ //
+ // reading the OSMData header
+ //
+    while (1) {
+          verbose_1("    iterating (read_osm_data_block)\n");
+
+       // resetting an empty variant field
+          reset_variant (&variant);
+
+          base = read_pbf_field (start, stop, &variant);
+
+          if (base == NULL && variant.valid == 0)
+              goto error;
+
+          start = base;
+
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 7) {
+                verbose_1("       field_id = 1\n");
+                if (memcmp (variant.pointer, "OSMData", 7) == 0) ok_header = 1;
+          }
+
+          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
+              hdsz = variant.value.int32_value;
+              verbose_1("       field_id = 3, hdsz = %d\n", hdsz);
+          }
+
+          if (base > stop)
+              break;
+
+    }
+#endif
+ // -------------------------------------------------------------------------
+#if 0
+
+    pbf_field_v2 fld_block_name;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
+
+    if (fld_block_name.field_id != 1) {
+       printf("field id = %d\n", fld_block_name.field_id);
+       wrong_assumption("field id");
+    }
+    if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
+       wrong_assumption("PROTOBUF_TYPE_LEN");
+    }
+    cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
+
+    if (fld_block_name.str_len == 9) {
+
+          verbose_1("      field_id == 1\n");
+          if (memcmp (fld_block_name.pointer, "OSMHeader", 9)) {
+              wrong_assumption("block name");
+          }
+    }
+
+#endif
+ // -------------------------------------------------------------------------
+
+    free (buf);
+    buf = NULL;
+    if (!ok_header || !hdsz)
+        goto error;
+
+     //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
+
+    buf   = malloc (hdsz);
+    base  = buf;
+    start = buf;
+    stop  = buf + hdsz - 1;
+    rd    = fread (buf, 1, hdsz, g_pbf_file);
+    if ((int) rd != hdsz)
+        goto error;
+
+// uncompressing the OSMData zipped */
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant  (&variant);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+    add_variant_hints (&variant, READOSM_VAR_INT32, 2);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
+   #endif
+    while (1) {
+          verbose_1("    iterating again (read_osm_data_block)\n");
+       // resetting an empty variant field
+          reset_variant (&variant);
+
+          base = read_pbf_field (start, stop, &variant);
+          if (base == NULL && variant.valid == 0)
+              goto error;
+
+          start = base;
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
+             // found an uncompressed block */
+                verbose_1("      uncompressed block\n");
+                wrong_assumption("uncompressed block don't exist");
+                sz_no_compression = variant.str_len;
+
+
+//              if (sz_no_compression > cur_uncompressed_buffer_size) {
+//                 printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
+//                 free(ptr_uncompressed_buffer);
+//                 cur_uncompressed_buffer_size = sz_no_compression;
+//                 ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
+//              }
+                set_uncompressed_buffer(sz_no_compression);
+
+//              raw_ptr = malloc (sz_no_compression);
+
+//              memcpy (raw_ptr, variant.pointer, sz_no_compression);
+                memcpy (ptr_uncompressed_buffer, variant.pointer, sz_no_compression);
+          }
+
+          if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
+
+             // expected size of unZipped block */
+                sz_no_compression = variant.value.int32_value;
+                verbose_1("      size of uncompressed block %d\n", sz_no_compression);
+          }
+
+          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
+                verbose_1("      zipped block\n");
+             // found a ZIP-compressed block
+                zip_ptr = variant.pointer;
+                zip_sz  = variant.str_len;
+          }
+          if (base > stop)
+              break;
+    }
+
+    if (zip_ptr != NULL && zip_sz != 0 && sz_no_compression != 0) {
+    // unzip a compressed block
+
+//        raw_ptr = malloc (sz_no_compression);
+//        if (sz_no_compression > cur_uncompressed_buffer_size) {
+//           printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
+//           free(ptr_uncompressed_buffer);
+//           cur_uncompressed_buffer_size = sz_no_compression;
+//           ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
+//        }
+          set_uncompressed_buffer(sz_no_compression);
+//        raw_ptr = malloc (sz_no_compression);
+
+
+                  
+//        if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, sz_no_compression))
+//            goto error;
+          uLongf unc_size = sz_no_compression;
+          int unc_ret = uncompress(
+//            raw_ptr,   // dest
+              ptr_uncompressed_buffer,   // dest
+              &unc_size, // dest len: on entry, the value is the size of the dest buffer; on exit, value is the length of uncompressed data.
+              zip_ptr,   // src
+              zip_sz     // src len
+          ); 
+
+          if (unc_ret != Z_OK || unc_size != sz_no_compression) {
+              printf("Z_OK = %d, unc_ret = %d / Z_BUF_ERROR = %d, Z_MEM_ERROR = %d, Z_DATA_ERROR = %d\n", Z_OK, unc_ret, Z_BUF_ERROR, Z_MEM_ERROR, Z_DATA_ERROR);
+              printf("unc_size = %d, zip_sz = %d\n", unc_size, zip_sz);
+              wrong_assumption("uncompress");
+              exit(101);
+          }
+
+    }
+
+//  free (buf);
+//  buf = NULL;
+//  if (raw_ptr == NULL || sz_no_compression == 0)
+//      goto error;
+
+     //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
+
+ // parsing the PrimitiveBlock
+
+//  base  = raw_ptr;
+//  start = raw_ptr;
+//  stop  = raw_ptr + sz_no_compression - 1;
+    base  = ptr_uncompressed_buffer;
+    start = ptr_uncompressed_buffer;
+    stop  = ptr_uncompressed_buffer + sz_no_compression - 1;
+
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&variant);
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
+    add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
+    add_variant_hints (&variant, READOSM_VAR_INT32, 17);
+    add_variant_hints (&variant, READOSM_VAR_INT32, 18);
+    add_variant_hints (&variant, READOSM_VAR_INT64, 19);
+    add_variant_hints (&variant, READOSM_VAR_INT64, 20);
+   #endif
+
+    while (1) {
+       // resetting an empty variant field
+          reset_variant (&variant);
+
+          base = read_pbf_field (start, stop, &variant);
+          if (base == NULL && variant.valid == 0)
+              goto error;
+
+          start = base;
+          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
+
+             // the StringTable
+                if (!parse_string_table (
+                     &string_table,
+                     variant.pointer,
+                     variant.pointer + variant.str_len - 1,
+                     variant.little_endian_cpu
+                   ))
+                   goto error;
+
+                array_from_string_table (&string_table);
+          }
+
+          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
+
+             // the PrimitiveGroup to be parsed
+                if (!parse_primitive_group (
+                    &string_table, variant.pointer,
+                     variant.pointer + variant.str_len - 1,
+                     variant.little_endian_cpu
+                     // , params
+                    ))
+
+                    goto error;
+          }
+
+          if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
+             // assumed to be a termination marker (???)
+                wrong_assumption("termination marker never reached");
+                break;
+          }
+
+          if (base > stop)
+              break;
+      }
+
+    if (buf != NULL)
+        free (buf);
+
+//  if (raw_ptr != NULL)
+//      free (raw_ptr);
+
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&variant);
+   #endif
+
+    finalize_string_table (&string_table);
+    return 1;
+
+  error:
+    if (buf != NULL)
+        free (buf);
+
+//  if (raw_ptr != NULL)
+//      free (raw_ptr);
+
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&variant);
+   #endif
+
+    finalize_string_table (&string_table);
+    wrong_assumption("neumond");
+    return 0;
 }
 
 int load_osm_pbf(
@@ -1267,12 +1182,6 @@ int load_osm_pbf(
 
 // ----- Header ------------------------------------------------------------------------------------------
 
-#if 0
-    rd = fread (buf, 1, 4, g_pbf_file);
-    if (rd != 4) return READOSM_INVALID_PBF_HEADER;
-
-    hdsz = get_header_size (buf);
-#endif
 
 //  testing OSMHeader
     if (!read_header_block_v2 ())
@@ -1292,19 +1201,6 @@ int load_osm_pbf(
     while(read_osm_data_block_v2()) {
        verbose_1("  iteration (load_osm_pbf)\n");
 
-#if 0
-          rd = fread (buf, 1, 4, g_pbf_file);
-
-          if (rd == 0 && feof (g_pbf_file))
-              break;
-
-          if (rd != 4) return READOSM_INVALID_PBF_HEADER;
-          hdsz = get_header_size (buf);
-
-        // parsing OSMData
-          if (!read_osm_data_block_v2 (hdsz))
-              return READOSM_INVALID_PBF_HEADER;
-#endif
     }
     free(ptr_uncompressed_buffer);
 
