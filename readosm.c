@@ -835,10 +835,6 @@ static int read_osm_data_block_v2 () {
     verbose_1("  read_osm_data_block\n");
 
 
-// if (sz > max_buffer_size) {
-//   max_buffer_size = sz;
-//   printf("max_buffer_size = %d\n", max_buffer_size);
-// }
 
     int ok_header = 0;
     int hdsz      = 0;
@@ -899,7 +895,7 @@ static int read_osm_data_block_v2 () {
 
      //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
 
-#if 1
+#if 0
  //
  // reading the OSMData header
  //
@@ -932,10 +928,17 @@ static int read_osm_data_block_v2 () {
               break;
 
     }
+
+    free (buf);
+    buf = NULL;
+    if (!ok_header || !hdsz)
+        goto error;
+
 #else
  // -------------------------------------------------------------------------
 
-    pbf_field_v2 fld_block_name;
+    pbf_field_v2    fld_block_name;
+
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
 
     if (fld_block_name.field_id != 1) {
@@ -947,21 +950,42 @@ static int read_osm_data_block_v2 () {
     }
     cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
 
-    if (fld_block_name.str_len == 9) {
+    if (fld_block_name.str_len == 7) {
 
           verbose_1("      field_id == 1\n");
-          if (memcmp (fld_block_name.pointer, "OSMHeader", 9)) {
+          if (memcmp (fld_block_name.pointer, "OSMData", 7)) {
               wrong_assumption("block name");
           }
     }
 
-#endif
- // -------------------------------------------------------------------------
+// -----------------------------------------------------------------------
+    pbf_field_v2    fld_block_size;
+
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_size);
+    verbose_1("      read block size\n");
+
+    if (fld_block_size.field_id != 3) {
+       printf("field id = %d\n", fld_block_size.field_id);
+       wrong_assumption("field id != 3");
+    }
+    if (fld_block_size.protobuf_type != PROTOBUF_TYPE_VARINT) {
+       wrong_assumption("PROTOBUF_TYPE_VARINT");
+    }
+
+    cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &fld_block_size);
+    verbose_1("      read integer\n");
+
+    hdsz = fld_block_size.value.int32_value;
+    verbose_1("      hdsz = %d\n", hdsz);
 
     free (buf);
-    buf = NULL;
-    if (!ok_header || !hdsz)
-        goto error;
+
+    if (!hdsz) {
+        wrong_assumption("ok header, hdsz");
+    }
+
+#endif
+ // -------------------------------------------------------------------------
 
      //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
 
