@@ -16,6 +16,7 @@
 select
    iso3166.nod_id,
    iso3166.v,
+   n.v                   n,
    wd.v                  wd,
    n_en.v                en_n,
 -- n_ru.v                ru_n,
@@ -28,6 +29,8 @@ select
    plac.v                place
 from
    tag  iso3166                                                            left join
+-- tag  nrel       on iso3166.nod_id 
+   tag  n          on iso3166.nod_id = n.nod_id    and n.k    = 'name'     left join
    tag  wd         on iso3166.nod_id = wd.nod_id   and wd.k   = 'wikidata' left join
    tag  n_en       on iso3166.nod_id = n_en.nod_id and n_en.k = 'name:en'  left join
    tag  n_ru       on iso3166.nod_id = n_ru.nod_id and n_ru.k = 'name:ru'  left join
