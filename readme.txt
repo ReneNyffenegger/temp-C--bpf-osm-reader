@@ -28,3 +28,5 @@ H3
 
 
     https://github.com/uber/h3
+
+  https://github.com/igor-suhorukov/openstreetmap_h3
