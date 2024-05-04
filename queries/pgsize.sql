@@ -1,4 +1,9 @@
--- select * from tag where k like 'ISO3166-%';
---SELECT SUM("pgsize") FROM "dbstat";
-
-select * from dbstat;
+select
+   name,
+   printf('%5.2f', sum(pgsize) / 1024.0 / 1024.0 / 1024.0) gb
+from
+   dbstat
+group by
+   name
+order by
+   sum(pgsize);
