@@ -845,18 +845,12 @@ static int read_osm_data_block_v2 () {
 
     verbose_1("  read_osm_data_block\n");
 
-
-
     int ok_header = 0;
-    int hdsz ; //     = 0;
+    int hdsz;
     size_t               rd;
-    unsigned char       *buf                ; // = malloc (sz);
-
-//  unsigned char       *base               ; // = buf;
-//  unsigned char       *start              ; // = buf;
-//  unsigned char       *stop               ; // = buf + sz - 1;
-    unsigned char       *cur                ; // = buf;
-    unsigned char       *end                ; // = buf + sz - 1;
+    unsigned char       *buf;
+    unsigned char       *cur;
+    unsigned char       *end;
 
     unsigned char       *zip_ptr            = NULL;
     int                  zip_sz             = 0;
@@ -873,22 +867,12 @@ static int read_osm_data_block_v2 () {
 
     buf = malloc(sz);
     if (buf == NULL) {
-       wrong_assumption("could not allocated buffer.");
+       wrong_assumption("could not allocate buffer.");
     }
 
     cur = buf;
     end = buf + sz-1;
 
- // initializing an empty string list
-//     init_string_table (&string_table);
-//     static void init_string_table (readosm_string_table * string_table) {
-   /* initializing an empty PBF StringTable object */
-       readosm_string_table string_table;
-       string_table.first_string   = NULL;
-       string_table.last_string    = NULL;
-       string_table.count          =    0;
-       string_table.strings        = NULL;
-// }
 
 
  // initializing an empty variant field
@@ -910,6 +894,7 @@ static int read_osm_data_block_v2 () {
     hdsz = block_size(cur, end, "OSMData");
 
     free (buf);
+
 
     if (!hdsz) {
         wrong_assumption("ok header, hdsz");
@@ -977,30 +962,24 @@ static int read_osm_data_block_v2 () {
               break;
     }
 
-    if (zip_ptr != NULL && zip_sz != 0 && sz_no_compression != 0) {
-    // unzip a compressed block
 
-//        raw_ptr = malloc (sz_no_compression);
-//        if (sz_no_compression > cur_uncompressed_buffer_size) {
-//           printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
-//           free(ptr_uncompressed_buffer);
-//           cur_uncompressed_buffer_size = sz_no_compression;
-//           ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
-//        }
+//  -------------------------------------------------------------------------------------
+
+    if (zip_ptr != NULL && zip_sz != 0 && sz_no_compression != 0) {
+    //
+    // The primitive block is zipped, we need to unzip it.
+    // 
+
           set_uncompressed_buffer(sz_no_compression);
-//        raw_ptr = malloc (sz_no_compression);
 
 
                   
-//        if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, sz_no_compression))
-//            goto error;
           uLongf unc_size = sz_no_compression;
           int unc_ret = uncompress(
-//            raw_ptr,   // dest
-              ptr_uncompressed_buffer,   // dest
-              &unc_size, // dest len: on entry, the value is the size of the dest buffer; on exit, value is the length of uncompressed data.
-              zip_ptr,   // src
-              zip_sz     // src len
+              ptr_uncompressed_buffer,// dest
+              &unc_size,              // dest len: on entry, the value is the size of the dest buffer; on exit, value is the length of uncompressed data.
+              zip_ptr,                // src
+              zip_sz                  // src len
           ); 
 
           if (unc_ret != Z_OK || unc_size != sz_no_compression) {
@@ -1014,19 +993,13 @@ static int read_osm_data_block_v2 () {
 
     free (buf);
     buf = NULL;
-//  if (raw_ptr == NULL || sz_no_compression == 0)
-//      goto error;
 
      //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
 
  // parsing the PrimitiveBlock
 
-//  base  = raw_ptr;
-//  start = raw_ptr;
-//  stop  = raw_ptr + sz_no_compression - 1;
     cur  = ptr_uncompressed_buffer;
-//  start = ptr_uncompressed_buffer;
-    end   = ptr_uncompressed_buffer + sz_no_compression - 1;
+    end  = ptr_uncompressed_buffer + sz_no_compression - 1;
 
    #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
@@ -1038,6 +1011,16 @@ static int read_osm_data_block_v2 () {
     add_variant_hints (&variant, READOSM_VAR_INT64, 20);
    #endif
 
+
+ // initializing an empty string list
+ // initializing an empty PBF StringTable object
+       readosm_string_table string_table;
+       string_table.first_string   = NULL;
+       string_table.last_string    = NULL;
+       string_table.count          =    0;
+       string_table.strings        = NULL;
+
+
     while (1) {
        // resetting an empty variant field
           reset_variant (&variant);
@@ -1045,10 +1028,8 @@ static int read_osm_data_block_v2 () {
           cur = read_pbf_field (cur, end, &variant);
           if (cur == NULL && variant.valid == 0) {
               wrong_assumption("stand");
-//            goto error;
           }
 
-//        start = base;
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
 
              // the StringTable
@@ -1059,7 +1040,6 @@ static int read_osm_data_block_v2 () {
                      variant.little_endian_cpu
                    ))
                    wrong_assumption("sta");
-//                 goto error;
 
                 array_from_string_table (&string_table);
           }
@@ -1074,7 +1054,6 @@ static int read_osm_data_block_v2 () {
                      // , params
                     ))
                     wrong_assumption("yuh");
-//                  goto error;
           }
 
           if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
@@ -1083,16 +1062,10 @@ static int read_osm_data_block_v2 () {
                 break;
           }
 
-//        if (base > stop)
           if (cur  > end )
               break;
       }
 
-//  if (buf != NULL)
-//      free (buf);
-
-//  if (raw_ptr != NULL)
-//      free (raw_ptr);
 
    #ifdef TQ84_USE_PBF_FIELD_HINTS
     finalize_variant (&variant);
