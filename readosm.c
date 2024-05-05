@@ -717,7 +717,7 @@ static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
 }
 
 
-int block_size(unsigned char* start, unsigned char* end, char* name)  { 
+int block_size(unsigned char* start, unsigned char* end, char* name)  {
 
     int ret;
 
@@ -729,7 +729,7 @@ int block_size(unsigned char* start, unsigned char* end, char* name)  {
 
     if (fld_block_name.field_id != 1) {
        printf("field id = %d\n", fld_block_name.field_id);
-       wrong_assumption("field id");
+       wrong_assumption("field id in block_size");
     }
     if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
        wrong_assumption("PROTOBUF_TYPE_LEN");
@@ -768,6 +768,37 @@ int block_size(unsigned char* start, unsigned char* end, char* name)  {
 
 }
 
+int block_size_v2(char* name) {
+
+    unsigned int sz = blob_size();
+    if (!sz) return 0;
+
+    int hdsz      = 0;
+    size_t        rd;
+
+
+    unsigned char *buf   = malloc (sz);
+    unsigned char *cur   = buf;
+    unsigned char *end   = buf + sz - 1;
+
+    if (buf == NULL) {
+        wrong_assumption("buf");
+    }
+
+    rd = fread (buf, 1, sz, g_pbf_file);
+    if (rd != sz) {
+       wrong_assumption("rd == sz");
+    }
+
+    hdsz = block_size(cur, end, "OSMHeader");
+
+
+    free(buf);
+
+    return hdsz;
+
+}
+
 
 static int read_header_block_v2() {
     unsigned int  sz;
@@ -782,6 +813,7 @@ static int read_header_block_v2() {
 
     verbose_1("  read_header_block, sz = %d\n", sz);
 
+#if 0
     sz = blob_size();
 
 //  if (sz != 14) {
@@ -805,14 +837,17 @@ static int read_header_block_v2() {
     unsigned char *end   = buf + sz - 1;
 
 
-    hdsz = block_size(cur, end, "OSMHeader");
 
-    free (buf);
+    hdsz = block_size(cur, end, "OSMHeader");
+#endif
+    int hdsz = block_size_v2("OSMHeader");
+
+//  free (buf);
 
 // -----------------------------------------------------------------------
 
     if (!hdsz) {
-        wrong_assumption("ok header, hdsz");
+        wrong_assumption("ok header, hdsz 2");
     }
 
 //
@@ -845,17 +880,11 @@ static int read_osm_data_block_v2 () {
 
     verbose_1("  read_osm_data_block\n");
 
+#if 0
     int ok_header = 0;
     int hdsz;
     size_t               rd;
-    unsigned char       *buf;
-    unsigned char       *cur;
-    unsigned char       *end;
 
-    unsigned char       *zip_ptr            = NULL;
-    int                  zip_sz             = 0;
-    int                  sz_no_compression  = 0;
-    pbf_field            variant;
 
 
     unsigned int sz;
@@ -888,17 +917,31 @@ static int read_osm_data_block_v2 () {
        wrong_assumption("fread is ok");
     }
 
-     //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
+    //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
+
+#endif
+
+//  hdsz = block_size(cur, end, "OSMData");
+    int hdsz = block_size_v2( "OSMData");
+    if (!hdsz) return 0;
+
+//  free (buf);
 
 
-    hdsz = block_size(cur, end, "OSMData");
+//  if (!hdsz) {
+//      wrong_assumption("ok header, hdsz 1");
+//  }
 
-    free (buf);
+ // -------------------------------
 
+    unsigned char       *buf;
+    unsigned char       *cur;
+    unsigned char       *end;
 
-    if (!hdsz) {
-        wrong_assumption("ok header, hdsz");
-    }
+    unsigned char       *zip_ptr            = NULL;
+    int                  zip_sz             = 0;
+    int                  sz_no_compression  = 0;
+    pbf_field            variant;
 
 //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
 
@@ -911,6 +954,7 @@ static int read_osm_data_block_v2 () {
     cur   = buf;
     end   = buf+hdsz-1;
 
+    size_t               rd;
     rd    = fread (buf, 1, hdsz, g_pbf_file);
     if ((int) rd != hdsz) {
        wrong_assumption("vbla");
@@ -918,7 +962,8 @@ static int read_osm_data_block_v2 () {
 
 // uncompressing the OSMData zipped */
    #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant  (&variant);
+//  finalize_variant  (&variant);
+    init_variant      (&variant, g_little_endian_cpu);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
     add_variant_hints (&variant, READOSM_VAR_INT32, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
