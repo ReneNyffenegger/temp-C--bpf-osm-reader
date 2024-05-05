@@ -717,6 +717,7 @@ static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
 }
 
 
+#if 0
 int block_size(unsigned char* start, unsigned char* end, char* name)  {
 
     int ret;
@@ -767,6 +768,7 @@ int block_size(unsigned char* start, unsigned char* end, char* name)  {
     return ret;
 
 }
+#endif
 
 int block_size_v2(char* name) {
 
@@ -790,8 +792,55 @@ int block_size_v2(char* name) {
        wrong_assumption("rd == sz");
     }
 
-    hdsz = block_size(cur, end, "OSMHeader");
+//  hdsz = block_size(cur, end, "OSMHeader");
 
+
+//  int ret;
+
+    pbf_field_v2    fld_block_name;
+
+//  unsigned char* cur = buf;
+
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
+
+    if (fld_block_name.field_id != 1) {
+       printf("field id = %d\n", fld_block_name.field_id);
+       wrong_assumption("field id in block_size");
+    }
+    if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
+       wrong_assumption("PROTOBUF_TYPE_LEN");
+    }
+    cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
+
+    if (fld_block_name.str_len == 9) {
+
+          verbose_1("      field_id == 1\n");
+          if (memcmp (fld_block_name.pointer, name, strlen(name))) {
+              wrong_assumption("block name");
+          }
+    }
+
+// -----------------------------------------------------------------------
+    pbf_field_v2    fld_block_size;
+
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_size);
+    verbose_1("      read block size\n");
+
+    if (fld_block_size.field_id != 3) {
+       printf("field id = %d\n", fld_block_size.field_id);
+       wrong_assumption("field id != 3");
+    }
+    if (fld_block_size.protobuf_type != PROTOBUF_TYPE_VARINT) {
+       wrong_assumption("PROTOBUF_TYPE_VARINT");
+    }
+
+    cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &fld_block_size);
+    verbose_1("      read integer\n");
+
+    hdsz = fld_block_size.value.int32_value;
+    verbose_1("      ret = %d\n", read);
+
+//  return ret;
 
     free(buf);
 
@@ -813,42 +862,18 @@ static int read_header_block_v2() {
 
     verbose_1("  read_header_block, sz = %d\n", sz);
 
-#if 0
-    sz = blob_size();
-
-//  if (sz != 14) {
-//     wrong_assumption("parameter sz of read_header_block was expected to be 14");
-//  }
-
-    int hdsz      = 0;
-
-
-    unsigned char *buf   = malloc (sz);
-    if (buf == NULL) {
-        wrong_assumption("buf");
-    }
-
-    rd = fread (buf, 1, sz, g_pbf_file);
-    if (rd != sz) {
-       wrong_assumption("rd == sz");
-    }
-
-    unsigned char *cur   = buf;
-    unsigned char *end   = buf + sz - 1;
-
-
-
-    hdsz = block_size(cur, end, "OSMHeader");
-#endif
     int hdsz = block_size_v2("OSMHeader");
-
-//  free (buf);
-
-// -----------------------------------------------------------------------
-
     if (!hdsz) {
         wrong_assumption("ok header, hdsz 2");
     }
+
+    fseek(g_pbf_file, hdsz, SEEK_CUR);
+    return 1;
+ //
+ // alternatively, create a buffer and parse it and deallocate it.
+ //
+  
+
 
 //
 //  Just SKIP OVER the rest of the header buffer!
@@ -864,7 +889,6 @@ static int read_header_block_v2() {
     }
 
     free (rest_of_header_buffer);
-
    
 // exit(100); // TQ84 - remove moe
     verbose_1("       returning from read_header_block_v2\n");
