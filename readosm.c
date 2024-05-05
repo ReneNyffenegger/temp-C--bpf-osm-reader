@@ -358,58 +358,6 @@ static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
 }
 
 
-#if 0
-int block_size(unsigned char* start, unsigned char* end, char* name)  {
-
-    int ret;
-
-    pbf_field_v2    fld_block_name;
-
-    unsigned char* cur = start;
-
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
-
-    if (fld_block_name.field_id != 1) {
-       printf("field id = %d\n", fld_block_name.field_id);
-       wrong_assumption("field id in block_size");
-    }
-    if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
-       wrong_assumption("PROTOBUF_TYPE_LEN");
-    }
-    cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
-
-    if (fld_block_name.str_len == 9) {
-
-          verbose_1("      field_id == 1\n");
-          if (memcmp (fld_block_name.pointer, name, strlen(name))) {
-              wrong_assumption("block name");
-          }
-    }
-
-// -----------------------------------------------------------------------
-    pbf_field_v2    fld_block_size;
-
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_size);
-    verbose_1("      read block size\n");
-
-    if (fld_block_size.field_id != 3) {
-       printf("field id = %d\n", fld_block_size.field_id);
-       wrong_assumption("field id != 3");
-    }
-    if (fld_block_size.protobuf_type != PROTOBUF_TYPE_VARINT) {
-       wrong_assumption("PROTOBUF_TYPE_VARINT");
-    }
-
-    cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &fld_block_size);
-    verbose_1("      read integer\n");
-
-    ret = fld_block_size.value.int32_value;
-    verbose_1("      ret = %d\n", read);
-
-    return ret;
-
-}
-#endif
 
 int block_size_v2(char* name) {
 
@@ -433,14 +381,7 @@ int block_size_v2(char* name) {
        wrong_assumption("rd == sz");
     }
 
-//  hdsz = block_size(cur, end, "OSMHeader");
-
-
-//  int ret;
-
     pbf_field_v2    fld_block_name;
-
-//  unsigned char* cur = buf;
 
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
 
@@ -590,6 +531,8 @@ static int read_osm_data_block_v2 () {
  // The primitive block can be uncompressed or compressed.
  // 
 
+//  pbf_field_v2    size_primitive_block;
+//  pbf_field_v2    zipped_block;
 
     while (1) {
           verbose_1("    iterating again (read_osm_data_block)\n");
