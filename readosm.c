@@ -61,7 +61,7 @@ void wrong_assumption(char* txt) {
 
 
    #define TQ84_USE_PBF_FIELD_HINTS
-   #define TQ84_VERBOSE_1
+// #define TQ84_VERBOSE_1
 
 #ifdef TQ84_VERBOSE_1
 #define verbose_1(...) printf(__VA_ARGS__)
@@ -132,7 +132,6 @@ typedef struct {
 
  // a PBF Variant type wrapper
 
-//  char          little_endian_cpu;     // actual CPU endianness
 //
 // A PBF field is prefixed by a single byte which 
 // stores both the FIELD ID (n bits )and the the FIELD type (8-n bites)
@@ -140,9 +139,8 @@ typedef struct {
 // two bytes:
 // 
 
-//  unsigned char type;          // current type
     unsigned char protobuf_type;
-    unsigned char field_id;      // field ID
+    unsigned char field_id;
 
     union variant_value_v2 {
 
@@ -155,9 +153,8 @@ typedef struct {
     }
     value;                      // The field value
 
-    size_t                str_len;     // length in bytes [for strings]
+    size_t                str_len;     // length in bytes [for strings]                --- TODO Should be named nof_bytes or something.
     unsigned char        *pointer;     // pointer to String value
-//  char                  valid;       // valid value
 }
 pbf_field_v2;
 
@@ -263,12 +260,10 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
 
       case READOSM_VAR_INT32:
            variant->value.int32_value = (int) value32;
-//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_UINT32:
            variant->value.uint32_value = value32;
-//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_SINT32:
@@ -279,17 +274,14 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
 
            v32 = (value32 + 1) / 2;
            variant->value.int32_value = v32 * neg;
-//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_INT64:
            variant->value.int64_value = (int) value64;
-//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_UINT64:
            variant->value.uint64_value = value64;
-//         variant->valid = 1;
            return ptr;
 
       case READOSM_VAR_SINT64:
@@ -299,7 +291,6 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
                neg = -1;
            v64 = (value64 + 1) / 2;
            variant->value.int64_value = v64 * neg;
-//         variant->valid = 1;
            return ptr;
       };
     wrong_assumption("xyz");
@@ -308,17 +299,17 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
 }
 
 static unsigned char * read_bytes_pbf_field_v2 (unsigned char *start, unsigned char *stop, pbf_field_v2 *variant) {
- /* 
- / attempting to read some bytes from PBF
- / Strings and alike are encoded in PBF using a two steps approach:
- / - an INT32 field declares the expected length
- / - then the string (no terminating NULL char) follows
-*/
+// 
+// attempting to read some bytes from PBF
+// Strings and alike are encoded in PBF using a two steps approach:
+// - an INT32 field declares the expected length
+// - then the string (no terminating NULL char) follows
+
     unsigned char *ptr = start;
     pbf_field varlen;
     unsigned int len;
 
-/* initializing an empty variant field (length) */
+ /* initializing an empty variant field (length) */
     init_variant (&varlen, g_little_endian_cpu);
     varlen.type = READOSM_VAR_UINT32;
 
@@ -331,7 +322,6 @@ static unsigned char * read_bytes_pbf_field_v2 (unsigned char *start, unsigned c
 
           variant->pointer = ptr;
           variant->str_len = len;
-//        variant->valid   = 1;
           return ptr + len;
     }
     wrong_assumption("bla bla");
@@ -342,8 +332,6 @@ static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
    pbf_field_v2  *fld
 )
 {
-
-
 //
 // any PBF field is prefixed by a single byte
 // a bitwise mask is used so to store both the
@@ -422,12 +410,9 @@ int block_size_v2(char* name) {
     hdsz = fld_block_size.value.int32_value;
     verbose_1("      ret = %d\n", read);
 
-//  return ret;
-
     free(buf);
 
     return hdsz;
-
 }
 
 
@@ -501,7 +486,6 @@ static int read_osm_data_block_v2 () {
 //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
 
     buf   = malloc (hdsz);
-
     if (!buf) {
        wrong_assumption("buf");
     }
@@ -509,7 +493,7 @@ static int read_osm_data_block_v2 () {
     cur   = buf;
     end   = buf+hdsz-1;
 
-    size_t               rd;
+    size_t  rd;
     rd    = fread (buf, 1, hdsz, g_pbf_file);
     if ((int) rd != hdsz) {
        wrong_assumption("vbla");
@@ -519,9 +503,9 @@ static int read_osm_data_block_v2 () {
    #ifdef TQ84_USE_PBF_FIELD_HINTS
 //  finalize_variant  (&variant);
     init_variant      (&variant, g_little_endian_cpu);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 2);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
+/// add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+/// add_variant_hints (&variant, READOSM_VAR_INT32, 2);
+/// add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
    #endif
 
 
@@ -531,9 +515,44 @@ static int read_osm_data_block_v2 () {
  // The primitive block can be uncompressed or compressed.
  // 
 
-//  pbf_field_v2    size_primitive_block;
-//  pbf_field_v2    zipped_block;
+    pbf_field_v2    size_primitive_block;
+    pbf_field_v2    zipped_block;
 
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &size_primitive_block);
+
+    if (size_primitive_block.field_id == 1) {
+    //
+    // The block is not compressed
+    //
+       cur = read_bytes_pbf_field_v2 (cur, end, &size_primitive_block);
+       sz_no_compression = size_primitive_block.str_len;
+    }
+    else if (size_primitive_block.field_id == 2) {
+
+       cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &size_primitive_block);
+       
+       sz_no_compression = size_primitive_block.value.int32_value;
+
+       cur = read_pbf_field_v2_protobuf_type_and_field(cur, &zipped_block);
+       cur = read_bytes_pbf_field_v2 (cur, end, &zipped_block);
+
+       if (zipped_block.field_id != 3) {
+          printf("field_id = %d\n", zipped_block.field_id);
+          wrong_assumption("zipped_block.field_id == 3");
+       }
+       zip_ptr = zipped_block.pointer;
+       zip_sz  = zipped_block.str_len;
+    }
+    else {
+       wrong_assumption("expected field id 1 or 2");
+    }
+
+    if (cur <= end) {
+       wrong_assumption("cur<=end");
+    }
+
+
+#if 0
     while (1) {
           verbose_1("    iterating again (read_osm_data_block)\n");
        // resetting an empty variant field
@@ -572,7 +591,7 @@ static int read_osm_data_block_v2 () {
           if (cur > end)
               break;
     }
-
+#endif
 
 //  -------------------------------------------------------------------------------------
 
@@ -611,7 +630,7 @@ static int read_osm_data_block_v2 () {
     end  = ptr_uncompressed_buffer + sz_no_compression - 1;
 
    #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
+//  finalize_variant (&variant);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
     add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
     add_variant_hints (&variant, READOSM_VAR_INT32, 17);
