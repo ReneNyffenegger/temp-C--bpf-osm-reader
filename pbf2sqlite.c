@@ -602,6 +602,7 @@ void createDB(const char* name) {
   if (!sqlite3_open(name, &db)) {
      printf("could not open sqlite db %s\n", name);
   }
+dbExec("pragma page_size = 8192");
 #elif defined PBF2MYSQL
 
    db = mysql_init(NULL);
@@ -849,6 +850,16 @@ int main (int argc, char *argv[]) {
   if (!snprintf(filename_pbf, sizeof(filename_pbf), "/home/rene/osm/pbf/%s.pbf", argv[1])) { printf("! 2\n"); exit(1); }
 
   createDB(dbName);
+
+if (1) { // https://sqlite.org/forum/info/f832398c19d30a4a
+dbExec("PRAGMA journal_mode = OFF");
+dbExec("PRAGMA synchronous = 0");
+dbExec("PRAGMA cache_size = 1000000");
+dbExec("PRAGMA locking_mode = EXCLUSIVE");
+dbExec("PRAGMA temp_store = MEMORY");
+}
+
+
 
   prepareStatements(db);
 
