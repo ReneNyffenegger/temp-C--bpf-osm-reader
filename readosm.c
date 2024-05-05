@@ -481,7 +481,6 @@ static int read_osm_data_block_v2 () {
     unsigned char       *zip_ptr            = NULL;
     int                  zip_sz             = 0;
     int                  sz_no_compression  = 0;
-    pbf_field            variant;
 
 //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
 
@@ -500,13 +499,6 @@ static int read_osm_data_block_v2 () {
     }
 
 // uncompressing the OSMData zipped */
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//  finalize_variant  (&variant);
-    init_variant      (&variant, g_little_endian_cpu);
-/// add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-/// add_variant_hints (&variant, READOSM_VAR_INT32, 2);
-/// add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
-   #endif
 
 
 
@@ -552,46 +544,6 @@ static int read_osm_data_block_v2 () {
     }
 
 
-#if 0
-    while (1) {
-          verbose_1("    iterating again (read_osm_data_block)\n");
-       // resetting an empty variant field
-          reset_variant (&variant);
-
-          cur = read_pbf_field (cur, end, &variant);
-          if (cur == NULL && variant.valid == 0) {
-              wrong_assumption("heidi");
-          }
-
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
-             // found an uncompressed block
-                verbose_1("      uncompressed block\n");
-                wrong_assumption("uncompressed block don't exist");
-                sz_no_compression = variant.str_len;
-
-
-                set_uncompressed_buffer(sz_no_compression);
-
-                memcpy (ptr_uncompressed_buffer, variant.pointer, sz_no_compression);
-          }
-
-          if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
-
-             // expected size of unZipped block */
-                sz_no_compression = variant.value.int32_value;
-                verbose_1("      size of uncompressed block %d\n", sz_no_compression);
-          }
-
-          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
-                verbose_1("      zipped block\n");
-             // found a ZIP-compressed block
-                zip_ptr = variant.pointer;
-                zip_sz  = variant.str_len;
-          }
-          if (cur > end)
-              break;
-    }
-#endif
 
 //  -------------------------------------------------------------------------------------
 
@@ -624,6 +576,14 @@ static int read_osm_data_block_v2 () {
 
      //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
 
+    pbf_field            variant;
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+//  finalize_variant  (&variant);
+    init_variant      (&variant, g_little_endian_cpu);
+/// add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+/// add_variant_hints (&variant, READOSM_VAR_INT32, 2);
+/// add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
+   #endif
  // parsing the PrimitiveBlock
 
     cur  = ptr_uncompressed_buffer;
