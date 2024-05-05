@@ -782,7 +782,7 @@ static int read_header_block_v2() {
 
     verbose_1("  read_header_block, sz = %d\n", sz);
 
-    sz = blob_size();//get_header_size (buf_4);
+    sz = blob_size();
 
 //  if (sz != 14) {
 //     wrong_assumption("parameter sz of read_header_block was expected to be 14");
@@ -804,55 +804,12 @@ static int read_header_block_v2() {
     unsigned char *cur   = buf;
     unsigned char *end   = buf + sz - 1;
 
-// -----------------------------------------------------------------------
 
     hdsz = block_size(cur, end, "OSMHeader");
 
-#ifdef AAA
-    pbf_field_v2    fld_block_name;
-
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
-
-    if (fld_block_name.field_id != 1) {
-       printf("field id = %d\n", fld_block_name.field_id);
-       wrong_assumption("field id");
-    }
-    if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
-       wrong_assumption("PROTOBUF_TYPE_LEN");
-    }
-    cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
-
-    if (fld_block_name.str_len == 9) {
-
-          verbose_1("      field_id == 1\n");
-          if (memcmp (fld_block_name.pointer, "OSMHeader", 9)) {
-              wrong_assumption("block name");
-          }
-    }
+    free (buf);
 
 // -----------------------------------------------------------------------
-    pbf_field_v2    fld_block_size;
-
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_size);
-    verbose_1("      read block size\n");
-
-    if (fld_block_size.field_id != 3) {
-       printf("field id = %d\n", fld_block_size.field_id);
-       wrong_assumption("field id != 3");
-    }
-    if (fld_block_size.protobuf_type != PROTOBUF_TYPE_VARINT) {
-       wrong_assumption("PROTOBUF_TYPE_VARINT");
-    }
-
-    cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &fld_block_size);
-    verbose_1("      read integer\n");
-
-    hdsz = fld_block_size.value.int32_value;
-    verbose_1("      hdsz = %d\n", hdsz);
-
-#endif
-
-    free (buf);
 
     if (!hdsz) {
         wrong_assumption("ok header, hdsz");
@@ -952,68 +909,20 @@ static int read_osm_data_block_v2 () {
 
     hdsz = block_size(cur, end, "OSMData");
 
-#ifdef AAA
-
-    pbf_field_v2    fld_block_name;
-
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_name);
-
-    if (fld_block_name.field_id != 1) {
-       printf("field id = %d\n", fld_block_name.field_id);
-       wrong_assumption("field id");
-    }
-    if (fld_block_name.protobuf_type != PROTOBUF_TYPE_LEN) {
-       wrong_assumption("PROTOBUF_TYPE_LEN");
-    }
-    cur = read_bytes_pbf_field_v2 (cur, end, &fld_block_name);
-
-    if (fld_block_name.str_len == 7) {
-
-          verbose_1("      field_id == 1\n");
-          if (memcmp (fld_block_name.pointer, "OSMData", 7)) {
-              wrong_assumption("block name");
-          }
-    }
-
-// -----------------------------------------------------------------------
-    pbf_field_v2    fld_block_size;
-
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_size);
-    verbose_1("      read block size\n");
-
-    if (fld_block_size.field_id != 3) {
-       printf("field id = %d\n", fld_block_size.field_id);
-       wrong_assumption("field id != 3");
-    }
-    if (fld_block_size.protobuf_type != PROTOBUF_TYPE_VARINT) {
-       wrong_assumption("PROTOBUF_TYPE_VARINT");
-    }
-
-    cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &fld_block_size);
-    verbose_1("      read integer\n");
-
-    hdsz = fld_block_size.value.int32_value;
-    verbose_1("      hdsz = %d\n", hdsz);
-
-#endif
-
     free (buf);
 
     if (!hdsz) {
         wrong_assumption("ok header, hdsz");
     }
 
- // -------------------------------------------------------------------------
-
-     //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
+//  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
 
     buf   = malloc (hdsz);
+
     if (!buf) {
        wrong_assumption("buf");
     }
-//  base  = buf;
-//  start = buf;
-//  stop  = buf + hdsz - 1;
+
     cur   = buf;
     end   = buf+hdsz-1;
 
@@ -1039,25 +948,15 @@ static int read_osm_data_block_v2 () {
               wrong_assumption("heidi");
           }
 
-//        start = base;
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
-             // found an uncompressed block */
+             // found an uncompressed block
                 verbose_1("      uncompressed block\n");
                 wrong_assumption("uncompressed block don't exist");
                 sz_no_compression = variant.str_len;
 
 
-//              if (sz_no_compression > cur_uncompressed_buffer_size) {
-//                 printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, sz_no_compression);
-//                 free(ptr_uncompressed_buffer);
-//                 cur_uncompressed_buffer_size = sz_no_compression;
-//                 ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
-//              }
                 set_uncompressed_buffer(sz_no_compression);
 
-//              raw_ptr = malloc (sz_no_compression);
-
-//              memcpy (raw_ptr, variant.pointer, sz_no_compression);
                 memcpy (ptr_uncompressed_buffer, variant.pointer, sz_no_compression);
           }
 
@@ -1074,7 +973,6 @@ static int read_osm_data_block_v2 () {
                 zip_ptr = variant.pointer;
                 zip_sz  = variant.str_len;
           }
-//        if (base > stop)
           if (cur > end)
               break;
     }
