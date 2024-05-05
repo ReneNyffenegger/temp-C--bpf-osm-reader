@@ -61,7 +61,7 @@ void wrong_assumption(char* txt) {
 
 
    #define TQ84_USE_PBF_FIELD_HINTS
-// #define TQ84_VERBOSE_1
+   #define TQ84_VERBOSE_1
 
 #ifdef TQ84_VERBOSE_1
 #define verbose_1(...) printf(__VA_ARGS__)
@@ -97,244 +97,6 @@ static int test_endianness () {
 }
 
 
-#if 0
-static int read_osm_data_block (unsigned int sz) {
- //
- // expecting to retrieve a valid OSMData header
- //
-
-    int ok_header = 0;
-    int hdsz      = 0;
-    size_t               rd;
-    unsigned char       *buf                = malloc (sz);
-    unsigned char       *base               = buf;
-    unsigned char       *start              = buf;
-    unsigned char       *stop               = buf + sz - 1;
-    unsigned char       *zip_ptr            = NULL;
-    int                  zip_sz             = 0;
-    unsigned char       *raw_ptr            = NULL;
-    int                  sz_no_compression  = 0;
-    pbf_field            variant;
-
-
-    verbose_1("  read_osm_data_block sz = %d\n", sz);
-
-    if (buf == NULL)
-        goto error;
-
- // initializing an empty string list
-//     init_string_table (&string_table);
-//     static void init_string_table (readosm_string_table * string_table) {
-   /* initializing an empty PBF StringTable object */
-       readosm_string_table string_table;
-       string_table.first_string   = NULL;
-       string_table.last_string    = NULL;
-       string_table.count          =    0;
-       string_table.strings        = NULL;
-// }
-
-
- // initializing an empty variant field
-    init_variant      (&variant, g_little_endian_cpu /* input->little_endian_cpu */);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 3);
-   #endif
-
-    rd = fread (buf, 1, sz, g_pbf_file);
-    if (rd != sz)
-        goto error;
-
-     //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
-
- //
- // reading the OSMData header
- //
-    while (1) {
-          verbose_1("    iterating (read_osm_data_block)\n");
-
-       // resetting an empty variant field
-          reset_variant (&variant);
-
-          base = read_pbf_field (start, stop, &variant);
-
-          if (base == NULL && variant.valid == 0)
-              goto error;
-
-          start = base;
-
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES && variant.str_len == 7) {
-                verbose_1("       field_id = 1\n");
-                if (memcmp (variant.pointer, "OSMData", 7) == 0) ok_header = 1;
-          }
-
-          if (variant.field_id == 3 && variant.type == READOSM_VAR_INT32) {
-              hdsz = variant.value.int32_value;
-              verbose_1("       field_id = 3, hdsz = %d\n", hdsz);
-          }
-
-          if (base > stop)
-              break;
-
-    }
-
-    free (buf);
-    buf = NULL;
-    if (!ok_header || !hdsz)
-        goto error;
-
-    buf   = malloc (hdsz);
-    base  = buf;
-    start = buf;
-    stop  = buf + hdsz - 1;
-    rd    = fread (buf, 1, hdsz, g_pbf_file);
-    if ((int) rd != hdsz)
-        goto error;
-
-// uncompressing the OSMData zipped */
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant  (&variant);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 2);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
-   #endif
-    while (1) {
-          verbose_1("    iterating again (read_osm_data_block)\n");
-       // resetting an empty variant field
-          reset_variant (&variant);
-
-          base = read_pbf_field (start, stop, &variant);
-          if (base == NULL && variant.valid == 0)
-              goto error;
-
-          start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
-             // found an uncompressed block */
-                verbose_1("      uncompressed block\n");
-                wrong_assumption("uncompressed block don't exist");
-                sz_no_compression = variant.str_len;
-                raw_ptr = malloc (sz_no_compression);
-                memcpy (raw_ptr, variant.pointer, sz_no_compression);
-          }
-
-          if (variant.field_id == 2 && variant.type == READOSM_VAR_INT32) {
-
-             // expected size of unZipped block */
-                sz_no_compression = variant.value.int32_value;
-                verbose_1("      size of uncompressed block %d\n", sz_no_compression);
-          }
-
-          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) {
-                verbose_1("      zipped block\n");
-             // found a ZIP-compressed block
-                zip_ptr = variant.pointer;
-                zip_sz  = variant.str_len;
-          }
-          if (base > stop)
-              break;
-    }
-
-    if (zip_ptr != NULL && zip_sz != 0 && sz_no_compression != 0) {
-          /* unZipping a compressed block */
-          raw_ptr = malloc (sz_no_compression);
-          if (!unzip_compressed_block (zip_ptr, zip_sz, raw_ptr, sz_no_compression))
-              goto error;
-    }
-
-    free (buf);
-    buf = NULL;
-    if (raw_ptr == NULL || sz_no_compression == 0)
-        goto error;
-
-     //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
-
- // parsing the PrimitiveBlock
-
-    base  = raw_ptr;
-    start = raw_ptr;
-    stop  = raw_ptr + sz_no_compression - 1;
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 17);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 18);
-    add_variant_hints (&variant, READOSM_VAR_INT64, 19);
-    add_variant_hints (&variant, READOSM_VAR_INT64, 20);
-   #endif
-
-    while (1) {
-       // resetting an empty variant field
-          reset_variant (&variant);
-
-          base = read_pbf_field (start, stop, &variant);
-          if (base == NULL && variant.valid == 0)
-              goto error;
-
-          start = base;
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
-
-             // the StringTable
-                if (!parse_string_table (
-                     &string_table,
-                     variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu
-                   ))
-                   goto error;
-
-                array_from_string_table (&string_table);
-          }
-
-          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
-
-             // the PrimitiveGroup to be parsed
-                if (!parse_primitive_group (
-                    &string_table, variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu
-                     // , params
-                    ))
-
-                    goto error;
-          }
-
-          if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
-             // assumed to be a termination marker (???)
-                break;
-          }
-
-          if (base > stop)
-              break;
-      }
-
-    if (buf != NULL)
-        free (buf);
-
-    if (raw_ptr != NULL)
-        free (raw_ptr);
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-   #endif
-
-    finalize_string_table (&string_table);
-    return 1;
-
-  error:
-    if (buf != NULL)
-        free (buf);
-    if (raw_ptr != NULL)
-        free (raw_ptr);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-   #endif
-
-    finalize_string_table (&string_table);
-    return 0;
-}
-#endif
 
 static unsigned int blob_size() {
     size_t        rd;
@@ -363,127 +125,6 @@ static int set_uncompressed_buffer(int req_uncompressed_buffer_size) {
 }
 
 
-
-#if 0
-static int read_header_block (unsigned int sz) {
-
-//
-// expecting to retrieve a valid OSMHeader header 
-// there is nothing really interesting here, so we'll
-// simply discard the whole block, simply advancing
-// the read file-pointer as appropriate
-//
-
-    verbose_1("  read_header_block, sz = %d\n", sz);
-
-    if (sz != 14) {
-       wrong_assumption("parameter sz of read_header_block was expected to be 14");
-    }
-
-    int ok_header = 0;
-    int hdsz      = 0;
-
-    size_t rd;
-    unsigned char *buf   = malloc (sz);
-//  unsigned char *base  = buf;
-//  unsigned char *start = buf;
-//  unsigned char *stop  = buf + sz - 1;
-    unsigned char *cur   = buf;
-    unsigned char *end   = buf + sz - 1;
-    pbf_field      fld;
-
-    if (buf == NULL)
-        goto error;
-
- // initializing an empty fld field 
-    init_variant (&fld, g_little_endian_cpu);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    add_variant_hints (&fld, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&fld, READOSM_LEN_BYTES, 2);
-    add_variant_hints (&fld, READOSM_VAR_INT32, 3);
-   #endif
-
-    rd = fread (buf, 1, sz, g_pbf_file);
-    if (rd != sz)
-        goto error;
-
-// reading the OSMHeader header
-//
-    while (1) {
-       verbose_1("    next iteration (read_header_block)\n");
-       // resetting an empty fld field
-          reset_variant (&fld);
-
-//        base = read_pbf_field (start, stop, &fld);
-          cur  = read_pbf_field (cur  , end , &fld);
-//        if (base == NULL && fld.valid == 0)
-          if (cur  == NULL && fld.valid == 0)
-              goto error;
-
-//        start = base;
-          if (fld.field_id == 1 && fld.type == READOSM_LEN_BYTES && fld.str_len == 9) {
-
-                verbose_1("      field_id == 1\n");
-                if (memcmp (fld.pointer, "OSMHeader", 9) == 0)
-                    ok_header = 1;
-          }
-          else if (fld.field_id == 3 && fld.type == READOSM_VAR_INT32) {
-              hdsz = fld.value.int32_value;
-              verbose_1("      field_id == 3, hdsz = %d\n", hdsz);
-          }
-          else {
-              wrong_assumption("else");
-              verbose_1("      else\n");
-          }
-
-//        if (base > stop) {
-          if (cur  > end ) {
-              verbose_1("      base > stop\n");
-              break;
-          }
-    }
-
-    free (buf);
-//  buf = NULL;
-
-
-    if (!ok_header || !hdsz)
-        goto error;
-
-//
-//  Just SKIP OVER the rest of the header buffer!
-//
-
-    buf   = malloc (hdsz);
-//  base  = buf;
-//  start = buf;
-//  stop  = buf + hdsz - 1;
-
-    rd = fread (buf, 1, hdsz, g_pbf_file);
-
-    if ((int) rd != hdsz)
-        goto error;
-
-    if (buf != NULL)
-        free (buf);
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&fld);
-   #endif
-   
-// exit(100); // TQ84 - remove moe
-    return 1;
-
-  error:
-    if (buf != NULL)
-        free (buf);
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&fld);
-   #endif
-    return 0;
-}
-#endif
 
 
 
@@ -866,18 +507,15 @@ static int read_header_block_v2() {
     if (!hdsz) {
         wrong_assumption("ok header, hdsz 2");
     }
-
+ //
+ // Just SKIP OVER the rest of the header buffer!
+ //
     fseek(g_pbf_file, hdsz, SEEK_CUR);
     return 1;
  //
  // alternatively, create a buffer and parse it and deallocate it.
  //
   
-
-
-//
-//  Just SKIP OVER the rest of the header buffer!
-//
     unsigned char *rest_of_header_buffer = malloc (hdsz);
     rd = fread (rest_of_header_buffer, 1, hdsz, g_pbf_file);
 
@@ -904,57 +542,9 @@ static int read_osm_data_block_v2 () {
 
     verbose_1("  read_osm_data_block\n");
 
-#if 0
-    int ok_header = 0;
-    int hdsz;
-    size_t               rd;
-
-
-
-    unsigned int sz;
-    sz = blob_size();
-    if (!sz) {
-       return 0;
-    }
-    verbose_1("    sz = %d\n", sz);
-
-    buf = malloc(sz);
-    if (buf == NULL) {
-       wrong_assumption("could not allocate buffer.");
-    }
-
-    cur = buf;
-    end = buf + sz-1;
-
-
-
- // initializing an empty variant field
-    init_variant      (&variant, g_little_endian_cpu);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 3);
-   #endif
-
-    rd = fread (buf, 1, sz, g_pbf_file);
-    if (rd != sz) {
-       wrong_assumption("fread is ok");
-    }
-
-    //  --------------------------------------------------------------------- Header ---------------------------------------------------------------------------------------------------
-
-#endif
-
-//  hdsz = block_size(cur, end, "OSMData");
     int hdsz = block_size_v2( "OSMData");
     if (!hdsz) return 0;
 
-//  free (buf);
-
-
-//  if (!hdsz) {
-//      wrong_assumption("ok header, hdsz 1");
-//  }
 
  // -------------------------------
 
@@ -992,6 +582,15 @@ static int read_osm_data_block_v2 () {
     add_variant_hints (&variant, READOSM_VAR_INT32, 2);
     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
    #endif
+
+
+
+ //
+ // Determine size of 'primitive block'.
+ // The primitive block can be uncompressed or compressed.
+ // 
+
+
     while (1) {
           verbose_1("    iterating again (read_osm_data_block)\n");
        // resetting an empty variant field
@@ -1040,8 +639,6 @@ static int read_osm_data_block_v2 () {
     // 
 
           set_uncompressed_buffer(sz_no_compression);
-
-
                   
           uLongf unc_size = sz_no_compression;
           int unc_ret = uncompress(
