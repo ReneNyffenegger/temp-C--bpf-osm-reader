@@ -31,6 +31,9 @@ H3
 
   https://github.com/igor-suhorukov/openstreetmap_h3
 
+  https://github.com/ReneNyffenegger/leaflet-h3-viewer
+
 ------
    Query wiki
       https://wiki.openstreetmap.org/w/api.php?action=query&list=allpages&apprefix=Key:
+      curl 'https://en.wikipedia.org/w/api.php?action=query&format=json&list=allpages&aplimit=50&apprefix=Pfung' | jq
