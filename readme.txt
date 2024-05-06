@@ -30,3 +30,7 @@ H3
     https://github.com/uber/h3
 
   https://github.com/igor-suhorukov/openstreetmap_h3
+
+------
+   Query wiki
+      https://wiki.openstreetmap.org/w/api.php?action=query&list=allpages&apprefix=Key:
