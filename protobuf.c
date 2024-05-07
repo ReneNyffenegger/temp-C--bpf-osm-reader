@@ -498,17 +498,19 @@ init_int64_packed (readosm_int64_packed * packed)
     packed->values = NULL;
 }
 
-static void
-append_int64_packed (readosm_int64_packed * packed, long long val)
-{
+static void append_int64_packed (readosm_int64_packed * packed, long long val) {
+
 /* appending an int64 value to a PBF packed object */
     readosm_int64 *value = malloc (sizeof (readosm_int64));
     value->value = val;
     value->next = NULL;
+
     if (packed->first == NULL)
         packed->first = value;
+
     if (packed->last != NULL)
         packed->last->next = value;
+
     packed->last = value;
 }
 

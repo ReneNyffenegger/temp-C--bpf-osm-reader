@@ -464,21 +464,21 @@ static int read_header_block_v2() {
 static int parse_pbf_nodes_v2 (
                  readosm_string_table * strings,
                  unsigned char *start,
-                 unsigned char *stop,
+                 unsigned char *end,
                  char           little_endian_cpu
 )
 {
 /* 
  / Attempting to parse a valid PBF DenseNodes 
  /
- / Remark: a PBF DenseNodes block consists in five strings:
+ / Remark: a PBF DenseNodes block consists of five byte blocks:
  / - ids
  / - DenseInfos
  / - longitudes
  / - latitudes
  / - packed-keys (*)
  /
- / Each "string" in turn contains an array of INT values;
+ / Each block in turn contains an array of INT values;
  / and individual values are usually encoded as DELTAs,
  / i.e. differences respect the immediately preceding value.
  /
@@ -488,19 +488,26 @@ static int parse_pbf_nodes_v2 (
  / any 0 value means that the current Node stops: next index
  / will be a key-index for the next Node item
 */
-    pbf_field       variant;
-    unsigned char *base = start;
+
+    verbose_1("      parse_pbf_nodes_v2\n");
+
+//  pbf_field       variant;
+    pbf_field_v2    fld;
+
+    unsigned char *cur = start;
+
     readosm_uint32_packed  packed_keys;
     readosm_int64_packed   packed_ids;
     readosm_int64_packed   packed_lats;
     readosm_int64_packed   packed_lons;
     readosm_packed_infos   packed_infos;
+
     readosm_internal_node *nodes = NULL;
     int nd_count                 = 0;
     int valid                    = 0;
     int fromPackedInfos          = 0;
 
-/* initializing empty packed objects */
+ // initializing empty packed objects
     init_uint32_packed (&packed_keys);
     init_int64_packed  (&packed_ids);
     init_int64_packed  (&packed_lats);
@@ -508,41 +515,46 @@ static int parse_pbf_nodes_v2 (
     init_packed_infos  (&packed_infos);
 
 /* initializing an empty variant field */
-    init_variant (&variant, little_endian_cpu);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  5);
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  8);
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  9);
-    add_variant_hints (&variant, READOSM_LEN_BYTES, 10);
-   #endif
+//q    init_variant (&variant, little_endian_cpu);
+//q   #ifdef TQ84_USE_PBF_FIELD_HINTS
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES,  5);
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES,  8);
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES,  9);
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 10);
+//q   #endif
 
 /* reading the Node */
     while (1) {
+
+
        // resetting an empty variant field
-          reset_variant (&variant);
+//q       reset_variant (&variant);
 
-          base = read_pbf_field (start, stop, &variant);
+//q       cur = read_pbf_field (start, stop, &variant);
+          cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
+          verbose_1("        field_id = %d\n", fld.field_id);
 
-          if (base == NULL && variant.valid == 0)
-              goto error;
+//q       if (cur == NULL && variant.valid == 0)
+//q           goto error;
 
-          start = base;
+//        start = cur;
 
-          if (variant.field_id ==  1 && variant.type == READOSM_LEN_BYTES) { /* NODE IDs    */ if (!parse_sint64_packed  (&packed_ids  , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
-          if (variant.field_id ==  5 && variant.type == READOSM_LEN_BYTES) { /* DenseInfos  */ if (!parse_pbf_node_infos (&packed_infos, variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error;                                         }
-          if (variant.field_id ==  8 && variant.type == READOSM_LEN_BYTES) { /* latitudes   */ if (!parse_sint64_packed  (&packed_lats , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
-          if (variant.field_id ==  9 && variant.type == READOSM_LEN_BYTES) { /* longitudes  */ if (!parse_sint64_packed  (&packed_lons , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
-          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES) { /* packes-keys */ if (!parse_uint32_packed  (&packed_keys , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
-          if (base > stop)
+          if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed (&packed_ids  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
+          else if (fld.field_id ==  5 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* DenseInfos  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_pbf_node_infos(&packed_infos, fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error;                                         }
+          else if (fld.field_id ==  8 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* latitudes   */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed (&packed_lats , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
+          else if (fld.field_id ==  9 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* longitudes  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed (&packed_lons , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
+          else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_uint32_packed (&packed_keys , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
+          else wrong_assumption("dense node");
+
+          if (cur > end)
               break;
-      }
-    if (packed_ids.count == packed_lats.count
-        && packed_ids.count == packed_lons.count)
-      {
-          /* not using PackedInfos */
+    }
+
+    if (packed_ids.count == packed_lats.count && packed_ids.count == packed_lons.count) {
+       /* not using PackedInfos */
           valid = 1;
-      }
+    }
     if (   packed_ids.count == packed_lats.count
         && packed_ids.count == packed_lons.count
         && packed_ids.count == packed_infos.ver_count
@@ -556,161 +568,163 @@ static int parse_pbf_nodes_v2 (
           fromPackedInfos = 1;
       }
 
-    if (!valid)
+    if (!valid) {
+        wrong_assumption("valid count");
         goto error;
+    }
 
-    else {
-          //
-          //  all right, we now have the same item count anywhere
-          //  we can now go further away attempting to reassemble
-          //  individual Nodes 
-          //
-          readosm_internal_node *nd;
-          int i;
-          int i_keys = 0;
-          long long delta_id = 0;
-          long long delta_lat = 0;
-          long long delta_lon = 0;
-          int max_nodes;
-          int base = 0;
-          nd_count = packed_ids.count;
+//  else {
+    //
+    //  all right, we now have the same item count anywhere
+    //  we can now go further away attempting to reassemble
+    //  individual Nodes 
+    //
+    readosm_internal_node *nd;
+    int i;
+    int i_keys = 0;
+    long long delta_id = 0;
+    long long delta_lat = 0;
+    long long delta_lon = 0;
+    int max_nodes;
+    int base = 0;
+    nd_count = packed_ids.count;
 
-          while (base < nd_count) {
+    while (base < nd_count) {
 
-             // processing about 1024 nodes at each time
-                max_nodes = MAX_NODES;
+       // processing about 1024 nodes at each time
+          max_nodes = MAX_NODES;
 
-                if ((nd_count - base) < MAX_NODES)
-                    max_nodes = nd_count - base;
+          if ((nd_count - base) < MAX_NODES)
+              max_nodes = nd_count - base;
 
-                nodes = malloc (sizeof (readosm_internal_node) * max_nodes);
+          nodes = malloc (sizeof (readosm_internal_node) * max_nodes);
 
-                for (i = 0; i < max_nodes; i++) {
-                   // initializing an array of empty internal Nodes
-                      nd = nodes + i;
-                      init_internal_node (nd);
-                }
-                for (i = 0; i < max_nodes; i++) {
-                      /* reassembling internal Nodes */
-                      const char *key = NULL;
-                      const char *value = NULL;
-                      time_t xtime;
-                      struct tm *times;
-                      int s_id;
-                      nd = nodes + i;
-                      delta_id += *(packed_ids.values + base + i);
-                      delta_lat += *(packed_lats.values + base + i);
-                      delta_lon += *(packed_lons.values + base + i);
-                      nd->id = delta_id;
-                  /* latitudes and longitudes require to be rescaled as DOUBLEs */
-                      nd->latitude  = delta_lat / 10000000.0;
-                      nd->longitude = delta_lon / 10000000.0;
+          for (i = 0; i < max_nodes; i++) {
+             // initializing an array of empty internal Nodes
+                nd = nodes + i;
+                init_internal_node (nd);
+          }
+          for (i = 0; i < max_nodes; i++) {
+                /* reassembling internal Nodes */
+                const char *key = NULL;
+                const char *value = NULL;
+                time_t xtime;
+                struct tm *times;
+                int s_id;
+                nd = nodes + i;
+                delta_id += *(packed_ids.values + base + i);
+                delta_lat += *(packed_lats.values + base + i);
+                delta_lon += *(packed_lons.values + base + i);
+                nd->id = delta_id;
+            /* latitudes and longitudes require to be rescaled as DOUBLEs */
+                nd->latitude  = delta_lat / 10000000.0;
+                nd->longitude = delta_lon / 10000000.0;
 
-                      if (fromPackedInfos) {
-                            nd->version = *(packed_infos.versions + base + i);
-                            xtime       = *(packed_infos.timestamps + base + i);
-                            times       = gmtime (&xtime);
+                if (fromPackedInfos) {
+                      nd->version = *(packed_infos.versions + base + i);
+                      xtime       = *(packed_infos.timestamps + base + i);
+                      times       = gmtime (&xtime);
 
-                            if (times) {
+                      if (times) {
 
-                               // formatting Timestamps
-                                  char buf[64];
-                                  int len;
-                                  sprintf (buf,
-                                           "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                                           times->tm_year + 1900,
-                                           times->tm_mon  +    1,
-                                           times->tm_mday,
-                                           times->tm_hour,
-                                           times->tm_min,
-                                           times->tm_sec);
+                         // formatting Timestamps
+                            char buf[64];
+                            int len;
+                            sprintf (buf,
+                                     "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                                     times->tm_year + 1900,
+                                     times->tm_mon  +    1,
+                                     times->tm_mday,
+                                     times->tm_hour,
+                                     times->tm_min,
+                                     times->tm_sec);
 
-                                  if (nd->timestamp)
-                                      free (nd->timestamp);
+                            if (nd->timestamp)
+                                free (nd->timestamp);
 
-                                  len = strlen (buf);
-                                  nd->timestamp = malloc (len + 1);
-                                  strcpy (nd->timestamp, buf);
-                              }
-                            nd->changeset =
-                                *(packed_infos.changesets + base + i);
-                            if (*(packed_infos.uids + base + i) >= 0)
-                                nd->uid = *(packed_infos.uids + base + i);
-                            s_id = *(packed_infos.users + base + i);
-                            if (s_id > 0)
-                              {
-                                  /* retrieving user-names as strings (by index) */
-                                  pbf_string_table_elem *s_ptr =
-                                      *(strings->strings + s_id);
-                                  int len = strlen (s_ptr->string);
-                                  if (nd->user != NULL)
-                                      free (nd->user);
-                                  if (len > 0)
-                                    {
-                                        nd->user = malloc (len + 1);
-                                        strcpy (nd->user, s_ptr->string);
-                                    }
-                              }
+                            len = strlen (buf);
+                            nd->timestamp = malloc (len + 1);
+                            strcpy (nd->timestamp, buf);
                         }
-
-                      for (; i_keys < packed_keys.count; i_keys++) {
-                          // decoding packed-keys
-                            int is = *(packed_keys.values + i_keys);
-
-                            if (is == 0) {
-                                  /* next Node */
-                                  i_keys++;
-                                  break;
-                              }
-                            if (key == NULL)
+                      nd->changeset =
+                          *(packed_infos.changesets + base + i);
+                      if (*(packed_infos.uids + base + i) >= 0)
+                          nd->uid = *(packed_infos.uids + base + i);
+                      s_id = *(packed_infos.users + base + i);
+                      if (s_id > 0)
+                        {
+                            /* retrieving user-names as strings (by index) */
+                            pbf_string_table_elem *s_ptr =
+                                *(strings->strings + s_id);
+                            int len = strlen (s_ptr->string);
+                            if (nd->user != NULL)
+                                free (nd->user);
+                            if (len > 0)
                               {
-                                  pbf_string_table_elem *s_ptr =
-                                      *(strings->strings + is);
-                                  key = s_ptr->string;
-                              }
-                            else
-                              {
-                                  pbf_string_table_elem *s_ptr =
-                                      *(strings->strings + is);
-                                  value = s_ptr->string;
-                                  append_tag_to_node (nd, key, value);
-                                  key = NULL;
-                                  value = NULL;
+                                  nd->user = malloc (len + 1);
+                                  strcpy (nd->user, s_ptr->string);
                               }
                         }
                   }
-                base += max_nodes;
 
-                /* processing each Node in the block */
-//              if (params->node_callback != NULL && params->stop == 0) {
-                      int ret;
-                      readosm_internal_node *nd;
-                      int i;
-                      for (i = 0; i < max_nodes; i++) {
-                            nd = nodes + i;
-                            ret = call_node_callback (g_cb_nod, nd);
+                for (; i_keys < packed_keys.count; i_keys++) {
+                    // decoding packed-keys
+                      int is = *(packed_keys.values + i_keys);
 
-                            if (ret != READOSM_OK) {
-                                  exit(42);
-                                  break;
-                              }
+                      if (is == 0) {
+                            /* next Node */
+                            i_keys++;
+                            break;
                         }
-//                }
-
-                /* memory cleanup: destroying Nodes */
-                if (nodes != NULL)
-                  {
-                      readosm_internal_node *nd;
-                      int i;
-                      for (i = 0; i < max_nodes; i++)
+                      if (key == NULL)
                         {
-                            nd = nodes + i;
-                            destroy_internal_node (nd);
+                            pbf_string_table_elem *s_ptr =
+                                *(strings->strings + is);
+                            key = s_ptr->string;
                         }
-                      free (nodes);
+                      else
+                        {
+                            pbf_string_table_elem *s_ptr =
+                                *(strings->strings + is);
+                            value = s_ptr->string;
+                            append_tag_to_node (nd, key, value);
+                            key = NULL;
+                            value = NULL;
+                        }
                   }
             }
+          base += max_nodes;
+
+          /* processing each Node in the block */
+//        if (params->node_callback != NULL && params->stop == 0) {
+                int ret;
+                readosm_internal_node *nd;
+                int i;
+                for (i = 0; i < max_nodes; i++) {
+                      nd = nodes + i;
+                      ret = call_node_callback (g_cb_nod, nd);
+
+                      if (ret != READOSM_OK) {
+                            exit(42);
+                            break;
+                        }
+                  }
+//          }
+
+          /* memory cleanup: destroying Nodes */
+          if (nodes != NULL)
+            {
+                readosm_internal_node *nd;
+                int i;
+                for (i = 0; i < max_nodes; i++)
+                  {
+                      nd = nodes + i;
+                      destroy_internal_node (nd);
+                  }
+                free (nodes);
+            }
       }
+//    }
 
 /* memory cleanup */
     finalize_uint32_packed (&packed_keys);
@@ -718,9 +732,9 @@ static int parse_pbf_nodes_v2 (
     finalize_int64_packed (&packed_lats);
     finalize_int64_packed (&packed_lons);
     finalize_packed_infos (&packed_infos);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-   #endif
+//q #ifdef TQ84_USE_PBF_FIELD_HINTS
+//q  finalize_variant (&variant);
+//q #endif
     return 1;
 
   error:
@@ -729,9 +743,9 @@ static int parse_pbf_nodes_v2 (
     finalize_int64_packed (&packed_lats);
     finalize_int64_packed (&packed_lons);
     finalize_packed_infos (&packed_infos);
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-   #endif
+//q #ifdef TQ84_USE_PBF_FIELD_HINTS
+//q  finalize_variant (&variant);
+//q #endif
 
     if (nodes != NULL) {
           readosm_internal_node *nd;
