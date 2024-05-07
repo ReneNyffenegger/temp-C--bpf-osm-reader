@@ -461,226 +461,109 @@ static int read_header_block_v2() {
 }
 
 
-#if 0
-static int read_osm_data_block_v2 () {
- //
- // expecting to retrieve a valid OSMData header
- //
+static int parse_primitive_group_v2 (
+   readosm_string_table * strings,
+   unsigned char *start,
+   unsigned char *end,
+            char little_endian_cpu
+)
+{
+// 
+// attempting to parse a valid Primitive Group 
+//
+// each PBF PrimitiveGroup can store only one type:
+// - NODEs
+// - WAYs
+// - RELATIONs
+//
+//  pbf_field    variant;
+    pbf_field_v2 fld;
+    unsigned char *cur = start;
 
-    verbose_1("  read_osm_data_block\n");
+/* initializing an empty variant field */
+//q    init_variant      (&variant, little_endian_cpu);
+//q   #ifdef TQ84_USE_PBF_FIELD_HINTS
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 4);
+//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 5);
+//q   #endif
 
-    int hdsz = block_size_v2( "OSMData");
-    if (!hdsz) return 0;
+/* reading the Primitive Group */
 
-
- // -------------------------------
-
-    unsigned char       *buf;
-    unsigned char       *cur;
-    unsigned char       *end;
-
-    unsigned char       *zip_ptr            = NULL;
-    int                  zip_sz             = 0;
-    int                  sz_no_compression  = 0;
-
-//  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
-
-    buf   = malloc (hdsz);
-    if (!buf) {
-       wrong_assumption("buf");
-    }
-
-    cur   = buf;
-    end   = buf+hdsz-1;
-
-    size_t  rd;
-    rd    = fread (buf, 1, hdsz, g_pbf_file);
-    if ((int) rd != hdsz) {
-       wrong_assumption("vbla");
-    }
-
-// uncompressing the OSMData zipped */
-
-
-
- //
- // Determine size of 'primitive block'.
- // The primitive block can be uncompressed or compressed.
- // 
-
-    pbf_field_v2    size_primitive_block;
-    pbf_field_v2    zipped_block;
-
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &size_primitive_block);
-
-    if (size_primitive_block.field_id == 1) {
-    //
-    // The block is not compressed
-    //
-       cur = read_bytes_pbf_field_v2 (cur, end, &size_primitive_block);
-       sz_no_compression = size_primitive_block.str_len;
-    }
-    else if (size_primitive_block.field_id == 2) {
-
-       cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &size_primitive_block);
-       
-       sz_no_compression = size_primitive_block.value.int32_value;
-
-       cur = read_pbf_field_v2_protobuf_type_and_field(cur, &zipped_block);
-       cur = read_bytes_pbf_field_v2 (cur, end, &zipped_block);
-
-       if (zipped_block.field_id != 3) {
-          printf("field_id = %d\n", zipped_block.field_id);
-          wrong_assumption("zipped_block.field_id == 3");
-       }
-       zip_ptr = zipped_block.pointer;
-       zip_sz  = zipped_block.str_len;
-    }
-    else {
-       wrong_assumption("expected field id 1 or 2");
-    }
-
-    if (cur <= end) {
-       wrong_assumption("cur<=end");
-    }
-
-
-
-//  -------------------------------------------------------------------------------------
-
-    if (zip_ptr != NULL && zip_sz != 0 && sz_no_compression != 0) {
-    //
-    // The primitive block is zipped, we need to unzip it.
-    // 
-
-          set_uncompressed_buffer(sz_no_compression);
-                  
-          uLongf unc_size = sz_no_compression;
-          int unc_ret = uncompress(
-              ptr_uncompressed_buffer,// dest
-              &unc_size,              // dest len: on entry, the value is the size of the dest buffer; on exit, value is the length of uncompressed data.
-              zip_ptr,                // src
-              zip_sz                  // src len
-          ); 
-
-          if (unc_ret != Z_OK || unc_size != sz_no_compression) {
-              printf("Z_OK = %d, unc_ret = %d / Z_BUF_ERROR = %d, Z_MEM_ERROR = %d, Z_DATA_ERROR = %d\n", Z_OK, unc_ret, Z_BUF_ERROR, Z_MEM_ERROR, Z_DATA_ERROR);
-              printf("unc_size = %d, zip_sz = %d\n", unc_size, zip_sz);
-              wrong_assumption("uncompress");
-              exit(101);
-          }
-
-    }
-
-    free (buf);
-    buf = NULL;
-
-     //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
-
-    pbf_field            variant;
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//  finalize_variant  (&variant);
-    init_variant      (&variant, g_little_endian_cpu);
-/// add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-/// add_variant_hints (&variant, READOSM_VAR_INT32, 2);
-/// add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
-   #endif
- // parsing the PrimitiveBlock
-
-    cur  = ptr_uncompressed_buffer;
-    end  = ptr_uncompressed_buffer + sz_no_compression - 1;
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//  finalize_variant (&variant);
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
-    add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 17);
-    add_variant_hints (&variant, READOSM_VAR_INT32, 18);
-    add_variant_hints (&variant, READOSM_VAR_INT64, 19);
-    add_variant_hints (&variant, READOSM_VAR_INT64, 20);
-   #endif
-
-
- // initializing an empty string list
- // initializing an empty PBF StringTable object
-       readosm_string_table string_table;
-       string_table.first_string   = NULL;
-       string_table.last_string    = NULL;
-       string_table.count          =    0;
-       string_table.strings        = NULL;
-
-
+    verbose_1("    parse_primitive_group\n");
     while (1) {
+
        // resetting an empty variant field
-          reset_variant (&variant);
+//q       reset_variant (&variant);
 
-          cur = read_pbf_field (cur, end, &variant);
-          if (cur == NULL && variant.valid == 0) {
-              wrong_assumption("stand");
-          }
+//q       base = read_pbf_field (start, stop, &variant);
+          cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
+//q       if (cur == NULL && variant.valid == 0)
+//q           goto error;
 
-          if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
+//q       start = base;
 
-             // the StringTable
-                if (!parse_string_table ( 
-                     &string_table,
-                     variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu
+//        if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) { // Dense nodes
+          if (fld.field_id == 2 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { // Dense nodes
+
+               cur = read_bytes_pbf_field_v2 (cur, end, &fld);
+
+               if (!parse_pbf_nodes (
+                     strings,
+                     fld.pointer,
+                     fld.pointer + fld.str_len - 1,
+                     g_little_endian_cpu
                    ))
-                   wrong_assumption("sta");
+                       wrong_assumption("parse_pbf_nodes");
+//                 goto error;
+            }
 
-                array_from_string_table (&string_table);
+//        if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) { // Way
+          else if (fld.field_id == 3 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { // Way
+
+               cur = read_bytes_pbf_field_v2 (cur, end, &fld);
+
+                if (!parse_pbf_way (
+                     strings,
+                     fld.pointer,
+                     fld.pointer + fld.str_len - 1,
+                     g_little_endian_cpu
+                ))
+                     wrong_assumption("parse_pbf_way");
+            }
+
+//        if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) { // Relation
+          else if (fld.field_id == 4 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { // Relation
+
+                cur = read_bytes_pbf_field_v2 (cur, end, &fld);
+
+                if (!parse_pbf_relation (
+                     strings, fld.pointer,
+                     fld.pointer + fld.str_len - 1,
+                     g_little_endian_cpu
+                ))
+                     wrong_assumption("parse_pbf_relation");
+
+            //    goto error;
+          }
+          else {
+               wrong_assumption("node, way or relation");
           }
 
-          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
 
-             // the PrimitiveGroup to be parsed
-                if (!parse_primitive_group (
-                    &string_table, variant.pointer,
-                     variant.pointer + variant.str_len - 1,
-                     variant.little_endian_cpu
-                     // , params
-                    ))
-                    wrong_assumption("yuh");
-          }
-
-          if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
-             // assumed to be a termination marker (???)
-                wrong_assumption("termination marker never reached");
-                break;
-          }
-
-          if (cur  > end )
+//      skip:
+          if (cur > end)
               break;
       }
 
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-   #endif
-
-    finalize_string_table (&string_table);
     return 1;
 
   error:
-    wrong_assumption("err");
-    if (buf != NULL)
-        free (buf);
 
-//  if (raw_ptr != NULL)
-//      free (raw_ptr);
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-    finalize_variant (&variant);
-   #endif
-
-    finalize_string_table (&string_table);
-    wrong_assumption("neumond");
     return 0;
 }
-#endif
-
 
 static int read_osm_data_block_v3 () {
  //
@@ -722,7 +605,6 @@ static int read_osm_data_block_v3 () {
 // uncompressing the OSMData zipped */
 
 
-
  //
  // Determine size of 'primitive block'.
  // The primitive block can be uncompressed or compressed.
@@ -797,29 +679,12 @@ static int read_osm_data_block_v3 () {
 
      //  --------------------------------------------------------------------- PrimitiveBlock ---------------------------------------------------------------------------------------------------
 
-//  pbf_field            variant;
     pbf_field_v2         fld_data;
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//  finalize_variant  (&variant);
-//q init_variant      (&variant, g_little_endian_cpu);
-/// add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-/// add_variant_hints (&variant, READOSM_VAR_INT32, 2);
-/// add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
-   #endif
  // parsing the PrimitiveBlock
 
     cur  = ptr_uncompressed_buffer;
     end  = ptr_uncompressed_buffer + sz_no_compression - 1;
 
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//  finalize_variant (&variant);
-//q add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
-//q add_variant_hints (&variant, READOSM_LEN_BYTES,  2);
-//q add_variant_hints (&variant, READOSM_VAR_INT32, 17);
-//q add_variant_hints (&variant, READOSM_VAR_INT32, 18);
-//q add_variant_hints (&variant, READOSM_VAR_INT64, 19);
-//q add_variant_hints (&variant, READOSM_VAR_INT64, 20);
-   #endif
 
 
  // initializing an empty string list
@@ -833,30 +698,12 @@ static int read_osm_data_block_v3 () {
 
     while (1) {
        // resetting an empty variant field
-//q       reset_variant (&variant);
 
-
-//q       cur = read_pbf_field (cur, end, &variant);
           cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_data);
-
-//q       if (cur == NULL && variant.valid == 0) {
-//q           wrong_assumption("stand");
-//q       }
-
           
-//q       if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
           if (fld_data.field_id == 1 && fld_data.protobuf_type == PROTOBUF_TYPE_LEN) {
               cur = read_bytes_pbf_field_v2 (cur, end, &fld_data);
 
-             // the StringTable
-             //
-             //qif (!parse_string_table ( 
-             //q     &string_table,
-             //q     variant.pointer,
-             //q     variant.pointer + variant.str_len - 1,
-             //q     variant.little_endian_cpu
-             //q   ))
-             //q   wrong_assumption("sta");
                 if (!parse_string_table ( 
                      &string_table,
                      fld_data.pointer,
@@ -870,19 +717,8 @@ static int read_osm_data_block_v3 () {
           else if(fld_data.field_id == 2 && fld_data.protobuf_type == PROTOBUF_TYPE_LEN) {
               cur = read_bytes_pbf_field_v2 (cur, end, &fld_data);
 
-//q       if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) {
-
              // the PrimitiveGroup to be parsed
-             //qif (!parse_primitive_group (
-             //q    &string_table, variant.pointer,
-             //q     variant.pointer + variant.str_len - 1,
-             //q     variant.little_endian_cpu
-             //q     // , params
-             //q    ))
-             //q    wrong_assumption("yuh");
-
-             // the PrimitiveGroup to be parsed
-                if (!parse_primitive_group (
+                if (!parse_primitive_group_v2 (
                     &string_table,
                      fld_data.pointer,
                      fld_data.pointer + fld_data.str_len - 1,
@@ -893,9 +729,6 @@ static int read_osm_data_block_v3 () {
 
           }
           else if (fld_data.field_id == 17 && fld_data.protobuf_type == PROTOBUF_TYPE_VARINT) {
-             // assumed to be a termination marker (???)
-
-//        if (variant.field_id == 17 && variant.type == READOSM_VAR_INT32) {
              // assumed to be a termination marker (???)
                 wrong_assumption("termination marker never reached");
                 break;
@@ -911,7 +744,6 @@ static int read_osm_data_block_v3 () {
 
 
    #ifdef TQ84_USE_PBF_FIELD_HINTS
-//q finalize_variant (&variant);
    #endif
 
     finalize_string_table (&string_table);
@@ -922,12 +754,6 @@ static int read_osm_data_block_v3 () {
     if (buf != NULL)
         free (buf);
 
-//  if (raw_ptr != NULL)
-//      free (raw_ptr);
-
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//q finalize_variant (&variant);
-   #endif
 
     finalize_string_table (&string_table);
     wrong_assumption("neumond");
