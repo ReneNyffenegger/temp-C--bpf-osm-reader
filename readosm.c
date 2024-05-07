@@ -618,6 +618,7 @@ static int read_osm_data_block_v2 () {
               wrong_assumption("stand");
           }
 
+printf("! field_id = %d\n", variant.field_id);
           if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) {
 
              // the StringTable
