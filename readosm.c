@@ -468,44 +468,21 @@ static int parse_primitive_group_v2 (
             char little_endian_cpu
 )
 {
-// 
-// attempting to parse a valid Primitive Group 
-//
-// each PBF PrimitiveGroup can store only one type:
-// - NODEs
-// - WAYs
-// - RELATIONs
-//
-//  pbf_field    variant;
+
+// Parse a so-called «Primitive Group» 
+// A primitive group stores elements of one OSM type, i. e.
+//    - nodes
+//    - ways, or
+//    - relations
+
     pbf_field_v2 fld;
     unsigned char *cur = start;
 
-/* initializing an empty variant field */
-//q    init_variant      (&variant, little_endian_cpu);
-//q   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 4);
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 5);
-//q   #endif
-
-/* reading the Primitive Group */
 
     verbose_1("    parse_primitive_group\n");
     while (1) {
 
-       // resetting an empty variant field
-//q       reset_variant (&variant);
-
-//q       base = read_pbf_field (start, stop, &variant);
           cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
-//q       if (cur == NULL && variant.valid == 0)
-//q           goto error;
-
-//q       start = base;
-
-//        if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) { // Dense nodes
           if (fld.field_id == 2 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { // Dense nodes
 
                cur = read_bytes_pbf_field_v2 (cur, end, &fld);
@@ -517,10 +494,7 @@ static int parse_primitive_group_v2 (
                      g_little_endian_cpu
                    ))
                        wrong_assumption("parse_pbf_nodes");
-//                 goto error;
-            }
-
-//        if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) { // Way
+          }
           else if (fld.field_id == 3 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { // Way
 
                cur = read_bytes_pbf_field_v2 (cur, end, &fld);
@@ -532,9 +506,7 @@ static int parse_primitive_group_v2 (
                      g_little_endian_cpu
                 ))
                      wrong_assumption("parse_pbf_way");
-            }
-
-//        if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) { // Relation
+          }
           else if (fld.field_id == 4 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { // Relation
 
                 cur = read_bytes_pbf_field_v2 (cur, end, &fld);
@@ -553,7 +525,6 @@ static int parse_primitive_group_v2 (
           }
 
 
-//      skip:
           if (cur > end)
               break;
       }
