@@ -461,6 +461,8 @@ static int read_header_block_v2() {
 }
 
 
+
+
 static int parse_pbf_nodes_v2 (
                  readosm_string_table * strings,
                  unsigned char *start,

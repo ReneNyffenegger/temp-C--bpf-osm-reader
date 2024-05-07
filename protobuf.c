@@ -459,9 +459,8 @@ append_int32_packed (readosm_int32_packed * packed, int val)
     packed->last = value;
 }
 
-static void
-finalize_int32_packed (readosm_int32_packed * packed)
-{
+static void finalize_int32_packed (readosm_int32_packed * packed) {
+
 /* cleaning any memory allocation for an int32 packed object */
     readosm_int32 *value;
     readosm_int32 *value_n;
@@ -477,9 +476,8 @@ finalize_int32_packed (readosm_int32_packed * packed)
 
 }
 
-static void
-reset_int32_packed (readosm_int32_packed * packed)
-{
+static void reset_int32_packed (readosm_int32_packed * packed) {
+
 /* resetting an int32 packed object to empty initial state */
     finalize_int32_packed (packed);
     packed->first = NULL;
@@ -488,13 +486,11 @@ reset_int32_packed (readosm_int32_packed * packed)
     packed->values = NULL;
 }
 
-static void
-init_int64_packed (readosm_int64_packed * packed)
-{
+static void init_int64_packed (readosm_int64_packed * packed) {
 /* initialing an empty PBF int64 packed object */
-    packed->first = NULL;
-    packed->last = NULL;
-    packed->count = 0;
+    packed->first  = NULL;
+    packed->last   = NULL;
+    packed->count  = 0;
     packed->values = NULL;
 }
 
@@ -514,18 +510,18 @@ static void append_int64_packed (readosm_int64_packed * packed, long long val) {
     packed->last = value;
 }
 
-static void
-array_from_int64_packed (readosm_int64_packed * packed)
-{
+static void array_from_int64_packed (readosm_int64_packed * packed) {
+
 /* creating an array supporting an int64 packed object */
     int i;
     readosm_int64 *value = packed->first;
-    while (value != NULL)
-      {
+
+    while (value != NULL) {
           /* counting how many values are into the packed list */
           packed->count++;
           value = value->next;
-      }
+    }
+
     if (packed->count <= 0)
         return;
 
@@ -533,19 +529,20 @@ array_from_int64_packed (readosm_int64_packed * packed)
     packed->values = malloc (sizeof (long long) * packed->count);
     i = 0;
     value = packed->first;
-    while (value != NULL)
-      {
-          /* setting up array values */
-          *(packed->values + i) = value->value;
+    while (value != NULL) {
+
+      // setting up array values
+
+        *(packed->values + i) = value->value;
           i++;
           value = value->next;
       }
 }
 
-static void
-finalize_int64_packed (readosm_int64_packed * packed)
-{
+static void finalize_int64_packed (readosm_int64_packed * packed) {
+
 /* cleaning any memory allocation for an int64 packed object */
+
     readosm_int64 *value;
     readosm_int64 *value_n;
     value = packed->first;
