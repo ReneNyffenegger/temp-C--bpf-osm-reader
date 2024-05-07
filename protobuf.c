@@ -1090,6 +1090,7 @@ static int parse_pbf_node_infos (
 }
 
 
+#if 0
 static int parse_pbf_nodes (
                  readosm_string_table * strings,
                  unsigned char *start,
@@ -1373,6 +1374,7 @@ static int parse_pbf_nodes (
       }
     return 0;
 }
+#endif
 
 static int parse_pbf_way_info (
     readosm_internal_way * way,

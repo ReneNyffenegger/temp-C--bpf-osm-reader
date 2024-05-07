@@ -115,8 +115,7 @@ typedef struct readosm_uint32_struct
     struct readosm_uint32_struct *next;
 } readosm_uint32;
 
-typedef struct readosm_uint32_packed_struct
-{
+typedef struct /* readosm_uint32_packed_struct */ {
 /* a PBF uint32 packed object */
     readosm_uint32 *first;
     readosm_uint32 *last;
@@ -131,7 +130,7 @@ typedef struct readosm_int32_struct
     struct readosm_int32_struct *next;
 } readosm_int32;
 
-typedef struct readosm_int32_packed_struct
+typedef struct /* readosm_int32_packed_struct */w
 {
 /* a PBF int32 packed object */
     readosm_int32 *first;
@@ -147,7 +146,7 @@ typedef struct readosm_int64_struct
     struct readosm_int64_struct *next;
 } readosm_int64;
 
-typedef struct readosm_int64_packed_struct
+typedef struct /* readosm_int64_packed_struct */
 {
 /* a PBF int64 packed object */
     readosm_int64 *first;

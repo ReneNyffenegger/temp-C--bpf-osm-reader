@@ -9,7 +9,7 @@ select
 from
    tag
 where
-   rel_id not in (8131479)   and
+  (rel_id is null or rel_id not in (8131479))   and
    k not like 'name:%'       and
    k not like 'old_name:%'   and
    k not like 'short_name:%' and
