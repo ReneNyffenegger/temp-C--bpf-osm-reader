@@ -514,31 +514,13 @@ static int parse_pbf_nodes_v2 (
     init_int64_packed  (&packed_lons);
     init_packed_infos  (&packed_infos);
 
-/* initializing an empty variant field */
-//q    init_variant (&variant, little_endian_cpu);
-//q   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES,  1);
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES,  5);
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES,  8);
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES,  9);
-//q    add_variant_hints (&variant, READOSM_LEN_BYTES, 10);
-//q   #endif
 
-/* reading the Node */
+
     while (1) {
 
-
-       // resetting an empty variant field
-//q       reset_variant (&variant);
-
-//q       cur = read_pbf_field (start, stop, &variant);
           cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
           verbose_1("        field_id = %d\n", fld.field_id);
 
-//q       if (cur == NULL && variant.valid == 0)
-//q           goto error;
-
-//        start = cur;
 
           if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed (&packed_ids  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
           else if (fld.field_id ==  5 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* DenseInfos  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_pbf_node_infos(&packed_infos, fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error;                                         }
@@ -551,8 +533,21 @@ static int parse_pbf_nodes_v2 (
               break;
     }
 
-    if (packed_ids.count == packed_lats.count && packed_ids.count == packed_lons.count) {
-       /* not using PackedInfos */
+//
+//  https://wiki.openstreetmap.org/wiki/PBF_Format (2024-05-07):
+//       A block may contain any number of entities, as long as the size limits for
+//       a block are obeyed. It will result in small file sizes if you pack as many
+//       entities as possible into each block. However, for simplicity, certain
+//       programs (e.g. osmosis 0.38) limit the number of entities in each block to
+//       8000 when writing PBF format.
+//
+printf("packed_ids.count = %d\n", packed_ids.count);
+
+    if (packed_ids.count == packed_lats.count &&
+        packed_ids.count == packed_lons.count
+       )
+    {
+       // not using PackedInfos
           valid = 1;
     }
     if (   packed_ids.count == packed_lats.count
@@ -563,7 +558,7 @@ static int parse_pbf_nodes_v2 (
         && packed_ids.count == packed_infos.uid_count
         && packed_ids.count == packed_infos.usr_count)
       {
-        // from PackedInfos
+       // from PackedInfos
           valid           = 1;
           fromPackedInfos = 1;
       }
@@ -606,13 +601,13 @@ static int parse_pbf_nodes_v2 (
           }
           for (i = 0; i < max_nodes; i++) {
                 /* reassembling internal Nodes */
-                const char *key = NULL;
+                const char *key   = NULL;
                 const char *value = NULL;
                 time_t xtime;
                 struct tm *times;
                 int s_id;
                 nd = nodes + i;
-                delta_id += *(packed_ids.values + base + i);
+                delta_id  += *(packed_ids.values  + base + i);
                 delta_lat += *(packed_lats.values + base + i);
                 delta_lon += *(packed_lons.values + base + i);
                 nd->id = delta_id;
@@ -621,12 +616,12 @@ static int parse_pbf_nodes_v2 (
                 nd->longitude = delta_lon / 10000000.0;
 
                 if (fromPackedInfos) {
-                      nd->version = *(packed_infos.versions + base + i);
+                      nd->version = *(packed_infos.versions   + base + i);
                       xtime       = *(packed_infos.timestamps + base + i);
                       times       = gmtime (&xtime);
 
                       if (times) {
-
+// printf("times\n");
                          // formatting Timestamps
                             char buf[64];
                             int len;
@@ -646,21 +641,23 @@ static int parse_pbf_nodes_v2 (
                             nd->timestamp = malloc (len + 1);
                             strcpy (nd->timestamp, buf);
                         }
-                      nd->changeset =
-                          *(packed_infos.changesets + base + i);
+
+                      nd->changeset = *(packed_infos.changesets + base + i);
+
                       if (*(packed_infos.uids + base + i) >= 0)
                           nd->uid = *(packed_infos.uids + base + i);
+
                       s_id = *(packed_infos.users + base + i);
-                      if (s_id > 0)
-                        {
-                            /* retrieving user-names as strings (by index) */
+
+                      if (s_id > 0) {
+                         /* retrieving user-names as strings (by index) */
                             pbf_string_table_elem *s_ptr =
                                 *(strings->strings + s_id);
                             int len = strlen (s_ptr->string);
                             if (nd->user != NULL)
                                 free (nd->user);
-                            if (len > 0)
-                              {
+
+                            if (len > 0) {
                                   nd->user = malloc (len + 1);
                                   strcpy (nd->user, s_ptr->string);
                               }
@@ -668,24 +665,24 @@ static int parse_pbf_nodes_v2 (
                   }
 
                 for (; i_keys < packed_keys.count; i_keys++) {
-                    // decoding packed-keys
+                   // decoding packed-keys
                       int is = *(packed_keys.values + i_keys);
 
                       if (is == 0) {
                             /* next Node */
                             i_keys++;
                             break;
-                        }
-                      if (key == NULL)
-                        {
+                      }
+
+                      if (key == NULL) {
                             pbf_string_table_elem *s_ptr =
                                 *(strings->strings + is);
+
                             key = s_ptr->string;
-                        }
-                      else
-                        {
-                            pbf_string_table_elem *s_ptr =
-                                *(strings->strings + is);
+                      }
+                      else {
+                            pbf_string_table_elem *s_ptr = *(strings->strings + is);
+
                             value = s_ptr->string;
                             append_tag_to_node (nd, key, value);
                             key = NULL;
@@ -712,8 +709,8 @@ static int parse_pbf_nodes_v2 (
 //          }
 
           /* memory cleanup: destroying Nodes */
-          if (nodes != NULL)
-            {
+          if (nodes != NULL) {
+
                 readosm_internal_node *nd;
                 int i;
                 for (i = 0; i < max_nodes; i++)
@@ -727,14 +724,11 @@ static int parse_pbf_nodes_v2 (
 //    }
 
 /* memory cleanup */
-    finalize_uint32_packed (&packed_keys);
+    finalize_uint32_packed(&packed_keys);
     finalize_int64_packed (&packed_ids);
     finalize_int64_packed (&packed_lats);
     finalize_int64_packed (&packed_lons);
     finalize_packed_infos (&packed_infos);
-//q #ifdef TQ84_USE_PBF_FIELD_HINTS
-//q  finalize_variant (&variant);
-//q #endif
     return 1;
 
   error:
@@ -743,9 +737,6 @@ static int parse_pbf_nodes_v2 (
     finalize_int64_packed (&packed_lats);
     finalize_int64_packed (&packed_lons);
     finalize_packed_infos (&packed_infos);
-//q #ifdef TQ84_USE_PBF_FIELD_HINTS
-//q  finalize_variant (&variant);
-//q #endif
 
     if (nodes != NULL) {
           readosm_internal_node *nd;
@@ -753,9 +744,9 @@ static int parse_pbf_nodes_v2 (
           for (i = 0; i < nd_count; i++) {
                 nd = nodes + i;
                 destroy_internal_node (nd);
-            }
+          }
           free (nodes);
-      }
+    }
     return 0;
 }
 
