@@ -49,20 +49,6 @@
 #define READOSM_BIG_ENDIAN      0
 #define READOSM_LITTLE_ENDIAN   1
 
-/* magic signatures */
-// #define READOSM_MAGIC_START     945371767
-// #define READOSM_MAGIC_END       1472954381
-
-// /* file formats */
-// #define READOSM_OSM_FORMAT      4589
-// #define READOSM_PBF_FORMAT      7491
-
-// /* XML tags */
-// #define READOSM_CURRENT_TAG_UNKNOWN  0
-// #define READOSM_CURRENT_TAG_IS_NODE  101
-// #define READOSM_CURRENT_TAG_IS_WAY   102
-// #define READOSM_CURRENT_TAG_IS_RELATION      103
-
 // block size
 #define READOSM_BLOCK_SZ        128
 

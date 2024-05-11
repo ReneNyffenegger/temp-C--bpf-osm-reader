@@ -123,15 +123,13 @@ typedef struct /* readosm_uint32_packed_struct */ {
     unsigned int *values;
 } readosm_uint32_packed;
 
-typedef struct readosm_int32_struct
-{
+typedef struct readosm_int32_struct {
 /* an int32 value into the PBF packed object */
     int value;
     struct readosm_int32_struct *next;
 } readosm_int32;
 
-typedef struct /* readosm_int32_packed_struct */w
-{
+typedef struct /* readosm_int32_packed_struct */ {
 /* a PBF int32 packed object */
     readosm_int32 *first;
     readosm_int32 *last;
@@ -139,15 +137,13 @@ typedef struct /* readosm_int32_packed_struct */w
     int *values;
 } readosm_int32_packed;
 
-typedef struct readosm_int64_struct
-{
+typedef struct readosm_int64_struct {
 /* an int64 value into the PBF packed object */
     long long value;
     struct readosm_int64_struct *next;
 } readosm_int64;
 
-typedef struct /* readosm_int64_packed_struct */
-{
+typedef struct {
 /* a PBF int64 packed object */
     readosm_int64 *first;
     readosm_int64 *last;

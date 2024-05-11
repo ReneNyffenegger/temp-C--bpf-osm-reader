@@ -454,12 +454,67 @@ static int read_header_block_v2() {
 
     free (rest_of_header_buffer);
    
-// exit(100); // TQ84 - remove moe
+// exit(100); // TQ84 - remove me
     verbose_1("       returning from read_header_block_v2\n");
     return 1;
 
 }
 
+
+#define NOF_PACKED_ELEMS 8000
+
+typedef struct {
+   int count;
+   long long data[NOF_PACKED_ELEMS];
+
+} packed_sint64_v2;
+
+static void parse_sint64_packed_v2 (
+//  readosm_int64_packed   *packed,
+    packed_sint64_v2       *packed,
+    unsigned char          *start,
+    unsigned char          *stop
+)
+{
+ //
+ // parsing a sint64 packed object
+ //
+    unsigned char *ptr = start;
+    pbf_field_v2 fld;
+
+ //
+ // initializing an empty variant field (length) */
+ //
+//  init_variant (&variant, little_endian_cpu);
+//  variant.type = READOSM_VAR_SINT64;
+
+//  int pos = 0;
+  
+    packed->count = 0;
+    while (packed->count < NOF_PACKED_ELEMS) {
+
+       ptr = read_integer_pbf_field_v2 (ptr, stop, READOSM_VAR_SINT64, &fld);
+
+//q    ptr = read_integer_pbf_field (start, stop, &variant);
+
+//     if (variant.valid) {
+//q       append_int64_packed (packed, variant.value.int64_value);
+          packed->data[packed->count] = fld.value.int64_value;
+          packed->count ++;
+
+          if (ptr > stop) {
+              return;
+//            break;
+          }
+
+//        start = ptr;
+//        continue;
+//     }
+//     return 0;
+
+    }
+//  return 1;
+}
 
 
 
@@ -499,7 +554,8 @@ static int parse_pbf_nodes_v2 (
     unsigned char *cur = start;
 
     readosm_uint32_packed  packed_keys;
-    readosm_int64_packed   packed_ids;
+//q readosm_int64_packed   packed_ids;
+    packed_sint64_v2       packed_ids_v2;
     readosm_int64_packed   packed_lats;
     readosm_int64_packed   packed_lons;
     readosm_packed_infos   packed_infos;
@@ -511,7 +567,7 @@ static int parse_pbf_nodes_v2 (
 
  // initializing empty packed objects
     init_uint32_packed (&packed_keys);
-    init_int64_packed  (&packed_ids);
+//q init_int64_packed  (&packed_ids);
     init_int64_packed  (&packed_lats);
     init_int64_packed  (&packed_lons);
     init_packed_infos  (&packed_infos);
@@ -524,11 +580,12 @@ static int parse_pbf_nodes_v2 (
           verbose_1("        field_id = %d\n", fld.field_id);
 
 
-          if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed (&packed_ids  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
-          else if (fld.field_id ==  5 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* DenseInfos  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_pbf_node_infos(&packed_infos, fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error;                                         }
-          else if (fld.field_id ==  8 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* latitudes   */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed (&packed_lats , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
-          else if (fld.field_id ==  9 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* longitudes  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed (&packed_lons , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
-          else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_uint32_packed (&packed_keys , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
+//q       if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_ids   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
+          if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld);      parse_sint64_packed_v2 (&packed_ids_v2, fld.pointer, fld.pointer + fld.str_len - 1                     );                                                     }
+          else if (fld.field_id ==  5 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* DenseInfos  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_pbf_node_infos   (&packed_infos , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error;                                         }
+          else if (fld.field_id ==  8 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* latitudes   */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lats  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
+          else if (fld.field_id ==  9 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* longitudes  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lons  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
+          else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_uint32_packed    (&packed_keys  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
           else wrong_assumption("dense node");
 
           if (cur > end)
@@ -543,22 +600,31 @@ static int parse_pbf_nodes_v2 (
 //       programs (e.g. osmosis 0.38) limit the number of entities in each block to
 //       8000 when writing PBF format.
 //
-printf("packed_ids.count = %d\n", packed_ids.count);
+// printf("packed_ids.count = %d\n", packed_ids.count);
 
-    if (packed_ids.count == packed_lats.count &&
-        packed_ids.count == packed_lons.count
+//q if (packed_ids.count == packed_lats.count &&
+//q     packed_ids.count == packed_lons.count
+    if (packed_ids_v2.count == packed_lats.count &&
+        packed_ids_v2.count == packed_lons.count
        )
     {
        // not using PackedInfos
           valid = 1;
     }
-    if (   packed_ids.count == packed_lats.count
-        && packed_ids.count == packed_lons.count
-        && packed_ids.count == packed_infos.ver_count
-        && packed_ids.count == packed_infos.tim_count
-        && packed_ids.count == packed_infos.cng_count
-        && packed_ids.count == packed_infos.uid_count
-        && packed_ids.count == packed_infos.usr_count)
+//qif (   packed_ids.count == packed_lats.count
+//q    && packed_ids.count == packed_lons.count
+//q    && packed_ids.count == packed_infos.ver_count
+//q    && packed_ids.count == packed_infos.tim_count
+//q    && packed_ids.count == packed_infos.cng_count
+//q    && packed_ids.count == packed_infos.uid_count
+//q    && packed_ids.count == packed_infos.usr_count)
+   if (   packed_ids_v2.count == packed_lats.count
+       && packed_ids_v2.count == packed_lons.count
+       && packed_ids_v2.count == packed_infos.ver_count
+       && packed_ids_v2.count == packed_infos.tim_count
+       && packed_ids_v2.count == packed_infos.cng_count
+       && packed_ids_v2.count == packed_infos.uid_count
+       && packed_ids_v2.count == packed_infos.usr_count)
       {
        // from PackedInfos
           valid           = 1;
@@ -584,7 +650,8 @@ printf("packed_ids.count = %d\n", packed_ids.count);
     long long delta_lon = 0;
     int max_nodes;
     int base = 0;
-    nd_count = packed_ids.count;
+//q nd_count = packed_ids.count;
+    nd_count = packed_ids_v2.count;
 
     while (base < nd_count) {
 
@@ -609,9 +676,10 @@ printf("packed_ids.count = %d\n", packed_ids.count);
                 struct tm *times;
                 int s_id;
                 nd = nodes + i;
-                delta_id  += *(packed_ids.values  + base + i);
-                delta_lat += *(packed_lats.values + base + i);
-                delta_lon += *(packed_lons.values + base + i);
+//q             delta_id  += *(packed_ids.values     + base + i);
+                delta_id  += *(packed_ids_v2.data    + base + i);
+                delta_lat += *(packed_lats.values    + base + i);
+                delta_lon += *(packed_lons.values    + base + i);
                 nd->id = delta_id;
             /* latitudes and longitudes require to be rescaled as DOUBLEs */
                 nd->latitude  = delta_lat / 10000000.0;
@@ -727,7 +795,7 @@ printf("packed_ids.count = %d\n", packed_ids.count);
 
 /* memory cleanup */
     finalize_uint32_packed(&packed_keys);
-    finalize_int64_packed (&packed_ids);
+//q finalize_int64_packed (&packed_ids);
     finalize_int64_packed (&packed_lats);
     finalize_int64_packed (&packed_lons);
     finalize_packed_infos (&packed_infos);
@@ -735,7 +803,7 @@ printf("packed_ids.count = %d\n", packed_ids.count);
 
   error:
     finalize_uint32_packed(&packed_keys);
-    finalize_int64_packed (&packed_ids);
+//q finalize_int64_packed (&packed_ids);
     finalize_int64_packed (&packed_lats);
     finalize_int64_packed (&packed_lons);
     finalize_packed_infos (&packed_infos);
