@@ -119,8 +119,8 @@ typedef struct /* readosm_uint32_packed_struct */ {
 /* a PBF uint32 packed object */
     readosm_uint32 *first;
     readosm_uint32 *last;
-    int count;
-    unsigned int *values;
+    int             count;
+    unsigned int   *values;
 } readosm_uint32_packed;
 
 typedef struct readosm_int32_struct {

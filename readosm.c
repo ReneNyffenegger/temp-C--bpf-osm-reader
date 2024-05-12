@@ -465,9 +465,58 @@ static int read_header_block_v2() {
 
 typedef struct {
    int count;
-   long long data[NOF_PACKED_ELEMS];
+   unsigned int data[NOF_PACKED_ELEMS];
+} packed_uint32_v2;
 
+typedef struct {
+   int count;
+   unsigned long long data[NOF_PACKED_ELEMS];
+} packed_uint64_v2;
+
+typedef struct {
+   int count;
+   signed long long data[NOF_PACKED_ELEMS];
 } packed_sint64_v2;
+
+
+static void parse_uint32_packed_v2(
+// readosm_uint32_packed * packed,
+   packed_uint32_v2 * packed,
+   unsigned char *start,
+   unsigned char *stop
+) {
+
+ // parsing a uint32 packed object
+    unsigned char *ptr = start;
+//q pbf_field variant;
+    pbf_field_v2 fld;
+
+ // initializing an empty variant field (length)
+//q init_variant (&variant, little_endian_cpu);
+//q variant.type = READOSM_VAR_UINT32;
+
+//q while (1) {
+    while (packed->count < NOF_PACKED_ELEMS) {
+
+//q    ptr = read_integer_pbf_field    (start, stop, &variant);
+       ptr = read_integer_pbf_field_v2 (start, stop, READOSM_VAR_UINT32, &fld);
+//     if (variant.valid) {
+//q          append_uint32_packed (packed, variant.value.uint32_value);
+             packed->data[packed->count] = fld.value.uint32_value;
+             packed->count++;
+             if (ptr > stop) {
+                 return;
+//               break;
+             }
+
+             start = ptr;
+//           continue;
+//q    }
+//q    return 0;
+    }
+//q return 1;
+}
+
 
 static void parse_sint64_packed_v2 (
 //  readosm_int64_packed   *packed,
@@ -516,6 +565,52 @@ static void parse_sint64_packed_v2 (
 //  return 1;
 }
 
+static void parse_uint64_packed_v2 (
+//  readosm_int64_packed   *packed,
+    packed_uint64_v2       *packed,
+    unsigned char          *start,
+    unsigned char          *stop
+)
+{
+ //
+ // parsing a sint64 packed object
+ //
+    unsigned char *ptr = start;
+    pbf_field_v2 fld;
+
+ //
+ // initializing an empty variant field (length) */
+ //
+//  init_variant (&variant, little_endian_cpu);
+//  variant.type = READOSM_VAR_SINT64;
+
+//  int pos = 0;
+  
+    packed->count = 0;
+    while (packed->count < NOF_PACKED_ELEMS) {
+
+       ptr = read_integer_pbf_field_v2 (ptr, stop, READOSM_VAR_UINT64, &fld);
+
+//q    ptr = read_integer_pbf_field (start, stop, &variant);
+
+//     if (variant.valid) {
+//q       append_int64_packed (packed, variant.value.int64_value);
+          packed->data[packed->count] = fld.value.uint64_value;
+          packed->count ++;
+
+          if (ptr > stop) {
+              return;
+//            break;
+          }
+
+//        start = ptr;
+//        continue;
+//     }
+//     return 0;
+
+    }
+//  return 1;
+}
 
 
 static int parse_pbf_nodes_v2 (
@@ -554,15 +649,16 @@ static int parse_pbf_nodes_v2 (
     unsigned char *cur = start;
 
     readosm_uint32_packed  packed_keys;
+//  packed_uint32_v2       packed_keys_v2;
 //q readosm_int64_packed   packed_ids;
-    packed_sint64_v2       packed_ids_v2;
+    packed_sint64_v2       packed_ids_v2;   // Nodes are signed!
     readosm_int64_packed   packed_lats;
     readosm_int64_packed   packed_lons;
     readosm_packed_infos   packed_infos;
 
     readosm_internal_node *nodes = NULL;
     int nd_count                 = 0;
-    int valid                    = 0;
+//  int valid                    = 0;
     int fromPackedInfos          = 0;
 
  // initializing empty packed objects
@@ -577,20 +673,26 @@ static int parse_pbf_nodes_v2 (
     while (1) {
 
           cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
+      //
+      //  It seems that each 'dense node' has the field ids 1, 5, 8, 9  and 10 exactly once (and in this order).
+      //  
           verbose_1("        field_id = %d\n", fld.field_id);
 
 
-//q       if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_ids   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
-          if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld);      parse_sint64_packed_v2 (&packed_ids_v2, fld.pointer, fld.pointer + fld.str_len - 1                     );                                                     }
-          else if (fld.field_id ==  5 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* DenseInfos  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_pbf_node_infos   (&packed_infos , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error;                                         }
-          else if (fld.field_id ==  8 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* latitudes   */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lats  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
-          else if (fld.field_id ==  9 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* longitudes  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lons  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
-          else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_uint32_packed    (&packed_keys  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
+//q       if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_ids    , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
+          if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld);      parse_sint64_packed_v2 (&packed_ids_v2 , fld.pointer, fld.pointer + fld.str_len - 1                     );                                                     }
+          else if (fld.field_id ==  5 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* DenseInfos  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_pbf_node_infos   (&packed_infos  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error;                                         }
+          else if (fld.field_id ==  8 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* latitudes   */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lats   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
+          else if (fld.field_id ==  9 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* longitudes  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lons   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
+          else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_uint32_packed    (&packed_keys   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
+//q       else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld);      parse_uint32_packed_v2 (&packed_keys_v2, fld.pointer, fld.pointer + fld.str_len - 1                     );                                                     }
           else wrong_assumption("dense node");
 
           if (cur > end)
               break;
     }
+
+    printf("packed_ids.count = %d, packed_keys count = %d\n", packed_ids_v2.count, packed_keys.count);
 
 //
 //  https://wiki.openstreetmap.org/wiki/PBF_Format (2024-05-07):
@@ -609,7 +711,10 @@ static int parse_pbf_nodes_v2 (
        )
     {
        // not using PackedInfos
-          valid = 1;
+//        valid = 1;
+    }
+    else {
+       wrong_assumption("count of lats <> count of longs");
     }
 //qif (   packed_ids.count == packed_lats.count
 //q    && packed_ids.count == packed_lons.count
@@ -627,14 +732,17 @@ static int parse_pbf_nodes_v2 (
        && packed_ids_v2.count == packed_infos.usr_count)
       {
        // from PackedInfos
-          valid           = 1;
+//        valid           = 1;
           fromPackedInfos = 1;
       }
+      else {
+          wrong_assumption("counts");
+      }
 
-    if (!valid) {
-        wrong_assumption("valid count");
-        goto error;
-    }
+//  if (!valid) {
+//      wrong_assumption("valid count");
+//      goto error;
+//  }
 
 //  else {
     //
@@ -732,15 +840,21 @@ static int parse_pbf_nodes_v2 (
                                   strcpy (nd->user, s_ptr->string);
                               }
                         }
-                  }
+                }
+                else {
+                }
 
                 for (; i_keys < packed_keys.count; i_keys++) {
+//              for (int i_keys = 0; i_keys < packed_keys_v2.count; i_keys++) {
+//                 printf("i_keys = %d\n", i_keys);
                    // decoding packed-keys
-                      int is = *(packed_keys.values + i_keys);
+                      int is = *(packed_keys.values  + i_keys);
+//                    int is = *(packed_keys_v2.data + i_keys);
 
                       if (is == 0) {
                             /* next Node */
                             i_keys++;
+printf("break\n");
                             break;
                       }
 
@@ -749,11 +863,13 @@ static int parse_pbf_nodes_v2 (
                                 *(strings->strings + is);
 
                             key = s_ptr->string;
+printf("key = %s\n", key);
                       }
                       else {
                             pbf_string_table_elem *s_ptr = *(strings->strings + is);
 
                             value = s_ptr->string;
+printf("value = %s\n", value);
                             append_tag_to_node (nd, key, value);
                             key = NULL;
                             value = NULL;
@@ -795,6 +911,7 @@ static int parse_pbf_nodes_v2 (
 
 /* memory cleanup */
     finalize_uint32_packed(&packed_keys);
+//
 //q finalize_int64_packed (&packed_ids);
     finalize_int64_packed (&packed_lats);
     finalize_int64_packed (&packed_lons);
@@ -984,6 +1101,14 @@ static int read_osm_data_block_v3 () {
     //
     // The primitive block is zipped, we need to unzip it.
     // 
+    // According to https://github.com/paulmach/osm?tab=readme-ov-file :
+    // 
+    //  OSM PBF data comes in blocks, each block is zlib compressed.
+    //  Decompressing this data takes about 33% of the total read time.
+    //  DataDog/czlib ( https://github.com/DataDog/czlib ) is used to speed this process.
+    //  See osmpbf/README.md ( https://github.com/paulmach/osm/blob/master/osmpbf#using-cgoczlib-for-decompression )
+    //  for more details.
+    //    
 
           set_uncompressed_buffer(sz_no_compression);
                   
