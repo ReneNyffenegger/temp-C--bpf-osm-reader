@@ -317,8 +317,10 @@ static unsigned char * read_bytes_pbf_field_v2 (unsigned char *start, unsigned c
 
     if (varlen.valid) {
           len = varlen.value.uint32_value;
-          if ((ptr + len - 1) > stop)
+          if ((ptr + len - 1) > stop) {
+              wrong_assumption("ptr+len-1 > stop");
               return NULL;
+          }
 
           variant->pointer = ptr;
           variant->str_len = len;
@@ -676,6 +678,7 @@ static int parse_pbf_nodes_v2 (
       //
       //  It seems that each 'dense node' has the field ids 1, 5, 8, 9  and 10 exactly once (and in this order).
       //  
+//q printf("        field_id = %d\n", fld.field_id);
           verbose_1("        field_id = %d\n", fld.field_id);
 
 
@@ -789,12 +792,14 @@ static int parse_pbf_nodes_v2 (
                 delta_lat += *(packed_lats.values    + base + i);
                 delta_lon += *(packed_lons.values    + base + i);
                 nd->id = delta_id;
+                printf("  nd->id = %d\n", nd->id);
             /* latitudes and longitudes require to be rescaled as DOUBLEs */
                 nd->latitude  = delta_lat / 10000000.0;
                 nd->longitude = delta_lon / 10000000.0;
 
                 if (fromPackedInfos) {
                       nd->version = *(packed_infos.versions   + base + i);
+                      printf("  nd->version = %d\n", nd->version);
                       xtime       = *(packed_infos.timestamps + base + i);
                       times       = gmtime (&xtime);
 
@@ -854,7 +859,7 @@ static int parse_pbf_nodes_v2 (
                       if (is == 0) {
                             /* next Node */
                             i_keys++;
-printf("break\n");
+// printf("break\n");
                             break;
                       }
 
@@ -863,13 +868,13 @@ printf("break\n");
                                 *(strings->strings + is);
 
                             key = s_ptr->string;
-printf("key = %s\n", key);
+// printf("key = %s\n", key);
                       }
                       else {
                             pbf_string_table_elem *s_ptr = *(strings->strings + is);
 
                             value = s_ptr->string;
-printf("value = %s\n", value);
+// printf("value = %s\n", value);
                             append_tag_to_node (nd, key, value);
                             key = NULL;
                             value = NULL;
@@ -937,6 +942,456 @@ printf("value = %s\n", value);
     return 0;
 }
 
+static int parse_pbf_nodes_v3 (
+                 readosm_string_table * strings,
+                 unsigned char * const start,
+                 unsigned char * const end
+//               char           little_endian_cpu
+)
+{
+/* 
+ / Attempting to parse a valid PBF DenseNodes 
+ /
+ / Remark: a PBF DenseNodes block consists of five byte blocks:
+ / - ids
+ / - DenseInfos
+ / - longitudes
+ / - latitudes
+ / - packed-keys (*)
+ /
+ / Each block in turn contains an array of INT values;
+ / and individual values are usually encoded as DELTAs,
+ / i.e. differences respect the immediately preceding value.
+ /
+ / (*) packed keys actually are encoded as arrays of index
+ / to StringTable entries.
+ / alternatively we have a key-index and then a value-index;
+ / any 0 value means that the current Node stops: next index
+ / will be a key-index for the next Node item
+*/
+
+    verbose_1("      parse_pbf_nodes_v2\n");
+
+//  pbf_field       variant;
+    pbf_field_v2    fld;
+
+
+    readosm_uint32_packed  packed_keys;
+//  packed_uint32_v2       packed_keys_v2;
+//q readosm_int64_packed   packed_ids;
+    packed_sint64_v2       packed_ids_v2;   // Nodes are signed!
+    readosm_int64_packed   packed_lats;
+    readosm_int64_packed   packed_lons;
+    readosm_packed_infos   packed_infos;
+
+    readosm_internal_node *nodes = NULL;
+    int nd_count                 = 0;
+//  int valid                    = 0;
+    int fromPackedInfos          = 0;
+
+ // initializing empty packed objects
+    init_uint32_packed (&packed_keys);
+//q init_int64_packed  (&packed_ids);
+    init_int64_packed  (&packed_lats);
+    init_int64_packed  (&packed_lons);
+    init_packed_infos  (&packed_infos);
+
+    unsigned char *cur = start;
+
+    unsigned char* cur_node_ids;     unsigned char* end_node_ids;
+    unsigned char* cur_dense_infos;  unsigned char* end_dense_infos;
+    unsigned char* cur_latitudes;    unsigned char* end_latitudes;
+    unsigned char* cur_longitudes;   unsigned char* end_longitudes;
+    unsigned char* cur_packed_keys;  unsigned char* end_packed_keys;
+
+    printf("start = %p\n", start);
+    
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_node_ids     = fld.pointer; end_node_ids      = cur_node_ids    + fld.str_len -1;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  5 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_dense_infos  = fld.pointer; end_dense_infos   = cur_dense_infos + fld.str_len -1;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  8 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_latitudes    = fld.pointer; end_latitudes     = cur_latitudes   + fld.str_len -1;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  9 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_longitudes   = fld.pointer; end_longitudes    = cur_longitudes  + fld.str_len -1;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id != 10 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_packed_keys  = fld.pointer; end_packed_keys   = cur_packed_keys + fld.str_len -1;
+
+
+//  iterate over each node
+
+    int cnt_nodes = 0;
+    signed long long cur_node_id = 0;
+
+    double lat = 0.0;
+    double lon = 0.0;
+
+    while (cur_node_ids <= end_node_ids) {
+
+       cur_node_ids = read_integer_pbf_field_v2 (cur_node_ids, end_node_ids, READOSM_VAR_SINT64, &fld);
+       signed long long δ_node_id = fld.value.int64_value;
+
+       cur_node_id   += δ_node_id;
+
+       double δ_lat;
+       double δ_lon;
+
+       cur_latitudes  = read_integer_pbf_field_v2 (cur_latitudes , end_latitudes , READOSM_VAR_SINT64, &fld);
+       δ_lat = fld.value.int64_value / 10000000.0;
+       lat += δ_lat;
+
+       cur_longitudes = read_integer_pbf_field_v2 (cur_longitudes, end_longitudes, READOSM_VAR_SINT64, &fld);
+       δ_lon = fld.value.int64_value / 10000000.0;
+       lon += δ_lon;
+
+       printf("node_id = %llu @ %f, %f\n", cur_node_id, lat, lon);
+
+
+    //
+    // Find key value pairs
+    //
+       while (1) {
+          cur_packed_keys = read_integer_pbf_field_v2(cur_packed_keys, end_packed_keys, READOSM_VAR_UINT32, &fld);
+          unsigned int str_id_key = fld.value.int32_value;
+
+          if (!str_id_key ) { break; }
+
+          cur_packed_keys = read_integer_pbf_field_v2(cur_packed_keys, end_packed_keys, READOSM_VAR_UINT32, &fld);
+          unsigned int str_id_val = fld.value.int32_value;
+
+          char *key, *val;
+
+          key = (*(strings -> strings + str_id_key))->string;
+          val = (*(strings -> strings + str_id_val))->string;
+
+//        printf("  %s = %s\n", key, val);
+       }
+
+// HERE!       while (1) {
+// HERE!
+// HERE!          cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos,  &fld);
+// HERE!          if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("xxx"); }
+// HERE!
+// HERE!          unsigned int version;
+// HERE!          read_integer_pbf_field_v2(cur_dense_infos, end_dense_infos, READOSM_VAR_UINT32, &fld);
+// HERE!          printf("version = %d\n", fld.value.uint32_value);
+// HERE!
+// HERE!
+// HERE!
+// HERE!// -        if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES) { /* versions: *not* delta encoded */                                         if (!parse_uint32_packed (&packed_u32, variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; pu32 = packed_u32.first; while (pu32) { count++; pu32 = pu32->next; } packed_infos->ver_count = count; if (packed_infos->versions   != NULL) { free (packed_infos->versions  ); packed_infos->versions   = NULL; } if (count > 0) { packed_infos->versions   = malloc (sizeof (int      ) * count); count = 0; pu32 = packed_u32.first; while (pu32) {              *(packed_infos->versions + count) = pu32->value;     count++; pu32 = pu32->next;} } reset_uint32_packed (&packed_u32); }
+// HERE!// -        if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES) { /* timestamps: delta encoded */                        int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->tim_count = count; if (packed_infos->timestamps != NULL) { free (packed_infos->timestamps); packed_infos->timestamps = NULL; } if (count > 0) { packed_infos->timestamps = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->timestamps + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
+// HERE!// -        if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES) { /* changesets: delta encoded */                        long long delta = 0; if (!parse_sint64_packed (&packed_64 , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; p64  = packed_64.first ; while (p64 ) { count++; p64  = p64->next;  } packed_infos->cng_count = count; if (packed_infos->changesets != NULL) { free (packed_infos->changesets); packed_infos->changesets = NULL; } if (count > 0) { packed_infos->changesets = malloc (sizeof (long long) * count); count = 0; p64  = packed_64.first ; while (p64)  { delta += p64->value; *(packed_infos->changesets + count) = delta; count++; p64  = p64->next; } } reset_int64_packed  (&packed_64);  }
+// HERE!// -        if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES) { /* uids: delta encoded */                              int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->uid_count = count; if (packed_infos->uids       != NULL) { free (packed_infos->uids      ); packed_infos->uids       = NULL; } if (count > 0) { packed_infos->uids       = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->uids       + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
+// HERE!// -        if (variant.field_id == 5 && variant.type == READOSM_LEN_BYTES) { /* user-names: delta encoded (index to StringTable) */ int       delta = 0; if (!parse_sint32_packed (&packed_32 , variant.pointer, variant.pointer + variant.str_len - 1, variant.little_endian_cpu)) goto error; count = 0; p32  = packed_32.first ; while (p32 ) { count++; p32  = p32->next;  } packed_infos->usr_count = count; if (packed_infos->users      != NULL) { free (packed_infos->users     ); packed_infos->users      = NULL; } if (count > 0) { packed_infos->users      = malloc (sizeof (int      ) * count); count = 0; p32  = packed_32.first ; while (p32)  { delta += p32->value; *(packed_infos->users      + count) = delta; count++; p32  = p32->next; } } reset_int32_packed  (&packed_32);  }
+// HERE!// -        if (base > stop)
+// HERE!
+// HERE!
+// HERE!//        printf("   fld.field_id = %d\n", fld.field_id);
+// HERE!//        cur_dense_infos = read_integer_pbf_field_v2(cur_dense_infos, end_dense_infos, READOSM_VAR_UINT32, &fld);
+// HERE!          
+// HERE!          break;
+// HERE!
+// HERE!       }
+
+
+       
+
+       cnt_nodes ++;
+    }
+
+    printf("count_nodes = %d\n", cnt_nodes);
+
+
+
+
+//  parse_sint64_packed_v2 (&packed_ids_v2 , fld.pointer, fld.pointer + fld.str_len - 1                     );                                                     }
+
+//r          else if (fld.field_id ==  5 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* DenseInfos  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_pbf_node_infos   (&packed_infos  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error;                                         }
+//r          else if (fld.field_id ==  8 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* latitudes   */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lats   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
+//r          else if (fld.field_id ==  9 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* longitudes  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lons   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
+//r          else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_uint32_packed    (&packed_keys   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
+//r//q       else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld);      parse_uint32_packed_v2 (&packed_keys_v2, fld.pointer, fld.pointer + fld.str_len - 1                     );                                                     }
+//r
+//r    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_dense_infos);
+//r    if (fld_dense_infos.field_id !=  5 || fld_dense_infos.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld_dense_infos");}
+//r
+//r    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_latitudes);
+//r    if (fld_latitudes.field_id   !=  8 || fld_latitudes.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld_latitudes");}
+//r
+//r    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_longitudes);
+//r    if (fld_longitudes.field_id  !=  9 || fld_longitudes.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld_longitudes");}
+//r
+//r    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_packed_keys);
+//r    if (fld_packed_keys.field_id != 10 || fld_packed_keys.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld_packed_keys");}
+//r
+//r
+//r    return 0;
+    
+//r    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
+//r    
+//r
+//r    while (1) {
+//r
+//r          cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
+//r      //
+//r      //  It seems that each 'dense node' has the field ids 1, 5, 8, 9  and 10 exactly once (and in this order).
+//r      //  
+//r          verbose_1("        field_id = %d\n", fld.field_id);
+//r
+//r
+//r//q       if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_ids    , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_ids);  }
+//r          if      (fld.field_id ==  1 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* NODE IDs    */ cur = read_bytes_pbf_field_v2 (cur, end, &fld);      parse_sint64_packed_v2 (&packed_ids_v2 , fld.pointer, fld.pointer + fld.str_len - 1                     );                                                     }
+//r          else if (fld.field_id ==  5 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* DenseInfos  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_pbf_node_infos   (&packed_infos  , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error;                                         }
+//r          else if (fld.field_id ==  8 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* latitudes   */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lats   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lats); }
+//r          else if (fld.field_id ==  9 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* longitudes  */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_sint64_packed    (&packed_lons   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed (&packed_lons); }
+//r          else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld); if (!parse_uint32_packed    (&packed_keys   , fld.pointer, fld.pointer + fld.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed(&packed_keys); }
+//r//q       else if (fld.field_id == 10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { /* packes-keys */ cur = read_bytes_pbf_field_v2 (cur, end, &fld);      parse_uint32_packed_v2 (&packed_keys_v2, fld.pointer, fld.pointer + fld.str_len - 1                     );                                                     }
+//r          else wrong_assumption("dense node");
+//r
+//r          if (cur > end)
+//r              break;
+//r    }
+//r
+//r  //  printf("packed_ids.count = %d, packed_keys count = %d\n", packed_ids_v2.count, packed_keys.count);
+//r
+//r//
+//r//  https://wiki.openstreetmap.org/wiki/PBF_Format (2024-05-07):
+//r//       A block may contain any number of entities, as long as the size limits for
+//r//       a block are obeyed. It will result in small file sizes if you pack as many
+//r//       entities as possible into each block. However, for simplicity, certain
+//r//       programs (e.g. osmosis 0.38) limit the number of entities in each block to
+//r//       8000 when writing PBF format.
+//r//
+//r// printf("packed_ids.count = %d\n", packed_ids.count);
+//r
+//r//q if (packed_ids.count == packed_lats.count &&
+//r//q     packed_ids.count == packed_lons.count
+//r    if (packed_ids_v2.count == packed_lats.count &&
+//r        packed_ids_v2.count == packed_lons.count
+//r       )
+//r    {
+//r       // not using PackedInfos
+//r//        valid = 1;
+//r    }
+//r    else {
+//r       wrong_assumption("count of lats <> count of longs");
+//r    }
+//r//qif (   packed_ids.count == packed_lats.count
+//r//q    && packed_ids.count == packed_lons.count
+//r//q    && packed_ids.count == packed_infos.ver_count
+//r//q    && packed_ids.count == packed_infos.tim_count
+//r//q    && packed_ids.count == packed_infos.cng_count
+//r//q    && packed_ids.count == packed_infos.uid_count
+//r//q    && packed_ids.count == packed_infos.usr_count)
+//r   if (   packed_ids_v2.count == packed_lats.count
+//r       && packed_ids_v2.count == packed_lons.count
+//r       && packed_ids_v2.count == packed_infos.ver_count
+//r       && packed_ids_v2.count == packed_infos.tim_count
+//r       && packed_ids_v2.count == packed_infos.cng_count
+//r       && packed_ids_v2.count == packed_infos.uid_count
+//r       && packed_ids_v2.count == packed_infos.usr_count)
+//r      {
+//r       // from PackedInfos
+//r//        valid           = 1;
+//r          fromPackedInfos = 1;
+//r      }
+//r      else {
+//r          wrong_assumption("counts");
+//r      }
+//r
+//r//  if (!valid) {
+//r//      wrong_assumption("valid count");
+//r//      goto error;
+//r//  }
+//r
+//r//  else {
+//r    //
+//r    //  all right, we now have the same item count anywhere
+//r    //  we can now go further away attempting to reassemble
+//r    //  individual Nodes 
+//r    //
+//r    readosm_internal_node *nd;
+//r    int i;
+//r    int i_keys = 0;
+//r    long long delta_id = 0;
+//r    long long delta_lat = 0;
+//r    long long delta_lon = 0;
+//r    int max_nodes;
+//r    int base = 0;
+//r//q nd_count = packed_ids.count;
+//r    nd_count = packed_ids_v2.count;
+//r
+//r    while (base < nd_count) {
+//r
+//r       // processing about 1024 nodes at each time
+//r          max_nodes = MAX_NODES;
+//r
+//r          if ((nd_count - base) < MAX_NODES)
+//r              max_nodes = nd_count - base;
+//r
+//r          nodes = malloc (sizeof (readosm_internal_node) * max_nodes);
+//r
+//r          for (i = 0; i < max_nodes; i++) {
+//r             // initializing an array of empty internal Nodes
+//r                nd = nodes + i;
+//r                init_internal_node (nd);
+//r          }
+//r          for (i = 0; i < max_nodes; i++) {
+//r                /* reassembling internal Nodes */
+//r                const char *key   = NULL;
+//r                const char *value = NULL;
+//r                time_t xtime;
+//r                struct tm *times;
+//r                int s_id;
+//r                nd = nodes + i;
+//r//q             delta_id  += *(packed_ids.values     + base + i);
+//r                delta_id  += *(packed_ids_v2.data    + base + i);
+//r                delta_lat += *(packed_lats.values    + base + i);
+//r                delta_lon += *(packed_lons.values    + base + i);
+//r                nd->id = delta_id;
+//r            /* latitudes and longitudes require to be rescaled as DOUBLEs */
+//r                nd->latitude  = delta_lat / 10000000.0;
+//r                nd->longitude = delta_lon / 10000000.0;
+//r
+//r                if (fromPackedInfos) {
+//r                      nd->version = *(packed_infos.versions   + base + i);
+//r                      xtime       = *(packed_infos.timestamps + base + i);
+//r                      times       = gmtime (&xtime);
+//r
+//r                      if (times) {
+//r// printf("times\n");
+//r                         // formatting Timestamps
+//r                            char buf[64];
+//r                            int len;
+//r                            sprintf (buf,
+//r                                     "%04d-%02d-%02dT%02d:%02d:%02dZ",
+//r                                     times->tm_year + 1900,
+//r                                     times->tm_mon  +    1,
+//r                                     times->tm_mday,
+//r                                     times->tm_hour,
+//r                                     times->tm_min,
+//r                                     times->tm_sec);
+//r
+//r                            if (nd->timestamp)
+//r                                free (nd->timestamp);
+//r
+//r                            len = strlen (buf);
+//r                            nd->timestamp = malloc (len + 1);
+//r                            strcpy (nd->timestamp, buf);
+//r                        }
+//r
+//r                      nd->changeset = *(packed_infos.changesets + base + i);
+//r
+//r                      if (*(packed_infos.uids + base + i) >= 0)
+//r                          nd->uid = *(packed_infos.uids + base + i);
+//r
+//r                      s_id = *(packed_infos.users + base + i);
+//r
+//r                      if (s_id > 0) {
+//r                         /* retrieving user-names as strings (by index) */
+//r                            pbf_string_table_elem *s_ptr =
+//r                                *(strings->strings + s_id);
+//r                            int len = strlen (s_ptr->string);
+//r                            if (nd->user != NULL)
+//r                                free (nd->user);
+//r
+//r                            if (len > 0) {
+//r                                  nd->user = malloc (len + 1);
+//r                                  strcpy (nd->user, s_ptr->string);
+//r                              }
+//r                        }
+//r                }
+//r                else {
+//r                }
+//r
+//r                for (; i_keys < packed_keys.count; i_keys++) {
+//r//              for (int i_keys = 0; i_keys < packed_keys_v2.count; i_keys++) {
+//r//                 printf("i_keys = %d\n", i_keys);
+//r                   // decoding packed-keys
+//r                      int is = *(packed_keys.values  + i_keys);
+//r//                    int is = *(packed_keys_v2.data + i_keys);
+//r
+//r                      if (is == 0) {
+//r                            /* next Node */
+//r                            i_keys++;
+//rprintf("break\n");
+//r                            break;
+//r                      }
+//r
+//r                      if (key == NULL) {
+//r                            pbf_string_table_elem *s_ptr =
+//r                                *(strings->strings + is);
+//r
+//r                            key = s_ptr->string;
+//rprintf("key = %s\n", key);
+//r                      }
+//r                      else {
+//r                            pbf_string_table_elem *s_ptr = *(strings->strings + is);
+//r
+//r                            value = s_ptr->string;
+//rprintf("value = %s\n", value);
+//r                            append_tag_to_node (nd, key, value);
+//r                            key = NULL;
+//r                            value = NULL;
+//r                        }
+//r                  }
+//r            }
+//r          base += max_nodes;
+//r
+//r          /* processing each Node in the block */
+//r//        if (params->node_callback != NULL && params->stop == 0) {
+//r                int ret;
+//r                readosm_internal_node *nd;
+//r                int i;
+//r                for (i = 0; i < max_nodes; i++) {
+//r                      nd = nodes + i;
+//r                      ret = call_node_callback (g_cb_nod, nd);
+//r
+//r                      if (ret != READOSM_OK) {
+//r                            exit(42);
+//r                            break;
+//r                        }
+//r                  }
+//r//          }
+//r
+//r          /* memory cleanup: destroying Nodes */
+//r          if (nodes != NULL) {
+//r
+//r                readosm_internal_node *nd;
+//r                int i;
+//r                for (i = 0; i < max_nodes; i++)
+//r                  {
+//r                      nd = nodes + i;
+//r                      destroy_internal_node (nd);
+//r                  }
+//r                free (nodes);
+//r            }
+//r      }
+//r//    }
+//r
+//r/* memory cleanup */
+//r    finalize_uint32_packed(&packed_keys);
+//r//
+//r//q finalize_int64_packed (&packed_ids);
+//r    finalize_int64_packed (&packed_lats);
+//r    finalize_int64_packed (&packed_lons);
+//r    finalize_packed_infos (&packed_infos);
+//r    return 1;
+//r
+//r  error:
+//r    finalize_uint32_packed(&packed_keys);
+//r//q finalize_int64_packed (&packed_ids);
+//r    finalize_int64_packed (&packed_lats);
+//r    finalize_int64_packed (&packed_lons);
+//r    finalize_packed_infos (&packed_infos);
+//r
+//r    if (nodes != NULL) {
+//r          readosm_internal_node *nd;
+//r          int i;
+//r          for (i = 0; i < nd_count; i++) {
+//r                nd = nodes + i;
+//r                destroy_internal_node (nd);
+//r          }
+//r          free (nodes);
+//r    }
+//r    return 0;
+}
+
 static int parse_primitive_group_v2 (
    readosm_string_table * strings,
    unsigned char *start,
@@ -963,11 +1418,11 @@ static int parse_primitive_group_v2 (
 
                cur = read_bytes_pbf_field_v2 (cur, end, &fld);
 
-               if (!parse_pbf_nodes_v2 (
+               if (!parse_pbf_nodes_v3 (
                      strings,
                      fld.pointer,
-                     fld.pointer + fld.str_len - 1,
-                     g_little_endian_cpu
+                     fld.pointer + fld.str_len - 1
+//                   g_little_endian_cpu
                    ))
                        wrong_assumption("parse_pbf_nodes");
           }
@@ -1198,8 +1653,6 @@ static int read_osm_data_block_v3 () {
       }
 
 
-   #ifdef TQ84_USE_PBF_FIELD_HINTS
-   #endif
 
     finalize_string_table (&string_table);
     return 1;
