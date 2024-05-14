@@ -277,7 +277,7 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
            return ptr;
 
       case READOSM_VAR_INT64:
-           variant->value.int64_value = (int) value64;
+           variant->value.int64_value = (int) value64; // TODO: Should value64 not be cast to signed long long ?
            return ptr;
 
       case READOSM_VAR_UINT64:
@@ -1013,9 +1013,10 @@ static int parse_pbf_nodes_v3 (
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id != 10 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_packed_keys  = fld.pointer; end_packed_keys   = cur_packed_keys + fld.str_len -1;
 
     unsigned char *cur_versions   , *end_versions;
-    unsigned char *cur_timestampes, *end_timestamp;
+    unsigned char *cur_timestamps , *end_timestamps;
 
-    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_versions  = fld.pointer; end_versions  = cur_versions + fld.str_len -1;
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_versions    = fld.pointer; end_versions    = cur_versions   + fld.str_len -1;
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 2 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_timestamps  = fld.pointer; end_timestamps  = cur_timestamps + fld.str_len -1;
 
 
 
@@ -1026,6 +1027,7 @@ static int parse_pbf_nodes_v3 (
 
     double lat = 0.0;
     double lon = 0.0;
+    int    tim = 0;
 
     while (cur_node_ids <= end_node_ids) {
 
@@ -1045,11 +1047,40 @@ static int parse_pbf_nodes_v3 (
        δ_lon = fld.value.int64_value / 10000000.0;
        lon += δ_lon;
 
-
        cur_versions = read_integer_pbf_field_v2(cur_versions, end_versions, READOSM_VAR_UINT32, &fld);
-       unsigned int version = fld.value.int32_value;
+       unsigned int version = fld.value.uint32_value;
 
-       printf("node_id = %llu @ %f, %f [%d]\n", cur_node_id, lat, lon, version);
+       cur_timestamps = read_integer_pbf_field_v2(cur_timestamps, end_timestamps, READOSM_VAR_SINT32, &fld);
+       int    δ_tim = fld.value.int32_value;
+//     printf("δ_tim = %11d\n", δ_tim);
+       tim += δ_tim;
+
+  //   printf("tim=%d, δ_tim = %d\n", tim, δ_tim);
+
+       const time_t tim_ = tim;
+//     printf("xtime = %d\n", xtime);
+       char ts_buf[64];
+       struct tm *times = gmtime (&tim_);
+//     printf("times = %p\n", times);
+                if (times) {
+                      int len;
+                      sprintf (ts_buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                               times->tm_year + 1900, times->tm_mon + 1,
+                               times->tm_mday, times->tm_hour, times->tm_min,
+                               times->tm_sec);
+//                    if (way->timestamp)
+//                        free (way->timestamp);
+//                    len = strlen (ts_buf);
+//                    way->timestamp = malloc (len + 1);
+//                    strcpy (way->timestamp, buf);
+                  }
+                  else {
+
+                     sprintf(ts_buf, "%s", "?");
+                  }
+
+       printf("node_id = %llu of %s @ %f, %f [%d]\n", cur_node_id, ts_buf, lat, lon, version);
+//     printf("node_id = %llu       @ %f, %f [%d]\n", cur_node_id        , lat, lon, version);
 
 
     //
@@ -1069,9 +1100,7 @@ static int parse_pbf_nodes_v3 (
           key = (*(strings -> strings + str_id_key))->string;
           val = (*(strings -> strings + str_id_val))->string;
 
-
-
-          printf("  %s = %s\n", key, val);
+//        printf("  %s = %s\n", key, val);
        }
 
 // HERE!       while (1) {
@@ -1434,7 +1463,7 @@ static int parse_primitive_group_v2 (
                      strings,
                      fld.pointer,
                      fld.pointer + fld.str_len - 1
-//                   g_little_endian_cpu
+//                ,  g_little_endian_cpu
                    ))
                        wrong_assumption("parse_pbf_nodes");
           }
