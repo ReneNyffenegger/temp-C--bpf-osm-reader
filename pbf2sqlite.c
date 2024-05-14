@@ -105,14 +105,6 @@ static int callback_node (/*const void *user_data,*/ const readosm_node *node) {
     int i;
     const readosm_tag *tag;
 
-#ifdef TQ84_PRINT_STAT
-    static unsigned long long callback_node_cnt = 0;
-    callback_node_cnt ++;
-
-    if (! (callback_node_cnt % (1000*1000))) {
-       printf("Nodes loaded: %llu M\n", callback_node_cnt/1000/1000);
-    }
-#endif
 
 #ifdef PBF2SQLITE
 printf("no no\n"); exit(42);
@@ -175,14 +167,6 @@ static int callback_way (const readosm_way * way) {
     int i;
     const readosm_tag *tag;
 
-#ifdef TQ84_PRINT_STAT
-    static unsigned long long callback_way_cnt = 0;
-    callback_way_cnt ++;
-
-    if (! (callback_way_cnt % (1000*1000))) {
-       printf("Ways loaded: %llu M\n", callback_way_cnt/1000/1000);
-    }
-#endif
 
       for (i = 0; i < way->node_ref_count; i++) {
 #ifdef PBF2SQLITE
@@ -259,14 +243,6 @@ static int callback_relation (/*const void *user_data,*/ const readosm_relation 
     const readosm_member *member;
     const readosm_tag *tag;
 
-#ifdef TQ84_PRINT_STAT
-    static unsigned long long callback_rel_cnt = 0;
-    callback_rel_cnt ++;
-
-    if (! (callback_rel_cnt % (1000*1000))) {
-       printf("Relations loaded: %llu M\n", callback_rel_cnt/1000/1000);
-    }
-#endif
 
       for (i = 0; i < relation->member_count; i++) {
         /* we'll now print each <member> for this way */
@@ -706,6 +682,14 @@ void osm_node(
 )
 {
 
+#ifdef TQ84_PRINT_STAT
+    static unsigned long long node_cnt = 0;
+    node_cnt ++;
+
+    if (! (node_cnt % (1000*1000))) {
+       printf("Nodes loaded: %llu M\n", node_cnt/1000/1000);
+    }
+#endif
 
    ts_to_buf(ts);
 
@@ -745,6 +729,15 @@ void osm_way(
        const char        *user,
        int                visible
 ) {
+
+#ifdef TQ84_PRINT_STAT
+    static unsigned long long way_cnt = 0;
+    way_cnt ++;
+
+    if (! (way_cnt % (1000*1000))) {
+       printf("Ways loaded: %llu M\n", way_cnt/1000/1000);
+    }
+#endif
 
 // ts_to_buf(ts);
 // printf("osm_way %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
@@ -792,6 +785,15 @@ void osm_rel(
        const char        *user,
        int                visible
 ) {
+
+#ifdef TQ84_PRINT_STAT
+    static unsigned long long rel_cnt = 0;
+    rel_cnt ++;
+
+    if (! (rel_cnt % (1000*1000))) {
+       printf("Relations loaded: %llu M\n", rel_cnt/1000/1000);
+    }
+#endif
 
 // ts_to_buf(ts);
 // printf("osm_rel %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
