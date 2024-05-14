@@ -140,7 +140,7 @@ typedef struct {
 
 } readosm_string_table;
 
-typedef union /* readosm_endian4_union */ {
+typedef union  {
 
 /* a union used for 32 bit ints [cross-endian] */
     unsigned char bytes[4];
@@ -149,7 +149,7 @@ typedef union /* readosm_endian4_union */ {
     float         float_value;
 } four_byte_value;
 
-typedef union /* readosm_endian8_union */ {
+typedef union  {
 // a union used for 64 bit ints [cross-endian] */
 //
     unsigned char       bytes[8];
@@ -158,17 +158,6 @@ typedef union /* readosm_endian8_union */ {
     double              double_value;
 } eight_byte_value;
 
-// typedef struct /* pbf_params */ {
-// 
-// /* an helper struct supporting PBF parsing */
-// 
-//     const void                  *user_data;
-//     readosm_node_callback        node_callback;
-//     readosm_way_callback         way_callback;
-//     readosm_relation_callback    relation_callback;
-// 
-//     int stop;
-// } pbf_params;
 
 static void init_variant (pbf_field * variant, int little_endian_cpu) {
 

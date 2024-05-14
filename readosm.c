@@ -76,6 +76,8 @@ void wrong_assumption(char* txt) {
 #include "readosm.h"
 #include "readosm_internals.h"
 
+#include "client.h"
+
 // #include "endian.c"
 //
 
@@ -121,7 +123,6 @@ static int set_uncompressed_buffer(int req_uncompressed_buffer_size) {
        cur_uncompressed_buffer_size = req_uncompressed_buffer_size;
        ptr_uncompressed_buffer      = malloc(cur_uncompressed_buffer_size);
     }
-//    ptr_uncompressed_buffer_cur = ptr_uncompressed_buffer;
 }
 
 
@@ -256,7 +257,7 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
               break;
       }
 
-    switch (field_type /* variant->type */) {
+    switch (field_type) {
 
       case READOSM_VAR_INT32:
            variant->value.int32_value = (int) value32;
@@ -615,6 +616,7 @@ static void parse_uint64_packed_v2 (
 }
 
 
+#if 0
 static int parse_pbf_nodes_v2 (
                  readosm_string_table * strings,
                  unsigned char *start,
@@ -941,6 +943,7 @@ static int parse_pbf_nodes_v2 (
     }
     return 0;
 }
+#endif
 
 static void parse_pbf_nodes_v3 (
                  readosm_string_table * strings,
@@ -973,9 +976,7 @@ static void parse_pbf_nodes_v3 (
 
     pbf_field_v2    fld;
 
-//  readosm_internal_node *nodes = NULL;
     int nd_count                 = 0;
-//  int fromPackedInfos          = 0;
 
 
     unsigned char *cur = start;
@@ -1013,10 +1014,11 @@ static void parse_pbf_nodes_v3 (
     int cnt_nodes = 0;
     signed long long cur_node_id = 0;
 
-    double lat = 0.0;
-    double lon = 0.0;
-    int    tim = 0;
-    long long changeset = 0;
+    double    lat = 0.0;
+    double    lon = 0.0;
+    int       tim = 0;
+    unsigned  long long changeset = 0;
+    unsigned  int       version;
     int       uid       = 0;
     int       uname     = 0;
 
@@ -1052,26 +1054,23 @@ static void parse_pbf_nodes_v3 (
   //   printf("tim=%d, δ_tim = %d\n", tim, δ_tim);
 
        const time_t tim_ = tim;
-//     printf("xtime = %d\n", xtime);
+
+#if 0
        char ts_buf[64];
        struct tm *times = gmtime (&tim_);
-//     printf("times = %p\n", times);
                 if (times) {
                       int len;
                       sprintf (ts_buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
                                times->tm_year + 1900, times->tm_mon + 1,
                                times->tm_mday, times->tm_hour, times->tm_min,
                                times->tm_sec);
-//                    if (way->timestamp)
-//                        free (way->timestamp);
-//                    len = strlen (ts_buf);
-//                    way->timestamp = malloc (len + 1);
-//                    strcpy (way->timestamp, buf);
                   }
                   else {
 
                      sprintf(ts_buf, "%s", "?");
                   }
+
+#endif
 
    //  -----------------------------------------------------------------------------------------------------
    //
@@ -1097,6 +1096,8 @@ static void parse_pbf_nodes_v3 (
        uname += δ_uname;
 
        char *uname_str = (*(strings -> strings + uname))->string;
+
+       osm_node(cur_node_id, lat, lon, tim_, version, changeset, uid, uname_str, 1);
 
 //     printf("node_id = %llu of %s @ %f, %f [%3d | %13llu] by %30s (%10d)\n", cur_node_id, ts_buf, lat, lon, version, changeset, uname_str, uid);
 
@@ -1766,7 +1767,6 @@ int load_osm_pbf(
 
     set_uncompressed_buffer(1 * 1000 * 1000);
 
-//  while(read_osm_data_block_v2()) {
     while(read_osm_data_block_v3()) {
        verbose_1("  iteration (load_osm_pbf)\n");
 

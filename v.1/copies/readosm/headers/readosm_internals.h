@@ -214,8 +214,8 @@ typedef struct readosm_export_relation_struct
     readosm_export_tag *tags;	/* array of TAG items */
 } readosm_export_relation;
 
-typedef union readosm_endian4_union
-{
+typedef union readosm_endian4_union {
+
 /* a union used for 32 bit ints [cross-endian] */
     unsigned char bytes[4];	/* raw byte buffer */
     int int32_value;		/* signed int32 */
