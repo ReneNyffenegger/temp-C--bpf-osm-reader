@@ -1622,6 +1622,170 @@ static int parse_pbf_way (readosm_string_table * strings,
     return 0;
 }
 
+static int parse_pbf_way_v3 (
+    readosm_string_table * strings,
+    unsigned char *start,
+    unsigned char *stop
+)
+{
+
+
+
+/* attempting to parse a valid PBF Way */
+    pbf_field variant;
+    unsigned char *base = start;
+    readosm_uint32_packed packed_keys;
+    readosm_uint32_packed packed_values;
+    readosm_int64_packed packed_refs;
+    readosm_internal_way *way = alloc_internal_way ();
+
+/* initializing empty packed objects */
+    init_uint32_packed (&packed_keys);
+    init_uint32_packed (&packed_values);
+    init_int64_packed (&packed_refs);
+
+/* initializing an empty variant field */
+    init_variant (&variant, g_little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    add_variant_hints (&variant, READOSM_VAR_INT64, 1);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 4);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 8);
+   #endif
+
+
+    printf("parse_pbf_way_v3\n");
+
+
+    unsigned char *cur_way_ids;      unsigned char* end_way_ids;
+    unsigned char *cur_keys;         unsigned char* end_keys;
+    unsigned char *cur_values;       unsigned char* end_values;
+    unsigned char *cur_infos;        unsigned char* end_infos;
+    unsigned char *cur_node_ids;     unsigned char* end_node_ids;
+
+
+
+    
+
+/* reading the Way */
+    while (1) {
+       /* resetting an empty variant field */
+          reset_variant (&variant);
+
+          base = read_pbf_field (start, stop, &variant);
+          if (base == NULL && variant.valid == 0)
+              goto error;
+          start = base;
+
+          printf("  variant.field_id = %d\n", variant.field_id);
+
+          if (variant.field_id == 1 && variant.type == READOSM_VAR_INT64)
+            {
+                /* WAY ID */
+                way->id = variant.value.int64_value;
+            }
+          if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES)
+            {
+                /* KEYs are encoded as an array of StringTable index */
+                if (!parse_uint32_packed
+                    (&packed_keys, variant.pointer,
+                     variant.pointer + variant.str_len - 1,
+                     variant.little_endian_cpu
+                     ))
+                    goto error;
+                array_from_uint32_packed (&packed_keys);
+            }
+          if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES)
+            {
+                /* VALUEs are encoded as an array of StringTable index  */
+                if (!parse_uint32_packed
+                    (&packed_values, variant.pointer,
+                     variant.pointer + variant.str_len - 1,
+                     variant.little_endian_cpu))
+                    goto error;
+                array_from_uint32_packed (&packed_values);
+            }
+          if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES)
+            {
+                /* WAY-INFO block */
+                if (!parse_pbf_way_info
+                    (way, strings, variant.pointer,
+                     variant.pointer + variant.str_len - 1,
+                     variant.little_endian_cpu))
+                    goto error;
+            }
+          if (variant.field_id == 8 && variant.type == READOSM_LEN_BYTES)
+            {
+                /* NODE-REFs */
+                long long delta = 0;
+                readosm_int64 *value;
+                /* KEYs are encoded as an array of StringTable index */
+                if (!parse_sint64_packed
+                    (&packed_refs, variant.pointer,
+                     variant.pointer + variant.str_len - 1,
+                     variant.little_endian_cpu))
+                    goto error;
+                value = packed_refs.first;
+                while (value != NULL)
+                  {
+                      /* appending Node references to Way */
+                      delta += value->value;
+                      append_reference_to_way (way, delta);
+                      value = value->next;
+                  }
+            }
+          if (base > stop)
+              break;
+      }
+
+/* reassembling a WAY object */
+    if (packed_keys.count == packed_values.count)
+      {
+          int i;
+          for (i = 0; i < packed_keys.count; i++)
+            {
+                int i_key = *(packed_keys.values + i);
+                int i_val = *(packed_values.values + i);
+                pbf_string_table_elem *s_key = *(strings->strings + i_key);
+                pbf_string_table_elem *s_value = *(strings->strings + i_val);
+                append_tag_to_way (way, s_key->string, s_value->string);
+            }
+      }
+    else
+        goto error;
+
+    finalize_uint32_packed (&packed_keys);
+    finalize_uint32_packed (&packed_values);
+    finalize_int64_packed (&packed_refs);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&variant);
+   #endif
+
+/* processing the WAY */
+//  if (params->way_callback != NULL && params->stop == 0)
+//    {
+          int ret = call_way_callback (g_cb_way /* cb_way */ /*params->way_callback*//* params->user_data */, way);
+
+          if (ret != READOSM_OK)
+              exit(43);
+//            params->stop = 1;
+
+//      }
+    destroy_internal_way (way);
+    return 1;
+
+  error:
+    finalize_uint32_packed (&packed_keys);
+    finalize_uint32_packed (&packed_values);
+    finalize_int64_packed  (&packed_refs);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&variant);
+   #endif
+    destroy_internal_way (way);
+    return 0;
+}
+
 static int
 parse_pbf_relation_info (readosm_internal_relation * relation,
                          readosm_string_table * strings, unsigned char *start,
