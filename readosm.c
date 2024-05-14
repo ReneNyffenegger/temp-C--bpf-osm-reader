@@ -1128,7 +1128,7 @@ static void parse_pbf_nodes_v3 (
 
 }
 
-static int parse_pbf_way_v3 (
+static void parse_pbf_way_v3 (
     readosm_string_table * strings,
     unsigned char *start,
     unsigned char *end
@@ -1306,146 +1306,6 @@ static int parse_pbf_way_v3 (
 
 
 
-
-
-
-//  if (fld.field_id == 2 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {
-//     //
-//     // Key value pairs
-//     //
-
-//                                                                                                                                                                                                                 
-//     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); printf("fld.id = %d\n", fld.field_id); if (fld.field_id !=  3 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("ways: values"  );} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_values       = fld.pointer; end_values        = cur_values      + fld.str_len -1;
-
-//  }
-
-
-//  cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); printf("fld.id = %d\n", fld.field_id); if (fld.field_id !=  1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("way ids"       );} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_way_ids      = fld.pointer; end_way_ids       = cur_way_ids     + fld.str_len -1;
-//  cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); printf("fld.id = %d\n", fld.field_id); if (fld.field_id !=  2 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("ways: keys"    );} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_keys         = fld.pointer; end_keys          = cur_keys        + fld.str_len -1;
-//  cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); printf("fld.id = %d\n", fld.field_id); if (fld.field_id !=  3 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("ways: values"  );} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_values       = fld.pointer; end_values        = cur_values      + fld.str_len -1;
-//  cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); printf("fld.id = %d\n", fld.field_id); if (fld.field_id !=  4 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("ways: infos"   );} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_infos        = fld.pointer; end_infos         = cur_infos       + fld.str_len -1;
-//  cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); printf("fld.id = %d\n", fld.field_id); if (fld.field_id !=  8 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("ways: node ids");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_node_ids     = fld.pointer; end_node_ids      = cur_node_ids    + fld.str_len -1;
-
-    
-
-    return 1;
-
-//r /* reading the Way */
-//r     while (1) {
-//r        /* resetting an empty variant field */
-//r           reset_variant (&variant);
-//r 
-//r           base = read_pbf_field (start, stop, &variant);
-//r           if (base == NULL && variant.valid == 0)
-//r               goto error;
-//r           start = base;
-//r 
-//r           printf("  variant.field_id = %d\n", variant.field_id);
-//r 
-//r           if (variant.field_id == 1 && variant.type == READOSM_VAR_INT64)
-//r             {
-//r                 /* WAY ID */
-//r                 way->id = variant.value.int64_value;
-//r             }
-//r           if (variant.field_id == 2 && variant.type == READOSM_LEN_BYTES)
-//r             {
-//r                 /* KEYs are encoded as an array of StringTable index */
-//r                 if (!parse_uint32_packed
-//r                     (&packed_keys, variant.pointer,
-//r                      variant.pointer + variant.str_len - 1,
-//r                      variant.little_endian_cpu
-//r                      ))
-//r                     goto error;
-//r                 array_from_uint32_packed (&packed_keys);
-//r             }
-//r           if (variant.field_id == 3 && variant.type == READOSM_LEN_BYTES)
-//r             {
-//r                 /* VALUEs are encoded as an array of StringTable index  */
-//r                 if (!parse_uint32_packed
-//r                     (&packed_values, variant.pointer,
-//r                      variant.pointer + variant.str_len - 1,
-//r                      variant.little_endian_cpu))
-//r                     goto error;
-//r                 array_from_uint32_packed (&packed_values);
-//r             }
-//r           if (variant.field_id == 4 && variant.type == READOSM_LEN_BYTES)
-//r             {
-//r                 /* WAY-INFO block */
-//r                 if (!parse_pbf_way_info
-//r                     (way, strings, variant.pointer,
-//r                      variant.pointer + variant.str_len - 1,
-//r                      variant.little_endian_cpu))
-//r                     goto error;
-//r             }
-//r           if (variant.field_id == 8 && variant.type == READOSM_LEN_BYTES)
-//r             {
-//r                 /* NODE-REFs */
-//r                 long long delta = 0;
-//r                 readosm_int64 *value;
-//r                 /* KEYs are encoded as an array of StringTable index */
-//r                 if (!parse_sint64_packed
-//r                     (&packed_refs, variant.pointer,
-//r                      variant.pointer + variant.str_len - 1,
-//r                      variant.little_endian_cpu))
-//r                     goto error;
-//r                 value = packed_refs.first;
-//r                 while (value != NULL)
-//r                   {
-//r                       /* appending Node references to Way */
-//r                       delta += value->value;
-//r                       append_reference_to_way (way, delta);
-//r                       value = value->next;
-//r                   }
-//r             }
-//r           if (base > stop)
-//r               break;
-//r       }
-//r 
-//r /* reassembling a WAY object */
-//r     if (packed_keys.count == packed_values.count)
-//r       {
-//r           int i;
-//r           for (i = 0; i < packed_keys.count; i++)
-//r             {
-//r                 int i_key = *(packed_keys.values + i);
-//r                 int i_val = *(packed_values.values + i);
-//r                 pbf_string_table_elem *s_key = *(strings->strings + i_key);
-//r                 pbf_string_table_elem *s_value = *(strings->strings + i_val);
-//r                 append_tag_to_way (way, s_key->string, s_value->string);
-//r             }
-//r       }
-//r     else
-//r         goto error;
-//r 
-//r     finalize_uint32_packed (&packed_keys);
-//r     finalize_uint32_packed (&packed_values);
-//r     finalize_int64_packed (&packed_refs);
-//r    #ifdef TQ84_USE_PBF_FIELD_HINTS
-//r     finalize_variant (&variant);
-//r    #endif
-//r 
-//r /* processing the WAY */
-//r //  if (params->way_callback != NULL && params->stop == 0)
-//r //    {
-//r           int ret = call_way_callback (g_cb_way /* cb_way */ /*params->way_callback*//* params->user_data */, way);
-//r 
-//r           if (ret != READOSM_OK)
-//r               exit(43);
-//r //            params->stop = 1;
-//r 
-//r //      }
-//r     destroy_internal_way (way);
-//r     return 1;
-//r 
-//r   error:
-//r     finalize_uint32_packed (&packed_keys);
-//r     finalize_uint32_packed (&packed_values);
-//r     finalize_int64_packed  (&packed_refs);
-//r    #ifdef TQ84_USE_PBF_FIELD_HINTS
-//r     finalize_variant (&variant);
-//r    #endif
-//r     destroy_internal_way (way);
-//r     return 0;
 }
 
 static int parse_primitive_group_v2 (
@@ -1495,6 +1355,13 @@ static int parse_primitive_group_v2 (
 
                cur = read_bytes_pbf_field_v2 (cur, end, &fld);
 
+                parse_pbf_way_v3 (
+                     strings,
+                     fld.pointer,
+                     fld.pointer + fld.str_len - 1
+                );
+
+/*
 //              if (!parse_pbf_way (
                 if (!parse_pbf_way_v3 (
                      strings,
@@ -1503,6 +1370,7 @@ static int parse_primitive_group_v2 (
  //               ,  g_little_endian_cpu
                 ))
                      wrong_assumption("parse_pbf_way");
+*/
           }
           else if (fld.field_id == 4 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { // Relation
 
