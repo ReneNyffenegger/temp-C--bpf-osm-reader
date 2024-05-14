@@ -1204,16 +1204,10 @@ static void parse_pbf_way_v3 (
                 struct tm *times = gmtime (&ts);
                 char ts_buf[64];
                 if (times) {
-//                    int len;
                       sprintf (ts_buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
                                times->tm_year + 1900, times->tm_mon + 1,
                                times->tm_mday, times->tm_hour, times->tm_min,
                                times->tm_sec);
-//                    if (way->timestamp)
-//                        free (way->timestamp);
-//                    len = strlen (buf);
-//                    way->timestamp = malloc (len + 1);
- //                   strcpy (way->timestamp, buf);
                   }
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
@@ -1304,19 +1298,10 @@ printf("parse_pbf_relation_v3\n");
     printf("   rel_id = %llu\n", rel_id);
 
 
-/* reading the Relation */
+//  reading the Relation
     while (1) {
        cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
        printf("  fld.id = %d\n", fld.field_id);
-
-          /* resetting an empty variant field */
-//        reset_variant (&variant);
-
-//r       cur = read_pbf_field (cur, end, &variant);
-//r       if (base == NULL && variant.valid == 0)
-//r           goto error;
-
-//r       printf("  field_id = %d\n", variant.field_id);
 
        if      (fld.field_id == 2 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_keys         = fld.pointer; end_keys          = cur_keys        + fld.str_len -1; }
        else if (fld.field_id == 3 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_values       = fld.pointer; end_values        = cur_values      + fld.str_len -1; }
@@ -1326,16 +1311,8 @@ printf("parse_pbf_relation_v3\n");
        else if (fld.field_id ==10 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_mem_types    = fld.pointer; end_mem_types     = cur_mem_types   + fld.str_len -1; }
        else {wrong_assumption("field id for rel");}
 
-//r //        if (variant.field_id ==  1 && variant.type == READOSM_VAR_INT64) { /* RELATION ID */ relation->id = variant.value.int64_value; }
-//r           if (variant.field_id ==  2 && variant.type == READOSM_LEN_BYTES) { /* KEYs are encoded as an array of StringTable index         */ if (!parse_uint32_packed     (&packed_keys  ,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed (&packed_keys);   }
-//r           if (variant.field_id ==  3 && variant.type == READOSM_LEN_BYTES) { /* VALUEs are encoded as an array of StringTable index       */ if (!parse_uint32_packed     (&packed_values,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed (&packed_values); }
-//r           if (variant.field_id ==  4 && variant.type == READOSM_LEN_BYTES) { /* RELATION-INFO block                                       */ if (!parse_pbf_relation_info (relation      , strings, variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error;                                            }
-//r           if (variant.field_id ==  8 && variant.type == READOSM_LEN_BYTES) { /* MEMBER-ROLEs are encoded as an array of StringTable index */ if (!parse_uint32_packed     (&packed_roles ,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed (&packed_roles);  }
-//r           if (variant.field_id ==  9 && variant.type == READOSM_LEN_BYTES) { /* MEMBER-REFs are encoded as an array                       */ if (!parse_sint64_packed     (&packed_refs  ,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed  (&packed_refs);   }
-//r           if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES) { /* MEMBER-TYPEs are encoded as an array                      */ if (!parse_uint32_packed     (&packed_types ,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed (&packed_types);  }
-
-          if (cur > end) { break; }
-      }
+       if (cur > end) { break; }
+   }
 
    // -----------------------------------------------------------------------
    //                    Infos (user, uid, timestamp etc.)
@@ -1357,16 +1334,10 @@ printf("parse_pbf_relation_v3\n");
                 struct tm *times = gmtime (&ts);
                 char ts_buf[64];
                 if (times) {
-//                    int len;
                       sprintf (ts_buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
                                times->tm_year + 1900, times->tm_mon + 1,
                                times->tm_mday, times->tm_hour, times->tm_min,
                                times->tm_sec);
-//                    if (way->timestamp)
-//                        free (way->timestamp);
-//                    len = strlen (buf);
-//                    way->timestamp = malloc (len + 1);
- //                   strcpy (way->timestamp, buf);
                   }
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
@@ -1398,6 +1369,18 @@ printf("parse_pbf_relation_v3\n");
       }
 
    // -----------------------------------------------------------------------
+   //    Members
+   //
+                long long δ_id   = 0;
+                long long id      = 0;
+
+                while (cur_mem_refs < end_mem_refs) {
+                     cur_mem_refs = read_integer_pbf_field_v2(cur_mem_refs, end_mem_refs, READOSM_VAR_SINT64, &fld);
+                     δ_id= fld.value.int64_value;
+                     id  += δ_id;
+                     printf("   id %lld\n", id);
+
+                }
 
    // -----------------------------------------------------------------------
    //
