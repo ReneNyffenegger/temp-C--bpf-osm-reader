@@ -705,7 +705,7 @@ void osm_node(
 
 
 
-   printf("osm_node %10llu   %11.7f,%11.7f  [%3d / %10llu] %s by %-20s (%8d) %d\n", id, lat, lon, version, changeset, ts_buf, user, uid, visible);
+// printf("osm_node %10llu   %11.7f,%11.7f  [%3d / %10llu] %s by %-20s (%8d) %d\n", id, lat, lon, version, changeset, ts_buf, user, uid, visible);
 
 
    sqlite3_bind_int64 (stmt_ins_nod, 1, id );
@@ -714,5 +714,21 @@ void osm_node(
    sqlite3_step       (stmt_ins_nod);
    sqlite3_reset      (stmt_ins_nod);
 
+
+}
+
+void osm_node_key_value(
+       unsigned long long id,
+       const char        *key,
+       const char        *value
+)
+{
+
+// printf("  %-30s = %-30s\n", key, value);
+   sqlite3_bind_int64(stmt_ins_tag_nod, 1, id);
+   sqlite3_bind_text (stmt_ins_tag_nod, 2, key  , -1, NULL);
+   sqlite3_bind_text (stmt_ins_tag_nod, 3, value, -1, NULL);
+   sqlite3_step      (stmt_ins_tag_nod);
+   sqlite3_reset     (stmt_ins_tag_nod);
 
 }

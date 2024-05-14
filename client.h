@@ -15,3 +15,9 @@ void osm_node(
        const char        *user,
        int                visible
 );
+
+void osm_node_key_value(
+       unsigned long long id,
+       const char        *key,
+       const char        *value
+);

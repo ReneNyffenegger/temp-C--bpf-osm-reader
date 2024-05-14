@@ -310,7 +310,7 @@ static unsigned char * read_bytes_pbf_field_v2 (unsigned char *start, unsigned c
     pbf_field varlen;
     unsigned int len;
 
- /* initializing an empty variant field (length) */
+ // initializing an empty variant field (length)
     init_variant (&varlen, g_little_endian_cpu);
     varlen.type = READOSM_VAR_UINT32;
 
@@ -394,6 +394,7 @@ int block_size_v2(char* name) {
     }
 
 // -----------------------------------------------------------------------
+
     pbf_field_v2    fld_block_size;
 
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld_block_size);
@@ -1013,7 +1014,7 @@ static void parse_pbf_nodes_v3 (
 //  Currently (2024-05-14), I've found a maximum of 8000 nodes in a block.
 //
 
-    int cnt_nodes = 0;
+//  int cnt_nodes = 0;
     signed long long cur_node_id = 0;
 
     double    lat = 0.0;
@@ -1107,8 +1108,6 @@ static void parse_pbf_nodes_v3 (
 
        osm_node(cur_node_id, lat, lon, tim_, version, changeset, uid, uname_str, visibility);
 
-//     printf("node_id = %llu of %s @ %f, %f [%3d | %13llu] by %30s (%10d)\n", cur_node_id, ts_buf, lat, lon, version, changeset, uname_str, uid);
-
 
    //  -----------------------------------------------------------------------------------------------------
     //
@@ -1128,9 +1127,12 @@ static void parse_pbf_nodes_v3 (
           key = (*(strings -> strings + str_id_key))->string;
           val = (*(strings -> strings + str_id_val))->string;
 
+          osm_node_key_value(cur_node_id, key, val);
+
        }
 
-       cnt_nodes ++;
+
+//     cnt_nodes ++;
     }
 
 //  printf("count_nodes = %d\n", cnt_nodes);
