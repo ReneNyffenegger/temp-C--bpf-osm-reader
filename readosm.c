@@ -1218,14 +1218,35 @@ static int parse_pbf_way_v3 (
    //                    Inofs (user, uid, timestamp etc.)
 
       if (cur_infos) {
-           cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
 
+           cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 1) {wrong_assumption("fld_id = 1"); }
            int version;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            version = fld.value.int32_value;
 
-           printf("  version = %d\n", version);
+           cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
+           if (fld.field_id != 2) {wrong_assumption("fld_id = 2"); }
+           time_t ts;
+           cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
+           ts = fld.value.int32_value;
+
+                struct tm *times = gmtime (&ts);
+                char ts_buf[64];
+                if (times) {
+//                    int len;
+                      sprintf (ts_buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                               times->tm_year + 1900, times->tm_mon + 1,
+                               times->tm_mday, times->tm_hour, times->tm_min,
+                               times->tm_sec);
+//                    if (way->timestamp)
+//                        free (way->timestamp);
+//                    len = strlen (buf);
+//                    way->timestamp = malloc (len + 1);
+ //                   strcpy (way->timestamp, buf);
+                  }
+
+           printf("  version = %d, ts = %s\n", version, ts_buf);
            
       }
       else {
