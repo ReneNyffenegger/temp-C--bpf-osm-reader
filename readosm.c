@@ -1378,7 +1378,13 @@ printf("parse_pbf_relation_v3\n");
                      cur_mem_refs = read_integer_pbf_field_v2(cur_mem_refs, end_mem_refs, READOSM_VAR_SINT64, &fld);
                      δ_id= fld.value.int64_value;
                      id  += δ_id;
-                     printf("   id %lld\n", id);
+
+
+                     cur_mem_types = read_integer_pbf_field_v2(cur_mem_types, end_mem_types, READOSM_VAR_UINT32, &fld);
+                     int type = fld.value.int32_value; // 0: Node, 1 = Way, 2= Relation
+
+
+                     printf("   id %lld (%d)\n", id, type);
 
                 }
 
