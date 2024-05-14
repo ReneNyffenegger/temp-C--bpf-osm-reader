@@ -1124,7 +1124,7 @@ static void parse_pbf_nodes_v3 (
        cnt_nodes ++;
     }
 
-    printf("count_nodes = %d\n", cnt_nodes);
+//  printf("count_nodes = %d\n", cnt_nodes);
 
 }
 
@@ -1136,36 +1136,11 @@ static void parse_pbf_way_v3 (
 {
 
 
-
-//r /* attempting to parse a valid PBF Way */
-//r     pbf_field variant;
-//r     unsigned char *base = start;
-//r     readosm_uint32_packed packed_keys;
-//r     readosm_uint32_packed packed_values;
-//r     readosm_int64_packed packed_refs;
-//r     readosm_internal_way *way = alloc_internal_way ();
-//r 
-//r /* initializing empty packed objects */
-//r     init_uint32_packed (&packed_keys);
-//r     init_uint32_packed (&packed_values);
-//r     init_int64_packed (&packed_refs);
-//r 
-//r /* initializing an empty variant field */
-//r     init_variant (&variant, g_little_endian_cpu);
-//r    #ifdef TQ84_USE_PBF_FIELD_HINTS
-//r     add_variant_hints (&variant, READOSM_VAR_INT64, 1);
-//r     add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
-//r     add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
-//r     add_variant_hints (&variant, READOSM_LEN_BYTES, 4);
-//r     add_variant_hints (&variant, READOSM_LEN_BYTES, 8);
-//r    #endif
-
-
-    printf("parse_pbf_way_v3\n");
+//  printf("parse_pbf_way_v3\n");
 
     unsigned char *cur = start;
 
-    unsigned char *cur_way_ids;           unsigned char* end_way_ids;
+//  unsigned char *cur_way_ids;           unsigned char* end_way_ids;
     unsigned char *cur_keys     = NULL;   unsigned char* end_keys     = NULL;
     unsigned char *cur_values   = NULL;   unsigned char* end_values   = NULL;
     unsigned char *cur_infos    = NULL;   unsigned char* end_infos;
@@ -1177,17 +1152,12 @@ static void parse_pbf_way_v3 (
     if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_VARINT) { wrong_assumption("way id"); }
     cur = read_integer_pbf_field_v2 (cur, end , READOSM_VAR_INT64, &fld);
     long long way_id = fld.value.int64_value;
-    printf("   way_id = %llu\n", way_id);
-
-
-
-
-
+//  printf("   way_id = %llu\n", way_id);
 
 
     while (1) {
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
-    printf("fld.id = %d\n", fld.field_id);
+//  printf("fld.id = %d\n", fld.field_id);
     //
     // Using a while loop because the following data does not alway come in the same order
     // 
@@ -1211,7 +1181,7 @@ static void parse_pbf_way_v3 (
                      cur_node_ids = read_integer_pbf_field_v2(cur_node_ids, end_node_ids, READOSM_VAR_SINT64, &fld);
                      δ_node_id = fld.value.int64_value;
                      node_id  += δ_node_id;
-                     printf("   node_id %lld\n", node_id);
+  //                 printf("   node_id %lld\n", node_id);
 
                 }
    // -----------------------------------------------------------------------
@@ -1267,7 +1237,7 @@ static void parse_pbf_way_v3 (
 
            user = (*(strings -> strings + usr_str_id))->string;
 
-           printf("  version = %d, ts = %s, %llu by %s (%d)\n", version, ts_buf, changeset, user, uid);
+ //        printf("  version = %d, ts = %s, %llu by %s (%d)\n", version, ts_buf, changeset, user, uid);
            
       }
       else {
@@ -1299,14 +1269,161 @@ static void parse_pbf_way_v3 (
          key = (*(strings -> strings + id_key))->string;
          val = (*(strings -> strings + id_val))->string;
 
-         printf("   %s = %s\n", key, val);
+//       printf("   %s = %s\n", key, val);
 
        }
     }
-
-
-
 }
+
+static void parse_pbf_relation_v3 (
+       readosm_string_table * strings,
+       unsigned char         *start,
+       unsigned char         *end
+)
+{
+
+    unsigned char *cur = start;
+
+ // attempting to parse a valid PBF Relation
+    pbf_field variant;
+    unsigned char *base = start;
+    readosm_uint32_packed packed_keys;
+    readosm_uint32_packed packed_values;
+    readosm_uint32_packed packed_roles;
+    readosm_uint32_packed packed_types;
+    readosm_int64_packed packed_refs;
+    readosm_internal_relation *relation = alloc_internal_relation ();
+
+/* initializing empty packed objects */
+    init_uint32_packed (&packed_keys);
+    init_uint32_packed (&packed_values);
+    init_uint32_packed (&packed_roles);
+    init_uint32_packed (&packed_types);
+    init_int64_packed  (&packed_refs);
+
+/* initializing an empty variant field */
+    init_variant (&variant, g_little_endian_cpu);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    add_variant_hints (&variant, READOSM_VAR_INT64, 1);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 2);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 3);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 4);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 8);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 9);
+    add_variant_hints (&variant, READOSM_LEN_BYTES, 10);
+   #endif
+
+printf("parse_pbf_relation_v3\n");
+
+    
+    pbf_field_v2    fld;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
+    if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_VARINT) { wrong_assumption("rel id"); }
+    cur = read_integer_pbf_field_v2 (cur, end , READOSM_VAR_INT64, &fld);
+    long long rel_id = fld.value.int64_value;
+    printf("   rel_id = %llu\n", rel_id);
+
+
+/* reading the Relation */
+    while (1) {
+
+          /* resetting an empty variant field */
+          reset_variant (&variant);
+
+          cur = read_pbf_field (cur, end, &variant);
+          if (base == NULL && variant.valid == 0)
+              goto error;
+
+          printf("  field_id = %d\n", variant.field_id);
+
+
+//        if (variant.field_id ==  1 && variant.type == READOSM_VAR_INT64) { /* RELATION ID */ relation->id = variant.value.int64_value; }
+          if (variant.field_id ==  2 && variant.type == READOSM_LEN_BYTES) { /* KEYs are encoded as an array of StringTable index         */ if (!parse_uint32_packed     (&packed_keys  ,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed (&packed_keys);   }
+          if (variant.field_id ==  3 && variant.type == READOSM_LEN_BYTES) { /* VALUEs are encoded as an array of StringTable index       */ if (!parse_uint32_packed     (&packed_values,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed (&packed_values); }
+          if (variant.field_id ==  4 && variant.type == READOSM_LEN_BYTES) { /* RELATION-INFO block                                       */ if (!parse_pbf_relation_info (relation      , strings, variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error;                                            }
+          if (variant.field_id ==  8 && variant.type == READOSM_LEN_BYTES) { /* MEMBER-ROLEs are encoded as an array of StringTable index */ if (!parse_uint32_packed     (&packed_roles ,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed (&packed_roles);  }
+          if (variant.field_id ==  9 && variant.type == READOSM_LEN_BYTES) { /* MEMBER-REFs are encoded as an array                       */ if (!parse_sint64_packed     (&packed_refs  ,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_int64_packed  (&packed_refs);   }
+          if (variant.field_id == 10 && variant.type == READOSM_LEN_BYTES) { /* MEMBER-TYPEs are encoded as an array                      */ if (!parse_uint32_packed     (&packed_types ,          variant.pointer, variant.pointer + variant.str_len - 1, g_little_endian_cpu)) goto error; array_from_uint32_packed (&packed_types);  }
+
+          if (cur > end) { break; }
+      }
+
+/* reassembling a RELATION object */
+    if (packed_keys.count == packed_values.count)
+      {
+          int i;
+          for (i = 0; i < packed_keys.count; i++)
+            {
+                int i_key = *(packed_keys.values + i);
+                int i_val = *(packed_values.values + i);
+                pbf_string_table_elem *s_key = *(strings->strings + i_key);
+                pbf_string_table_elem *s_value = *(strings->strings + i_val);
+                append_tag_to_relation (relation, s_key->string, s_value->string);
+            }
+      }
+    else
+        goto error;
+
+    if (packed_roles.count == packed_refs.count && packed_roles.count == packed_types.count) {
+          int i;
+          long long delta = 0;
+          for (i = 0; i < packed_roles.count; i++) {
+                int xtype = READOSM_UNDEFINED;
+                int i_role = *(packed_roles.values + i);
+                pbf_string_table_elem *s_role = *(strings->strings + i_role);
+                int type = *(packed_types.values + i);
+                delta += *(packed_refs.values + i);
+
+                if (type == 0)
+                    xtype = READOSM_MEMBER_NODE;
+                else if (type == 1)
+                    xtype = READOSM_MEMBER_WAY;
+                else if (type == 2)
+                    xtype = READOSM_MEMBER_RELATION;
+                append_member_to_relation (relation, xtype, delta,
+                                           s_role->string);
+            }
+      }
+    else
+        goto error;
+
+    finalize_uint32_packed (&packed_keys);
+    finalize_uint32_packed (&packed_values);
+    finalize_uint32_packed (&packed_roles);
+    finalize_uint32_packed (&packed_types);
+    finalize_int64_packed (&packed_refs);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&variant);
+   #endif
+
+/* processing the RELATION */
+//  if (params->relation_callback != NULL && params->stop == 0)
+//    {
+          int ret = call_relation_callback (g_cb_rel, // params->relation_callback,
+//                                          0, // params->user_data,
+                                            relation);
+          if (ret != READOSM_OK)
+              exit(44);
+//            params->stop = 1;
+//    }
+    destroy_internal_relation (relation);
+    return;
+
+  error:
+wrong_assumption("xyz");
+    finalize_uint32_packed (&packed_keys);
+    finalize_uint32_packed (&packed_values);
+    finalize_uint32_packed (&packed_roles);
+    finalize_uint32_packed (&packed_types);
+    finalize_int64_packed (&packed_refs);
+   #ifdef TQ84_USE_PBF_FIELD_HINTS
+    finalize_variant (&variant);
+   #endif
+    destroy_internal_relation (relation);
+//  return 0;
+}
+
+
 
 static int parse_primitive_group_v2 (
    readosm_string_table * strings,
@@ -1376,14 +1493,17 @@ static int parse_primitive_group_v2 (
 
                 cur = read_bytes_pbf_field_v2 (cur, end, &fld);
 
+                parse_pbf_relation_v3(strings, fld.pointer, fld.pointer+fld.str_len -1);
+
+/*
                 if (!parse_pbf_relation (
                      strings, fld.pointer,
                      fld.pointer + fld.str_len - 1,
                      g_little_endian_cpu
                 ))
                      wrong_assumption("parse_pbf_relation");
+*/
 
-            //    goto error;
           }
           else {
                wrong_assumption("node, way or relation");
