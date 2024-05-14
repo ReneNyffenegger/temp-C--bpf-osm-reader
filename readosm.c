@@ -49,6 +49,8 @@
 #include <string.h>
 
 
+// #define OSM_PBF_CONTAINS_VISIBILITY
+
 unsigned int    cur_uncompressed_buffer_size = 0;
 unsigned char  *ptr_uncompressed_buffer      = NULL;
 // unsigned char  *ptr_uncompressed_buffer_cur  = NULL;
@@ -980,25 +982,29 @@ static void parse_pbf_nodes_v3 (
     unsigned char *cur_longitudes;   unsigned char* end_longitudes;
     unsigned char *cur_packed_keys;  unsigned char* end_packed_keys;
     
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_node_ids     = fld.pointer; end_node_ids      = cur_node_ids    + fld.str_len -1;
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  5 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_dense_infos  = fld.pointer; end_dense_infos   = cur_dense_infos + fld.str_len -1;
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  8 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_latitudes    = fld.pointer; end_latitudes     = cur_latitudes   + fld.str_len -1;
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  9 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_longitudes   = fld.pointer; end_longitudes    = cur_longitudes  + fld.str_len -1;
-    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id != 10 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_packed_keys  = fld.pointer; end_packed_keys   = cur_packed_keys + fld.str_len -1;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("field_id 1" );} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_node_ids     = fld.pointer; end_node_ids      = cur_node_ids    + fld.str_len -1;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  5 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("field_id 5" );} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_dense_infos  = fld.pointer; end_dense_infos   = cur_dense_infos + fld.str_len -1;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  8 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("field_id 8" );} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_latitudes    = fld.pointer; end_latitudes     = cur_latitudes   + fld.str_len -1;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  9 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("field_id 9" ) ;} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_longitudes   = fld.pointer; end_longitudes    = cur_longitudes  + fld.str_len -1;
+    cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id != 10 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("field_id 10");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_packed_keys  = fld.pointer; end_packed_keys   = cur_packed_keys + fld.str_len -1;
 
     unsigned char *cur_versions   , *end_versions;
     unsigned char *cur_timestamps , *end_timestamps;
     unsigned char *cur_changesets , *end_changesets;
     unsigned char *cur_uids       , *end_uids;
     unsigned char *cur_unames     , *end_unames;
+#ifdef OSM_PBF_CONTAINS_VISIBILITY
     unsigned char *cur_visibilites, *end_visibilities;
+#endif
 
-    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_versions    = fld.pointer; end_versions    = cur_versions   + fld.str_len -1;
-    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 2 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_timestamps  = fld.pointer; end_timestamps  = cur_timestamps + fld.str_len -1;
-    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 3 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_changesets  = fld.pointer; end_changesets  = cur_changesets + fld.str_len -1;
-    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 4 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_uids        = fld.pointer; end_uids        = cur_uids       + fld.str_len -1;
-    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 5 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_unames      = fld.pointer; end_unames      = cur_unames     + fld.str_len -1;
-    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 6 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_visibilites = fld.pointer; end_visibilities= cur_visibilites+ fld.str_len -1;
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("node, dense fld 1");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_versions    = fld.pointer; end_versions    = cur_versions   + fld.str_len -1;
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 2 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("node, dense fld 2");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_timestamps  = fld.pointer; end_timestamps  = cur_timestamps + fld.str_len -1;
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 3 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("node, dense fld 3");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_changesets  = fld.pointer; end_changesets  = cur_changesets + fld.str_len -1;
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 4 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("node, dense fld 4");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_uids        = fld.pointer; end_uids        = cur_uids       + fld.str_len -1;
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 5 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("node, dense fld 5");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_unames      = fld.pointer; end_unames      = cur_unames     + fld.str_len -1;
+#ifdef OSM_PBF_CONTAINS_VISIBILITY
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 6 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("node, dense fld 6");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_visibilites = fld.pointer; end_visibilities= cur_visibilites+ fld.str_len -1;
+#endif
 
 //
 //  Iterate over each node (in the current block)
@@ -1092,8 +1098,12 @@ static void parse_pbf_nodes_v3 (
 
    //  -----------------------------------------------------------------------------------------------------
 
+#ifdef OSM_PBF_CONTAINS_VISIBILITY
        cur_visibilites = read_integer_pbf_field_v2(cur_visibilites, end_visibilities, READOSM_VAR_SINT32, &fld);
        int visibility = fld.value.int32_value;
+#else
+       int visibility = 1;
+#endif
 
    //  -----------------------------------------------------------------------------------------------------
 
@@ -1213,10 +1223,15 @@ static void parse_pbf_way_v3 (
 
            user = (*(strings -> strings + usr_str_id))->string;
 
+#ifdef OSM_PBF_CONTAINS_VISIBILITY
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 6) {wrong_assumption("fld_id = 6"); }
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            int visibility = fld.value.int32_value;
+#else
+           int visibility = 1;
+#endif
+
 
            osm_way(way_id, ts, version, changeset, uid, user, visibility);
 
@@ -1366,10 +1381,14 @@ static void parse_pbf_relation_v3 (
 
            user = (*(strings -> strings + usr_str_id))->string;
 
+#ifdef OSM_PBF_CONTAINS_VISIBILITY
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 6) {wrong_assumption("fld_id = 6"); }
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            int visibility = fld.value.int32_value;
+#else
+           int visibility = 1;
+#endif
 
            osm_rel(rel_id, ts, version, changeset, uid, user, visibility);
            
@@ -1384,6 +1403,7 @@ static void parse_pbf_relation_v3 (
    long long δelem_id  = 0;
    long long elem_id   = 0;
 
+   int elem_pos = 0;
    while (cur_mem_refs < end_mem_refs) {
         cur_mem_refs = read_integer_pbf_field_v2(cur_mem_refs, end_mem_refs, READOSM_VAR_SINT64, &fld);
         δelem_id= fld.value.int64_value;
@@ -1398,6 +1418,7 @@ static void parse_pbf_relation_v3 (
         char const* role = (*(strings -> strings + id_role))->string;
 
 
+        osm_rel_member(rel_id, elem_id, role, type, elem_pos++);
 //      printf("   elem_id %lld [%s] (%d)\n", elem_id, role, type);
 
    }
@@ -1408,7 +1429,6 @@ static void parse_pbf_relation_v3 (
    //
 
     if (cur_keys) {
-
 
        if (!cur_values) {
          wrong_assumption("keys and values");
@@ -1428,6 +1448,7 @@ static void parse_pbf_relation_v3 (
          val = (*(strings -> strings + id_val))->string;
 
  //      printf("   %s = %s\n", key, val);
+         osm_rel_key_val(rel_id, key, val);
        }
     }
 

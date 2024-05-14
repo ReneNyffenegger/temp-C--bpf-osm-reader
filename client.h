@@ -53,3 +53,17 @@ void osm_rel(
        const char        *user,
        int                visible
 );
+
+void osm_rel_member(
+   unsigned long long  rel_id,
+   unsigned long long  elem_id,
+   const char         *role,
+   int                 type,  // 0: Node, 1 = Way, 2= Relation
+   int                 elem_pos
+);
+
+void osm_rel_key_val(
+   unsigned long long rel_id,
+   const char        *key,
+   const char        *val
+);

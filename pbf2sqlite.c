@@ -792,6 +792,69 @@ void osm_rel(
        const char        *user,
        int                visible
 ) {
-   ts_to_buf(ts);
-   printf("osm_rel %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
+
+// ts_to_buf(ts);
+// printf("osm_rel %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
+
+}
+
+void osm_rel_member(
+   unsigned long long  rel_id,
+   unsigned long long  elem_id,
+   const char         *role,
+   int                 type,  // 0: Node, 1 = Way, 2= Relation
+   int                 elem_pos
+) {
+
+  switch (type) {
+     case 0:
+        sqlite3_bind_int64(stmt_ins_rel_mem_nod, 1, rel_id);
+        sqlite3_bind_int  (stmt_ins_rel_mem_nod, 2, elem_pos);
+        sqlite3_bind_int64(stmt_ins_rel_mem_nod, 3, elem_id);
+        sqlite3_bind_text (stmt_ins_rel_mem_nod, 4, role, -1, NULL); // TODO: should be checked for NULL?
+        sqlite3_step      (stmt_ins_rel_mem_nod);
+        sqlite3_reset     (stmt_ins_rel_mem_nod);
+
+        break;
+
+     case 1:
+
+        sqlite3_bind_int64(stmt_ins_rel_mem_way, 1, rel_id);
+        sqlite3_bind_int  (stmt_ins_rel_mem_way, 2, elem_pos);
+        sqlite3_bind_int64(stmt_ins_rel_mem_way, 3, elem_id);
+        sqlite3_bind_text (stmt_ins_rel_mem_way, 4, role, -1, NULL); // TODO: should be checked for NULL?
+        sqlite3_step      (stmt_ins_rel_mem_way);
+        sqlite3_reset     (stmt_ins_rel_mem_way);
+
+        break;
+
+     case 2:
+
+        sqlite3_bind_int64(stmt_ins_rel_mem_rel, 1, rel_id);
+        sqlite3_bind_int  (stmt_ins_rel_mem_rel, 2, elem_pos);
+        sqlite3_bind_int64(stmt_ins_rel_mem_rel, 3, elem_id);
+        sqlite3_bind_text (stmt_ins_rel_mem_rel, 4, role, -1, NULL); // TODO: should be checked for NULL?
+        sqlite3_step      (stmt_ins_rel_mem_rel);
+        sqlite3_reset     (stmt_ins_rel_mem_rel);
+
+        break;
+
+     default:
+        printf("default not epxected\n"); exit(9);
+  }
+
+// printf("   elem_id %lld [%s] (%d)\n", elem_id, role, type);
+}
+
+void osm_rel_key_val(
+   unsigned long long rel_id,
+   const char        *key,
+   const char        *val
+) {
+
+   sqlite3_bind_int64(stmt_ins_tag_rel, 1, rel_id);
+   sqlite3_bind_text (stmt_ins_tag_rel, 2, key  , -1, NULL);
+   sqlite3_bind_text (stmt_ins_tag_rel, 3, val  , -1, NULL);
+   sqlite3_step      (stmt_ins_tag_rel);
+   sqlite3_reset     (stmt_ins_tag_rel);
 }
