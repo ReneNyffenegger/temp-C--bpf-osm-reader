@@ -998,12 +998,14 @@ static void parse_pbf_nodes_v3 (
     unsigned char *cur_changesets , *end_changesets;
     unsigned char *cur_uids       , *end_uids;
     unsigned char *cur_unames     , *end_unames;
+    unsigned char *cur_visibilites, *end_visibilities;
 
     cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_versions    = fld.pointer; end_versions    = cur_versions   + fld.str_len -1;
     cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 2 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_timestamps  = fld.pointer; end_timestamps  = cur_timestamps + fld.str_len -1;
     cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 3 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_changesets  = fld.pointer; end_changesets  = cur_changesets + fld.str_len -1;
     cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 4 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_uids        = fld.pointer; end_uids        = cur_uids       + fld.str_len -1;
     cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 5 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_unames      = fld.pointer; end_unames      = cur_unames     + fld.str_len -1;
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 6 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_visibilites = fld.pointer; end_visibilities= cur_visibilites+ fld.str_len -1;
 
 
 //
@@ -1021,6 +1023,7 @@ static void parse_pbf_nodes_v3 (
     unsigned  int       version;
     int       uid       = 0;
     int       uname     = 0;
+    int       visible;
 
     while (cur_node_ids <= end_node_ids) {
 
@@ -1048,10 +1051,8 @@ static void parse_pbf_nodes_v3 (
 
        cur_timestamps = read_integer_pbf_field_v2(cur_timestamps, end_timestamps, READOSM_VAR_SINT32, &fld);
        int    δ_tim = fld.value.int32_value;
-//     printf("δ_tim = %11d\n", δ_tim);
        tim += δ_tim;
 
-  //   printf("tim=%d, δ_tim = %d\n", tim, δ_tim);
 
        const time_t tim_ = tim;
 
@@ -1097,7 +1098,14 @@ static void parse_pbf_nodes_v3 (
 
        char *uname_str = (*(strings -> strings + uname))->string;
 
-       osm_node(cur_node_id, lat, lon, tim_, version, changeset, uid, uname_str, 1);
+   //  -----------------------------------------------------------------------------------------------------
+
+       cur_visibilites = read_integer_pbf_field_v2(cur_visibilites, end_visibilities, READOSM_VAR_SINT32, &fld);
+       int visibility = fld.value.int32_value;
+
+   //  -----------------------------------------------------------------------------------------------------
+
+       osm_node(cur_node_id, lat, lon, tim_, version, changeset, uid, uname_str, visibility);
 
 //     printf("node_id = %llu of %s @ %f, %f [%3d | %13llu] by %30s (%10d)\n", cur_node_id, ts_buf, lat, lon, version, changeset, uname_str, uid);
 

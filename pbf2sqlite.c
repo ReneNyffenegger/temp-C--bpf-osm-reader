@@ -705,7 +705,7 @@ void osm_node(
 
 
 
-   printf("osm_node %10llu   %11.7f,%11.7f  [%3d / %10llu] %s by %-20s (%8d)\n", id, lat, lon, version, changeset, ts_buf, user, uid);
+   printf("osm_node %10llu   %11.7f,%11.7f  [%3d / %10llu] %s by %-20s (%8d) %d\n", id, lat, lon, version, changeset, ts_buf, user, uid, visible);
 
 
    sqlite3_bind_int64 (stmt_ins_nod, 1, id );
