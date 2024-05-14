@@ -1014,9 +1014,11 @@ static int parse_pbf_nodes_v3 (
 
     unsigned char *cur_versions   , *end_versions;
     unsigned char *cur_timestamps , *end_timestamps;
+    unsigned char *cur_changesets , *end_changesets;
 
     cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_versions    = fld.pointer; end_versions    = cur_versions   + fld.str_len -1;
     cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 2 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_timestamps  = fld.pointer; end_timestamps  = cur_timestamps + fld.str_len -1;
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 3 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_changesets  = fld.pointer; end_changesets  = cur_changesets + fld.str_len -1;
 
 
 
@@ -1028,6 +1030,7 @@ static int parse_pbf_nodes_v3 (
     double lat = 0.0;
     double lon = 0.0;
     int    tim = 0;
+    long long changeset = 0;
 
     while (cur_node_ids <= end_node_ids) {
 
@@ -1049,6 +1052,9 @@ static int parse_pbf_nodes_v3 (
 
        cur_versions = read_integer_pbf_field_v2(cur_versions, end_versions, READOSM_VAR_UINT32, &fld);
        unsigned int version = fld.value.uint32_value;
+
+
+   //  -----------------------------------------------------------------------------------------------------
 
        cur_timestamps = read_integer_pbf_field_v2(cur_timestamps, end_timestamps, READOSM_VAR_SINT32, &fld);
        int    δ_tim = fld.value.int32_value;
@@ -1079,8 +1085,22 @@ static int parse_pbf_nodes_v3 (
                      sprintf(ts_buf, "%s", "?");
                   }
 
-       printf("node_id = %llu of %s @ %f, %f [%d]\n", cur_node_id, ts_buf, lat, lon, version);
-//     printf("node_id = %llu       @ %f, %f [%d]\n", cur_node_id        , lat, lon, version);
+   //  -----------------------------------------------------------------------------------------------------
+   //
+   //      Changesets
+   //         Note: Changesets need not be monotonously increasing vis a vis a node's history.
+   //               It's also possible for different versions to have the same changeset.
+   //               See for example node 854251
+   //             
+
+
+       cur_changesets = read_integer_pbf_field_v2(cur_changesets, end_changesets, READOSM_VAR_SINT64, &fld);
+       signed long long    δ_changeset = fld.value.int64_value;
+       changeset += δ_changeset;
+
+
+       printf("node_id = %llu of %s @ %f, %f [%3d | %13llu]\n", cur_node_id, ts_buf, lat, lon, version, changeset);
+//     printf("node_id = %llu       @ %f, %f [%3d]\n", cur_node_id        , lat, lon, version);
 
 
     //
