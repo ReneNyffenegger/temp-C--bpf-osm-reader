@@ -48,6 +48,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "osm-pbf-data-extractor.h"
+
 
 // #define OSM_PBF_CONTAINS_VISIBILITY
 
@@ -1724,7 +1726,7 @@ static int read_osm_data_block_v3 () {
 }
 
 
-int load_osm_pbf(
+int extract_data_from_osm_pbf(
 
     const char* filename_pbf
 
@@ -1737,7 +1739,7 @@ int load_osm_pbf(
     unsigned char buf[4];
     unsigned int  hdsz;
 
-    verbose_1("load_osm_pbf\n");
+    verbose_1("extract_data_from_osm_pbf\n");
 
 //  g_cb_nod            = cb_nod;
 //  g_cb_way            = cb_way;
@@ -1769,7 +1771,7 @@ int load_osm_pbf(
     set_uncompressed_buffer(1 * 1000 * 1000);
 
     while(read_osm_data_block_v3()) {
-       verbose_1("  iteration (load_osm_pbf)\n");
+       verbose_1("  iteration (extract_data_from_osm_pbf)\n");
 
     }
     free(ptr_uncompressed_buffer);

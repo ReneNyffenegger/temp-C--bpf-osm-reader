@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "client.h"
+#include "osm-pbf-data-extractor.h"
 
 #define PBF2SQLITE
 
@@ -13,7 +14,7 @@
 #error neither PBF2SQLITE nor PBF2MYSQL defined
 #endif
 
-#include "readosm.h"
+// #include "readosm.h"
 
 #define TQ84_PRINT_STAT
 
@@ -645,7 +646,7 @@ dbExec("PRAGMA temp_store = MEMORY");
 #endif
 
 
-  load_osm_pbf(filename_pbf /*, callback_node, callback_way, callback_relation */);
+  extract_data_from_osm_pbf(filename_pbf);
 
 
 //sqlite3_exec(db, "commit transaction", NULL, NULL, NULL);

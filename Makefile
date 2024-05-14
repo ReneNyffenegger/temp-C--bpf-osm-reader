@@ -22,9 +22,9 @@
    -fdiagnostics-show-option \
  	-O3
 
-pbf2sqlite: pbf2sqlite.c readosm.o client.h Makefile
+pbf2sqlite: pbf2sqlite.c readosm.o client.h osm-pbf-data-extractor.h Makefile
 	gcc $(C_OPTS) readosm.o pbf2sqlite.c  -lz  -lsqlite3 -o pbf2sqlite
 
-readosm.o: readosm.c pbf2sqlite.c protobuf.c osm_objects.c readosm.h readosm_protobuf.h readosm_internals.h client.h Makefile
+readosm.o: readosm.c pbf2sqlite.c protobuf.c osm_objects.c readosm.h readosm_protobuf.h readosm_internals.h client.h osm-pbf-data-extractor.h Makefile
 	gcc $(C_OPTS) -c readosm.c -o readosm.o
 

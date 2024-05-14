@@ -292,11 +292,6 @@ struct readosm_relation_struct {
         */
 //    READOSM_DECLARE const char * readosm_zlib_version (void);
 
-int load_osm_pbf(const char* filename_pbf
-//   readosm_node_callback     cb_nod,
-//   readosm_way_callback      cb_way,
-//   readosm_relation_callback cb_rel
-);
 
 #ifdef __cplusplus
 }
