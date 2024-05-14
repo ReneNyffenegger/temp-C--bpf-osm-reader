@@ -1,3 +1,4 @@
+#if 0
 /* 
 / osm_object.c
 /
@@ -205,7 +206,9 @@ destroy_internal_node (readosm_internal_node * node)
       }
     node->last_tag = &(node->first_tag);
 }
+#endif
 
+#if 0
 static void init_export_node (readosm_export_node * node) {
 
 /* initializing an empty export NODE object */
@@ -223,7 +226,9 @@ static void init_export_node (readosm_export_node * node) {
     node->tag_count = 0;
     node->tags = NULL;
 }
+#endif
 
+#if 0
 static void
 reset_export_node (readosm_export_node * node)
 {
@@ -244,7 +249,9 @@ reset_export_node (readosm_export_node * node)
         free (node->tags);
     init_export_node (node);
 }
+#endif
 
+#if 0
 READOSM_PRIVATE readosm_internal_way *
 alloc_internal_way (void)
 {
@@ -266,7 +273,9 @@ alloc_internal_way (void)
     way->last_tag = &(way->first_tag);
     return way;
 }
+#endif
 
+#if 0
 READOSM_PRIVATE void
 append_reference_to_way (readosm_internal_way * way, long long node_ref)
 {
@@ -289,7 +298,9 @@ append_reference_to_way (readosm_internal_way * way, long long node_ref)
           way->last_ref = ref;
       }
 }
+#endif
 
+#if 0
 READOSM_PRIVATE void
 append_tag_to_way (readosm_internal_way * way, const char *key,
                    const char *value)
@@ -323,7 +334,9 @@ append_tag_to_way (readosm_internal_way * way, const char *key,
     tag->value = malloc (len + 1);
     strcpy (tag->value, value);
 }
+#endif
 
+#if 0
 READOSM_PRIVATE void
 destroy_internal_way (readosm_internal_way * way)
 {
@@ -357,7 +370,9 @@ destroy_internal_way (readosm_internal_way * way)
       }
     free (way);
 }
+#endif
 
+#if 0
 static void
 init_export_way (readosm_export_way * way)
 {
@@ -375,7 +390,9 @@ init_export_way (readosm_export_way * way)
     way->tag_count = 0;
     way->tags = NULL;
 }
+#endif
 
+#if 0
 static void
 reset_export_way (readosm_export_way * way)
 {
@@ -398,7 +415,9 @@ reset_export_way (readosm_export_way * way)
         free (way->tags);
     init_export_way (way);
 }
+#endif
 
+#if 0
 static void
 init_export_member (readosm_export_member * member)
 {
@@ -409,7 +428,9 @@ init_export_member (readosm_export_member * member)
     member->id = 0;
     member->role = NULL;
 }
+#endif
 
+#if 0
 static void
 reset_export_member (readosm_export_member * member)
 {
@@ -420,7 +441,9 @@ reset_export_member (readosm_export_member * member)
         free (member->role);
     init_export_member (member);
 }
+#endif
 
+#if 0
 READOSM_PRIVATE readosm_internal_relation *
 alloc_internal_relation (void)
 {
@@ -443,7 +466,9 @@ alloc_internal_relation (void)
     rel->last_tag = &(rel->first_tag);
     return rel;
 }
+#endif
 
+#if 0
 READOSM_PRIVATE void
 append_member_to_relation (readosm_internal_relation * relation, int type,
                            long long id, const char *role)
@@ -475,7 +500,9 @@ append_member_to_relation (readosm_internal_relation * relation, int type,
     member->role = malloc (len + 1);
     strcpy (member->role, role);
 }
+#endif
 
+#if 0
 READOSM_PRIVATE void
 append_tag_to_relation (readosm_internal_relation * relation, const char *key,
                         const char *value)
@@ -509,7 +536,9 @@ append_tag_to_relation (readosm_internal_relation * relation, const char *key,
     tag->value = malloc (len + 1);
     strcpy (tag->value, value);
 }
+#endif
 
+#if 0
 READOSM_PRIVATE void
 destroy_internal_relation (readosm_internal_relation * relation)
 {
@@ -546,7 +575,9 @@ destroy_internal_relation (readosm_internal_relation * relation)
       }
     free (relation);
 }
+#endif
 
+#if 0
 static void
 init_export_relation (readosm_export_relation * relation)
 {
@@ -564,7 +595,9 @@ init_export_relation (readosm_export_relation * relation)
     relation->tag_count = 0;
     relation->tags = NULL;
 }
+#endif
 
+#if 0
 static void
 reset_export_relation (readosm_export_relation * relation)
 {
@@ -592,8 +625,10 @@ reset_export_relation (readosm_export_relation * relation)
         free (relation->tags);
     init_export_relation (relation);
 }
+#endif
 
 
+#if 0
 int call_node_callback (readosm_node_callback node_callback, readosm_internal_node * node) {
  //
  // calling the Node-handling callback function */
@@ -686,7 +721,9 @@ int call_node_callback (readosm_node_callback node_callback, readosm_internal_no
     reset_export_node (&exp_node);
     return ret;
 }
+#endif
 
+#if 0
 /*READOSM_PRIVATE */ int
 call_way_callback (readosm_way_callback way_callback,
 //                 const void *user_data,
@@ -804,7 +841,9 @@ call_way_callback (readosm_way_callback way_callback,
     reset_export_way (&exp_way);
     return ret;
 }
+#endif
 
+#if 0
 /*READOSM_PRIVATE*/ int
 call_relation_callback (readosm_relation_callback relation_callback,
 //                      const void *user_data,
@@ -938,3 +977,4 @@ call_relation_callback (readosm_relation_callback relation_callback,
     reset_export_relation (&exp_relation);
     return ret;
 }
+#endif

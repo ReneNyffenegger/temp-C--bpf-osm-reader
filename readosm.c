@@ -1749,15 +1749,19 @@ int extract_data_from_osm_pbf(
 
     g_pbf_file = fopen(filename_pbf, "rb");
 
-    if (g_pbf_file == NULL)
-        return READOSM_FILE_NOT_FOUND;
+    if (g_pbf_file == NULL) {
+       wrong_assumption("g_pbf_file");
+//      return READOSM_FILE_NOT_FOUND;
+    }
 
 // ----- Header ------------------------------------------------------------------------------------------
 
 
 //  testing OSMHeader
-    if (!read_header_block_v2 ())
-        return READOSM_INVALID_PBF_HEADER;
+    if (!read_header_block_v2 ()) {
+       wrong_assumption("valid pbf header");
+//      return READOSM_INVALID_PBF_HEADER;
+    }
 
 // ----- Data blocks -------------------------------------------------------------------------------------
 

@@ -76,25 +76,24 @@ extern "C"
 #endif
 
 /* constants */
-#define READOSM_UNDEFINED      -1234567890
-#define READOSM_MEMBER_NODE     7361
-#define READOSM_MEMBER_WAY      6731
-#define READOSM_MEMBER_RELATION 3671
+// #define READOSM_UNDEFINED      -1234567890
+// #define READOSM_MEMBER_NODE     7361
+// #define READOSM_MEMBER_WAY      6731
+// #define READOSM_MEMBER_RELATION 3671
 
 /* Error codes */
-#define READOSM_OK                      0 /**< No error, success */
+// #define READOSM_OK                      0 /**< No error, success */
 // #define READOSM_INVALID_SUFFIX          -1 /**< not .osm or .pbf suffix */
-#define READOSM_FILE_NOT_FOUND          -2 /**< .osm or .pbf file does not exist or is not accessible for reading */
-#define READOSM_NULL_HANDLE             -3 /**< Null OSM_handle argument */
-#define READOSM_INVALID_HANDLE          -4 /**< Invalid OSM_handle argument */
-#define READOSM_INSUFFICIENT_MEMORY     -5 /**< some kind of memory allocation
-                                                failure */
+// #define READOSM_FILE_NOT_FOUND          -2 /**< .osm or .pbf file does not exist or is not accessible for reading */
+// #define READOSM_NULL_HANDLE             -3 /**< Null OSM_handle argument */
+// #define READOSM_INVALID_HANDLE          -4 /**< Invalid OSM_handle argument */
+// #define READOSM_INSUFFICIENT_MEMORY     -5 /**< some kind of memory allocation failure */
 // #define READOSM_CREATE_XML_PARSER_ERROR      -6 /**< cannot create the XML Parser */
-#define READOSM_READ_ERROR              -7 /**< read error */
+// #define READOSM_READ_ERROR              -7 /**< read error */
 // #define READOSM_XML_ERROR            -8 /**< XML parser error */
-#define READOSM_INVALID_PBF_HEADER      -9 /**< invalid PBF header */
-#define READOSM_UNZIP_ERROR             -10 /**< unZip error */
-#define READOSM_ABORT                   -11 /**< user-required parser abort */
+// #define READOSM_INVALID_PBF_HEADER      -9 /**< invalid PBF header */
+// #define READOSM_UNZIP_ERROR             -10 /**< unZip error */
+// #define READOSM_ABORT                   -11 /**< user-required parser abort */
 
         /**
          a struct representing a <b>key:value</b> pair, and wrapping an XML fragment like the following:
@@ -102,12 +101,12 @@ extern "C"
 <tag key="key-value" value="some-value" />
         \endverbatim
          */
-    struct readosm_tag_struct
-    {
+ //   struct readosm_tag_struct
+ //   {
 
-        const char *key; /**< the KEY */
-        const char *value; /**< the VALUE */
-    };
+ //       const char *key; /**< the KEY */
+ //       const char *value; /**< the VALUE */
+ //   };
 
         /**
      Typedef for TAG structure.
