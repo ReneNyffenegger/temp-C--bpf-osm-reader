@@ -656,7 +656,7 @@ dbExec("PRAGMA temp_store = MEMORY");
   dbExec("commit work"       );
 #endif
 
-//createIndexes();
+  createIndexes();
 }
 
 char ts_buf[64];
