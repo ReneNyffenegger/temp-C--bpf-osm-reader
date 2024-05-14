@@ -1371,22 +1371,26 @@ printf("parse_pbf_relation_v3\n");
    // -----------------------------------------------------------------------
    //    Members
    //
-                long long δ_id   = 0;
-                long long id      = 0;
+   long long δelem_id  = 0;
+   long long elem_id   = 0;
 
-                while (cur_mem_refs < end_mem_refs) {
-                     cur_mem_refs = read_integer_pbf_field_v2(cur_mem_refs, end_mem_refs, READOSM_VAR_SINT64, &fld);
-                     δ_id= fld.value.int64_value;
-                     id  += δ_id;
-
-
-                     cur_mem_types = read_integer_pbf_field_v2(cur_mem_types, end_mem_types, READOSM_VAR_UINT32, &fld);
-                     int type = fld.value.int32_value; // 0: Node, 1 = Way, 2= Relation
+   while (cur_mem_refs < end_mem_refs) {
+        cur_mem_refs = read_integer_pbf_field_v2(cur_mem_refs, end_mem_refs, READOSM_VAR_SINT64, &fld);
+        δelem_id= fld.value.int64_value;
+        elem_id  += δelem_id;
 
 
-                     printf("   id %lld (%d)\n", id, type);
+        cur_mem_types = read_integer_pbf_field_v2(cur_mem_types, end_mem_types, READOSM_VAR_UINT32, &fld);
+        int type = fld.value.int32_value; // 0: Node, 1 = Way, 2= Relation
 
-                }
+        cur_mem_roles = read_integer_pbf_field_v2(cur_mem_roles, end_mem_roles, READOSM_VAR_UINT32, &fld);
+        int id_role = fld.value.int32_value;
+        char const* role = (*(strings -> strings + id_role))->string;
+
+
+        printf("   elem_id %lld [%s] (%d)\n", elem_id, role, type);
+
+   }
 
    // -----------------------------------------------------------------------
    //
@@ -1414,83 +1418,9 @@ printf("parse_pbf_relation_v3\n");
          val = (*(strings -> strings + id_val))->string;
 
          printf("   %s = %s\n", key, val);
-
        }
     }
 
-//r/* reassembling a RELATION object */
-//r    if (packed_keys.count == packed_values.count)
-//r      {
-//r          int i;
-//r          for (i = 0; i < packed_keys.count; i++)
-//r            {
-//r                int i_key = *(packed_keys.values + i);
-//r                int i_val = *(packed_values.values + i);
-//r                pbf_string_table_elem *s_key = *(strings->strings + i_key);
-//r                pbf_string_table_elem *s_value = *(strings->strings + i_val);
-//r                append_tag_to_relation (relation, s_key->string, s_value->string);
-//r            }
-//r      }
-//r    else
-//r        goto error;
-//r
-//r    if (packed_roles.count == packed_refs.count && packed_roles.count == packed_types.count) {
-//r          int i;
-//r          long long delta = 0;
-//r          for (i = 0; i < packed_roles.count; i++) {
-//r                int xtype = READOSM_UNDEFINED;
-//r                int i_role = *(packed_roles.values + i);
-//r                pbf_string_table_elem *s_role = *(strings->strings + i_role);
-//r                int type = *(packed_types.values + i);
-//r                delta += *(packed_refs.values + i);
-//r
-//r                if (type == 0)
-//r                    xtype = READOSM_MEMBER_NODE;
-//r                else if (type == 1)
-//r                    xtype = READOSM_MEMBER_WAY;
-//r                else if (type == 2)
-//r                    xtype = READOSM_MEMBER_RELATION;
-//r                append_member_to_relation (relation, xtype, delta,
-//r                                           s_role->string);
-//r            }
-//r      }
-//r    else
-//r        goto error;
-//r
-//r    finalize_uint32_packed (&packed_keys);
-//r    finalize_uint32_packed (&packed_values);
-//r    finalize_uint32_packed (&packed_roles);
-//r    finalize_uint32_packed (&packed_types);
-//r    finalize_int64_packed (&packed_refs);
-//r   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//r    finalize_variant (&variant);
-//r   #endif
-//r
-//r/* processing the RELATION */
-//r//  if (params->relation_callback != NULL && params->stop == 0)
-//r//    {
-//r          int ret = call_relation_callback (g_cb_rel, // params->relation_callback,
-//r//                                          0, // params->user_data,
-//r                                            relation);
-//r          if (ret != READOSM_OK)
-//r              exit(44);
-//r//            params->stop = 1;
-//r//    }
-//r    destroy_internal_relation (relation);
-//r    return;
-//r
-//r  error:
-//rwrong_assumption("xyz");
-//r    finalize_uint32_packed (&packed_keys);
-//r    finalize_uint32_packed (&packed_values);
-//r    finalize_uint32_packed (&packed_roles);
-//r    finalize_uint32_packed (&packed_types);
-//r    finalize_int64_packed (&packed_refs);
-//r   #ifdef TQ84_USE_PBF_FIELD_HINTS
-//r    finalize_variant (&variant);
-//r   #endif
-//r    destroy_internal_relation (relation);
-//r//  return 0;
 }
 
 
