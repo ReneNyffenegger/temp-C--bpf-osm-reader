@@ -1213,7 +1213,6 @@ static void parse_pbf_way_v3 (
 
            user = (*(strings -> strings + usr_str_id))->string;
 
-
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 6) {wrong_assumption("fld_id = 6"); }
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
@@ -1293,7 +1292,7 @@ static void parse_pbf_relation_v3 (
     unsigned char *cur_mem_types;          unsigned char* end_mem_types;
 
 
-printf("parse_pbf_relation_v3\n");
+// printf("parse_pbf_relation_v3\n");
 
     
     pbf_field_v2    fld;
@@ -1301,13 +1300,12 @@ printf("parse_pbf_relation_v3\n");
     if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_VARINT) { wrong_assumption("rel id"); }
     cur = read_integer_pbf_field_v2 (cur, end , READOSM_VAR_INT64, &fld);
     long long rel_id = fld.value.int64_value;
-    printf("   rel_id = %llu\n", rel_id);
 
 
 //  reading the Relation
     while (1) {
        cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
-       printf("  fld.id = %d\n", fld.field_id);
+//     printf("  fld.id = %d\n", fld.field_id);
 
        if      (fld.field_id == 2 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_keys         = fld.pointer; end_keys          = cur_keys        + fld.str_len -1; }
        else if (fld.field_id == 3 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_values       = fld.pointer; end_values        = cur_values      + fld.str_len -1; }
@@ -1337,6 +1335,7 @@ printf("parse_pbf_relation_v3\n");
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            ts = fld.value.int32_value;
 
+#if 0
                 struct tm *times = gmtime (&ts);
                 char ts_buf[64];
                 if (times) {
@@ -1345,7 +1344,7 @@ printf("parse_pbf_relation_v3\n");
                                times->tm_mday, times->tm_hour, times->tm_min,
                                times->tm_sec);
                   }
-
+#endif
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 3) {wrong_assumption("fld_id = 3"); }
            long long changeset;
@@ -1367,7 +1366,12 @@ printf("parse_pbf_relation_v3\n");
 
            user = (*(strings -> strings + usr_str_id))->string;
 
-           printf("  version = %d, ts = %s, %llu by %s (%d)\n", version, ts_buf, changeset, user, uid);
+           cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
+           if (fld.field_id != 6) {wrong_assumption("fld_id = 6"); }
+           cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
+           int visibility = fld.value.int32_value;
+
+           osm_rel(rel_id, ts, version, changeset, uid, user, visibility);
            
       }
       else {
@@ -1394,7 +1398,7 @@ printf("parse_pbf_relation_v3\n");
         char const* role = (*(strings -> strings + id_role))->string;
 
 
-        printf("   elem_id %lld [%s] (%d)\n", elem_id, role, type);
+//      printf("   elem_id %lld [%s] (%d)\n", elem_id, role, type);
 
    }
 
@@ -1423,7 +1427,7 @@ printf("parse_pbf_relation_v3\n");
          key = (*(strings -> strings + id_key))->string;
          val = (*(strings -> strings + id_val))->string;
 
-         printf("   %s = %s\n", key, val);
+ //      printf("   %s = %s\n", key, val);
        }
     }
 

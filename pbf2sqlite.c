@@ -746,7 +746,7 @@ void osm_way(
        int                visible
 ) {
 
-   ts_to_buf(ts);
+// ts_to_buf(ts);
 // printf("osm_way %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
 }
 
@@ -781,4 +781,17 @@ void osm_way_key_val(
    sqlite3_bind_text (stmt_ins_tag_way, 3, val, -1, NULL);
    sqlite3_step      (stmt_ins_tag_way);
    sqlite3_reset     (stmt_ins_tag_way);
+}
+
+void osm_rel(
+       unsigned long long id,
+       time_t             ts,
+       unsigned int       version,
+       unsigned long long changeset,
+       int                uid,
+       const char        *user,
+       int                visible
+) {
+   ts_to_buf(ts);
+   printf("osm_rel %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
 }

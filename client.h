@@ -43,3 +43,13 @@ void osm_way_key_val(
    const char        *key,
    const char        *val
 );
+
+void osm_rel(
+       unsigned long long id,
+       time_t             ts,
+       unsigned int       version,
+       unsigned long long changeset,
+       int                uid,
+       const char        *user,
+       int                visible
+);
