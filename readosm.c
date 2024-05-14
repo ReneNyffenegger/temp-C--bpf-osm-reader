@@ -998,11 +998,11 @@ static int parse_pbf_nodes_v3 (
 
     unsigned char *cur = start;
 
-    unsigned char* cur_node_ids;     unsigned char* end_node_ids;
-    unsigned char* cur_dense_infos;  unsigned char* end_dense_infos;
-    unsigned char* cur_latitudes;    unsigned char* end_latitudes;
-    unsigned char* cur_longitudes;   unsigned char* end_longitudes;
-    unsigned char* cur_packed_keys;  unsigned char* end_packed_keys;
+    unsigned char *cur_node_ids;     unsigned char* end_node_ids;
+    unsigned char *cur_dense_infos;  unsigned char* end_dense_infos;
+    unsigned char *cur_latitudes;    unsigned char* end_latitudes;
+    unsigned char *cur_longitudes;   unsigned char* end_longitudes;
+    unsigned char *cur_packed_keys;  unsigned char* end_packed_keys;
 
     printf("start = %p\n", start);
     
@@ -1011,6 +1011,12 @@ static int parse_pbf_nodes_v3 (
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  8 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_latitudes    = fld.pointer; end_latitudes     = cur_latitudes   + fld.str_len -1;
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id !=  9 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_longitudes   = fld.pointer; end_longitudes    = cur_longitudes  + fld.str_len -1;
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld); if (fld.field_id != 10 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_packed_keys  = fld.pointer; end_packed_keys   = cur_packed_keys + fld.str_len -1;
+
+    unsigned char *cur_versions   , *end_versions;
+    unsigned char *cur_timestampes, *end_timestamp;
+
+    cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_versions  = fld.pointer; end_versions  = cur_versions + fld.str_len -1;
+
 
 
 //  iterate over each node
@@ -1039,7 +1045,11 @@ static int parse_pbf_nodes_v3 (
        δ_lon = fld.value.int64_value / 10000000.0;
        lon += δ_lon;
 
-       printf("node_id = %llu @ %f, %f\n", cur_node_id, lat, lon);
+
+       cur_versions = read_integer_pbf_field_v2(cur_versions, end_versions, READOSM_VAR_UINT32, &fld);
+       unsigned int version = fld.value.int32_value;
+
+       printf("node_id = %llu @ %f, %f [%d]\n", cur_node_id, lat, lon, version);
 
 
     //
@@ -1059,7 +1069,9 @@ static int parse_pbf_nodes_v3 (
           key = (*(strings -> strings + str_id_key))->string;
           val = (*(strings -> strings + str_id_val))->string;
 
-//        printf("  %s = %s\n", key, val);
+
+
+          printf("  %s = %s\n", key, val);
        }
 
 // HERE!       while (1) {
