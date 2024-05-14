@@ -78,14 +78,6 @@ void wrong_assumption(char* txt) {
 
 #include "client.h"
 
-// #include "endian.c"
-//
-
-// readosm_node_callback        g_cb_nod;
-// readosm_way_callback         g_cb_way;
-// readosm_relation_callback    g_cb_rel;
-// char                         g_little_endian_cpu;
-
 static int test_endianness () {
 
 /* checks the current CPU endianness */
@@ -1242,16 +1234,17 @@ static void parse_pbf_way_v3 (
    // -----------------------------------------------------------------------
    //                    find node ids in way
    //
-                long long δ_node_id   = 0;
-                long long node_id         = 0;
+      long long δ_node_id   = 0;
+      long long node_id         = 0;
 
-                while (cur_node_ids < end_node_ids) {
-                     cur_node_ids = read_integer_pbf_field_v2(cur_node_ids, end_node_ids, READOSM_VAR_SINT64, &fld);
-                     δ_node_id = fld.value.int64_value;
-                     node_id  += δ_node_id;
-  //                 printf("   node_id %lld\n", node_id);
+      int nod_pos = 0;
+      while (cur_node_ids < end_node_ids) {
+           cur_node_ids = read_integer_pbf_field_v2(cur_node_ids, end_node_ids, READOSM_VAR_SINT64, &fld);
+           δ_node_id = fld.value.int64_value;
+           node_id  += δ_node_id;
 
-                }
+           osm_way_node_id(way_id, node_id, nod_pos++);
+      }
    // -----------------------------------------------------------------------
    //
    //    find key value pairs

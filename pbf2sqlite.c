@@ -749,3 +749,15 @@ void osm_way(
    ts_to_buf(ts);
    printf("osm_way %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
 }
+
+
+void osm_way_node_id(
+       unsigned long long way_id,
+       unsigned long long nod_id,
+       int                nod_pos
+)
+{
+
+   printf("   node: %10llu %10llu %d\n", way_id, nod_id, nod_pos);
+
+}
