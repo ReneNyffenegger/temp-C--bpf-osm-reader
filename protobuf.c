@@ -1410,6 +1410,7 @@ static int parse_pbf_way_info (
           if (base == NULL && variant.valid == 0)
               goto error;
 
+printf("parse_pbf_way_info, field.id = %d\n", variant.field_id);
           start = base;
           if (variant.field_id == 1 && variant.type == READOSM_VAR_INT32)
             {

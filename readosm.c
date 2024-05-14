@@ -1195,7 +1195,7 @@ static int parse_pbf_way_v3 (
        else if (fld.field_id == 3 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_values       = fld.pointer; end_values        = cur_values      + fld.str_len -1; }
        else if (fld.field_id == 4 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_infos        = fld.pointer; end_infos         = cur_infos       + fld.str_len -1; }
        else if (fld.field_id == 8 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_node_ids     = fld.pointer; end_node_ids      = cur_node_ids    + fld.str_len -1; }
-       else {wrong_assumption("bbb");}
+       else {wrong_assumption("field id for way");}
 
        if (cur > end) { break; }
     }
@@ -1214,22 +1214,23 @@ static int parse_pbf_way_v3 (
                      printf("   node_id %lld\n", node_id);
 
                 }
+   // -----------------------------------------------------------------------
+   //                    Inofs (user, uid, timestamp etc.)
 
-//              readosm_int64 *value;
-                /* KEYs are encoded as an array of StringTable index */
-//              if (!parse_sint64_packed
-//                  (&packed_refs, variant.pointer,
-//                   variant.pointer + variant.str_len - 1,
-//                   variant.little_endian_cpu))
-//                  goto error;
-//              value = packed_refs.first;
-//              while (value != NULL)
-//                {
-//                    /* appending Node references to Way */
-//                    delta += value->value;
-//                    append_reference_to_way (way, delta);
-//                    value = value->next;
-//                }
+      if (cur_infos) {
+           cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
+
+           if (fld.field_id != 1) {wrong_assumption("fld_id = 1"); }
+           int version;
+           cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
+           version = fld.value.int32_value;
+
+           printf("  version = %d\n", version);
+           
+      }
+      else {
+         wrong_assumption("cur_infos");
+      }
 
    // -----------------------------------------------------------------------
    //
@@ -1238,7 +1239,6 @@ static int parse_pbf_way_v3 (
 
     if (cur_keys) {
 
-       printf("cur_keys\n");
 
        if (!cur_values) {
          wrong_assumption("keys and values");
@@ -1261,15 +1261,6 @@ static int parse_pbf_way_v3 (
 
        }
     }
-
-//    if (cur_infos) {
-//         cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_UINT32, &fld);
-//         printf("fld.id = %d\n", fld.field_id);
-//         if (fld.field_id != 1) {wrong_assumption("fld_id = 1"); }
-//    }
-//    else {
-//       wrong_assumption("cur_infos");
-//    }
 
 
 
