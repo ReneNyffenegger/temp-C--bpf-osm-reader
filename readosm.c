@@ -52,11 +52,10 @@
 
 
 // #define OSM_PBF_CONTAINS_VISIBILITY
+// #define PARSE_INFOS
 
 unsigned int    cur_uncompressed_buffer_size = 0;
 unsigned char  *ptr_uncompressed_buffer      = NULL;
-// unsigned char  *ptr_uncompressed_buffer_cur  = NULL;
-
 
 void wrong_assumption(char* txt) {
    printf("\033[1;31m%s\033[0m\n", txt);
@@ -1023,7 +1022,8 @@ static void parse_pbf_nodes_v3 (
     unsigned  int       version;
     int       uid       = 0;
     int       uname     = 0;
-    int       visible;
+    int       visibility;
+    char     *uname_str;
 
     while (cur_node_ids <= end_node_ids) {
 
@@ -1043,8 +1043,11 @@ static void parse_pbf_nodes_v3 (
        δ_lon = fld.value.int64_value / 10000000.0;
        lon += δ_lon;
 
+
+
+#ifdef PARSE_INFOS
        cur_versions = read_integer_pbf_field_v2(cur_versions, end_versions, READOSM_VAR_UINT32, &fld);
-       unsigned int version = fld.value.uint32_value;
+       version = fld.value.uint32_value;
 
 
    //  -----------------------------------------------------------------------------------------------------
@@ -1054,7 +1057,6 @@ static void parse_pbf_nodes_v3 (
        tim += δ_tim;
 
 
-//     const time_t tim_ = tim;
 
 #if 0
        char ts_buf[64];
@@ -1096,15 +1098,16 @@ static void parse_pbf_nodes_v3 (
        signed int δ_uname = fld.value.int32_value;
        uname += δ_uname;
 
-       char *uname_str = (*(strings -> strings + uname))->string;
+       uname_str = (*(strings -> strings + uname))->string;
 
    //  -----------------------------------------------------------------------------------------------------
 
 #ifdef OSM_PBF_CONTAINS_VISIBILITY
        cur_visibilites = read_integer_pbf_field_v2(cur_visibilites, end_visibilities, READOSM_VAR_SINT32, &fld);
-       int visibility = fld.value.int32_value;
+       visibility = fld.value.int32_value;
 #else
-       int visibility = 1;
+       visibility = 1;
+#endif
 #endif
 
    //  -----------------------------------------------------------------------------------------------------
@@ -1179,17 +1182,23 @@ static void parse_pbf_way_v3 (
    // -----------------------------------------------------------------------
    //                    Infos (user, uid, timestamp etc.)
 
+
+      char const* user;
+      int visibility;
+      long long changeset;
+      int uid;
+      int version;
+      time_t ts;
+#ifdef PARSE_INFOS
       if (cur_infos) {
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 1) {wrong_assumption("fld_id = 1"); }
-           int version;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            version = fld.value.int32_value;
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 2) {wrong_assumption("fld_id = 2"); }
-           time_t ts;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            ts = fld.value.int32_value;
 
@@ -1206,13 +1215,11 @@ static void parse_pbf_way_v3 (
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 3) {wrong_assumption("fld_id = 3"); }
-           long long changeset;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT64, &fld);
            changeset = fld.value.int64_value;
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 4) {wrong_assumption("fld_id = 4"); }
-           int uid;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            uid = fld.value.int32_value;
 
@@ -1220,7 +1227,6 @@ static void parse_pbf_way_v3 (
            if (fld.field_id != 5) {wrong_assumption("fld_id = 5"); }
            int user_str_id;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
-           char const *user;
            int usr_str_id = fld.value.int32_value;
 
            user = (*(strings -> strings + usr_str_id))->string;
@@ -1229,13 +1235,12 @@ static void parse_pbf_way_v3 (
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 6) {wrong_assumption("fld_id = 6"); }
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
-           int visibility = fld.value.int32_value;
+           visibility = fld.value.int32_value;
 #else
-           int visibility = 1;
+           visibility = 1;
 #endif
 
 
-           osm_way(way_id, ts, version, changeset, uid, user, visibility);
 
  //        printf("  version = %d, ts = %s, %llu by %s (%d)\n", version, ts_buf, changeset, user, uid);
            
@@ -1243,7 +1248,8 @@ static void parse_pbf_way_v3 (
       else {
          wrong_assumption("cur_infos");
       }
-
+#endif
+      osm_way(way_id, ts, version, changeset, uid, user, visibility);
 
 
    // -----------------------------------------------------------------------
@@ -1276,17 +1282,16 @@ static void parse_pbf_way_v3 (
        char const *val;
 
        while (cur_keys < end_keys) {
-         cur_keys   = read_integer_pbf_field_v2(cur_keys  , end_keys  , READOSM_VAR_UINT32, &fld);
-         int id_key = fld.value.int32_value;
+          cur_keys   = read_integer_pbf_field_v2(cur_keys  , end_keys  , READOSM_VAR_UINT32, &fld);
+          int id_key = fld.value.int32_value;
 
-         cur_values = read_integer_pbf_field_v2(cur_values, end_values, READOSM_VAR_UINT32, &fld);
-         int id_val = fld.value.int32_value;
+          cur_values = read_integer_pbf_field_v2(cur_values, end_values, READOSM_VAR_UINT32, &fld);
+          int id_val = fld.value.int32_value;
 
-         key = (*(strings -> strings + id_key))->string;
-         val = (*(strings -> strings + id_val))->string;
+          key = (*(strings -> strings + id_key))->string;
+          val = (*(strings -> strings + id_val))->string;
 
-         osm_way_key_val(way_id, key, val);
-
+          osm_way_key_val(way_id, key, val);
        }
     }
 }
@@ -1308,9 +1313,7 @@ static void parse_pbf_relation_v3 (
     unsigned char *cur_mem_refs;           unsigned char* end_mem_refs;
     unsigned char *cur_mem_types;          unsigned char* end_mem_types;
 
-
 // printf("parse_pbf_relation_v3\n");
-
     
     pbf_field_v2    fld;
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
@@ -1322,7 +1325,6 @@ static void parse_pbf_relation_v3 (
 //  reading the Relation
     while (1) {
        cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
-//     printf("  fld.id = %d\n", fld.field_id);
 
        if      (fld.field_id == 2 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_keys         = fld.pointer; end_keys          = cur_keys        + fld.str_len -1; }
        else if (fld.field_id == 3 && fld.protobuf_type == PROTOBUF_TYPE_LEN) {cur = read_bytes_pbf_field_v2 (cur, end, &fld); cur_values       = fld.pointer; end_values        = cur_values      + fld.str_len -1; }
@@ -1338,17 +1340,22 @@ static void parse_pbf_relation_v3 (
    // -----------------------------------------------------------------------
    //                    Infos (user, uid, timestamp etc.)
 
+      char const* user;
+      int visibility;
+      long long changeset;
+      int uid;
+      int version;
+      time_t ts;
+#ifdef PARSE_INFOS
       if (cur_infos) {
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 1) {wrong_assumption("fld_id = 1"); }
-           int version;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            version = fld.value.int32_value;
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 2) {wrong_assumption("fld_id = 2"); }
-           time_t ts;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            ts = fld.value.int32_value;
 
@@ -1364,13 +1371,11 @@ static void parse_pbf_relation_v3 (
 #endif
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 3) {wrong_assumption("fld_id = 3"); }
-           long long changeset;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT64, &fld);
            changeset = fld.value.int64_value;
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 4) {wrong_assumption("fld_id = 4"); }
-           int uid;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            uid = fld.value.int32_value;
 
@@ -1378,7 +1383,6 @@ static void parse_pbf_relation_v3 (
            if (fld.field_id != 5) {wrong_assumption("fld_id = 5"); }
            int user_str_id;
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
-           char const *user;
            int usr_str_id = fld.value.int32_value;
 
            user = (*(strings -> strings + usr_str_id))->string;
@@ -1387,17 +1391,18 @@ static void parse_pbf_relation_v3 (
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 6) {wrong_assumption("fld_id = 6"); }
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
-           int visibility = fld.value.int32_value;
+           visibility = fld.value.int32_value;
 #else
-           int visibility = 1;
+           visibility = 1;
 #endif
 
-           osm_rel(rel_id, ts, version, changeset, uid, user, visibility);
            
       }
       else {
          wrong_assumption("cur_infos");
       }
+#endif
+      osm_rel(rel_id, ts, version, changeset, uid, user, visibility);
 
    // -----------------------------------------------------------------------
    //    Members
@@ -1440,22 +1445,19 @@ static void parse_pbf_relation_v3 (
        char const *val;
 
        while (cur_keys < end_keys) {
-         cur_keys   = read_integer_pbf_field_v2(cur_keys  , end_keys  , READOSM_VAR_UINT32, &fld);
-         int id_key = fld.value.int32_value;
+          cur_keys   = read_integer_pbf_field_v2(cur_keys  , end_keys  , READOSM_VAR_UINT32, &fld);
+          int id_key = fld.value.int32_value;
 
-         cur_values = read_integer_pbf_field_v2(cur_values, end_values, READOSM_VAR_UINT32, &fld);
-         int id_val = fld.value.int32_value;
+          cur_values = read_integer_pbf_field_v2(cur_values, end_values, READOSM_VAR_UINT32, &fld);
+          int id_val = fld.value.int32_value;
 
-         key = (*(strings -> strings + id_key))->string;
-         val = (*(strings -> strings + id_val))->string;
+          key = (*(strings -> strings + id_key))->string;
+          val = (*(strings -> strings + id_val))->string;
 
- //      printf("   %s = %s\n", key, val);
-         osm_rel_key_val(rel_id, key, val);
+          osm_rel_key_val(rel_id, key, val);
        }
     }
-
 }
-
 
 
 static int parse_primitive_group_v2 (
@@ -1727,12 +1729,7 @@ static int read_osm_data_block_v3 () {
 
 
 int extract_data_from_osm_pbf(
-
     const char* filename_pbf
-
-//  readosm_node_callback     cb_nod,
-//  readosm_way_callback      cb_way,
-//  readosm_relation_callback cb_rel
 ) {
 
     size_t        rd;
@@ -1741,17 +1738,12 @@ int extract_data_from_osm_pbf(
 
     verbose_1("extract_data_from_osm_pbf\n");
 
-//  g_cb_nod            = cb_nod;
-//  g_cb_way            = cb_way;
-//  g_cb_rel            = cb_rel;
-
     g_little_endian_cpu = test_endianness();
 
     g_pbf_file = fopen(filename_pbf, "rb");
 
     if (g_pbf_file == NULL) {
        wrong_assumption("g_pbf_file");
-//      return READOSM_FILE_NOT_FOUND;
     }
 
 // ----- Header ------------------------------------------------------------------------------------------
@@ -1760,23 +1752,17 @@ int extract_data_from_osm_pbf(
 //  testing OSMHeader
     if (!read_header_block_v2 ()) {
        wrong_assumption("valid pbf header");
-//      return READOSM_INVALID_PBF_HEADER;
     }
 
 // ----- Data blocks -------------------------------------------------------------------------------------
-
 // 
 // the PBF file is internally organized as a collection
 // of many subsequent OSMData blocks 
-
-//  cur_uncompressed_buffer_size = 1 * 1000 * 1000;
-//  ptr_uncompressed_buffer = malloc(cur_uncompressed_buffer_size);
 
     set_uncompressed_buffer(1 * 1000 * 1000);
 
     while(read_osm_data_block_v3()) {
        verbose_1("  iteration (extract_data_from_osm_pbf)\n");
-
     }
     free(ptr_uncompressed_buffer);
 
