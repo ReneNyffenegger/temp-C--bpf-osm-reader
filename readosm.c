@@ -1163,7 +1163,6 @@ static void parse_pbf_way_v3 (
 
     while (1) {
        cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
-//  printf("fld.id = %d\n", fld.field_id);
     //
     // Using a while loop because the following data does not alway come in the same order
     // 
@@ -1224,7 +1223,12 @@ static void parse_pbf_way_v3 (
            user = (*(strings -> strings + usr_str_id))->string;
 
 
-           osm_way(way_id, ts, version, changeset, uid, user, 1);
+           cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
+           if (fld.field_id != 6) {wrong_assumption("fld_id = 6"); }
+           cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
+           int visibility = fld.value.int32_value;
+
+           osm_way(way_id, ts, version, changeset, uid, user, visibility);
 
  //        printf("  version = %d, ts = %s, %llu by %s (%d)\n", version, ts_buf, changeset, user, uid);
            
