@@ -1246,7 +1246,28 @@ static int parse_pbf_way_v3 (
  //                   strcpy (way->timestamp, buf);
                   }
 
-           printf("  version = %d, ts = %s\n", version, ts_buf);
+           cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
+           if (fld.field_id != 3) {wrong_assumption("fld_id = 3"); }
+           long long changeset;
+           cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT64, &fld);
+           changeset = fld.value.int64_value;
+
+           cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
+           if (fld.field_id != 4) {wrong_assumption("fld_id = 4"); }
+           int uid;
+           cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
+           uid = fld.value.int32_value;
+
+           cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
+           if (fld.field_id != 5) {wrong_assumption("fld_id = 5"); }
+           int user_str_id;
+           cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
+           char const *user;
+           int usr_str_id = fld.value.int32_value;
+
+           user = (*(strings -> strings + usr_str_id))->string;
+
+           printf("  version = %d, ts = %s, %llu by %s (%d)\n", version, ts_buf, changeset, user, uid);
            
       }
       else {
