@@ -676,6 +676,22 @@ dbExec("PRAGMA temp_store = MEMORY");
   createIndexes();
 }
 
+char ts_buf[64];
+static void ts_to_buf(time_t ts) {
+
+   struct tm *times = gmtime (&ts);
+   if (times) {
+        int len;
+        sprintf (ts_buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                 times->tm_year + 1900, times->tm_mon + 1,
+                 times->tm_mday, times->tm_hour, times->tm_min,
+                 times->tm_sec);
+   }
+   else {
+      printf("! times\n"); exit(64);
+   }
+
+}
 
 void osm_node(
        unsigned long long id,
@@ -690,23 +706,10 @@ void osm_node(
 )
 {
 
-       char ts_buf[64];
-       struct tm *times = gmtime (&ts);
-                if (times) {
-                      int len;
-                      sprintf (ts_buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                               times->tm_year + 1900, times->tm_mon + 1,
-                               times->tm_mday, times->tm_hour, times->tm_min,
-                               times->tm_sec);
-                  }
-                  else {
-                     sprintf(ts_buf, "%s", "?");
-                  }
 
-
+   ts_to_buf(ts);
 
 // printf("osm_node %10llu   %11.7f,%11.7f  [%3d / %10llu] %s by %-20s (%8d) %d\n", id, lat, lon, version, changeset, ts_buf, user, uid, visible);
-
 
    sqlite3_bind_int64 (stmt_ins_nod, 1, id );
    sqlite3_bind_double(stmt_ins_nod, 2, lat);
@@ -731,4 +734,18 @@ void osm_node_key_value(
    sqlite3_step      (stmt_ins_tag_nod);
    sqlite3_reset     (stmt_ins_tag_nod);
 
+}
+
+void osm_way(
+       unsigned long long id,
+       time_t             ts,
+       unsigned int       version,
+       unsigned long long changeset,
+       int                uid,
+       const char        *user,
+       int                visible
+) {
+
+   ts_to_buf(ts);
+   printf("osm_way %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
 }

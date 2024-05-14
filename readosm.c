@@ -1146,12 +1146,8 @@ static void parse_pbf_way_v3 (
 )
 {
 
-
-//  printf("parse_pbf_way_v3\n");
-
     unsigned char *cur = start;
 
-//  unsigned char *cur_way_ids;           unsigned char* end_way_ids;
     unsigned char *cur_keys     = NULL;   unsigned char* end_keys     = NULL;
     unsigned char *cur_values   = NULL;   unsigned char* end_values   = NULL;
     unsigned char *cur_infos    = NULL;   unsigned char* end_infos;
@@ -1163,7 +1159,6 @@ static void parse_pbf_way_v3 (
     if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_VARINT) { wrong_assumption("way id"); }
     cur = read_integer_pbf_field_v2 (cur, end , READOSM_VAR_INT64, &fld);
     long long way_id = fld.value.int64_value;
-//  printf("   way_id = %llu\n", way_id);
 
 
     while (1) {
@@ -1181,20 +1176,6 @@ static void parse_pbf_way_v3 (
        if (cur > end) { break; }
     }
 
-
-   // -----------------------------------------------------------------------
-   //                    find node ids in way
-   //
-                long long δ_node_id   = 0;
-                long long node_id         = 0;
-
-                while (cur_node_ids < end_node_ids) {
-                     cur_node_ids = read_integer_pbf_field_v2(cur_node_ids, end_node_ids, READOSM_VAR_SINT64, &fld);
-                     δ_node_id = fld.value.int64_value;
-                     node_id  += δ_node_id;
-  //                 printf("   node_id %lld\n", node_id);
-
-                }
    // -----------------------------------------------------------------------
    //                    Infos (user, uid, timestamp etc.)
 
@@ -1242,6 +1223,9 @@ static void parse_pbf_way_v3 (
 
            user = (*(strings -> strings + usr_str_id))->string;
 
+
+           osm_way(way_id, ts, version, changeset, uid, user, 1);
+
  //        printf("  version = %d, ts = %s, %llu by %s (%d)\n", version, ts_buf, changeset, user, uid);
            
       }
@@ -1249,6 +1233,21 @@ static void parse_pbf_way_v3 (
          wrong_assumption("cur_infos");
       }
 
+
+
+   // -----------------------------------------------------------------------
+   //                    find node ids in way
+   //
+                long long δ_node_id   = 0;
+                long long node_id         = 0;
+
+                while (cur_node_ids < end_node_ids) {
+                     cur_node_ids = read_integer_pbf_field_v2(cur_node_ids, end_node_ids, READOSM_VAR_SINT64, &fld);
+                     δ_node_id = fld.value.int64_value;
+                     node_id  += δ_node_id;
+  //                 printf("   node_id %lld\n", node_id);
+
+                }
    // -----------------------------------------------------------------------
    //
    //    find key value pairs

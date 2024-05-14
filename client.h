@@ -21,3 +21,13 @@ void osm_node_key_value(
        const char        *key,
        const char        *value
 );
+
+void osm_way(
+       unsigned long long id,
+       time_t             ts,
+       unsigned int       version,
+       unsigned long long changeset,
+       int                uid,
+       const char        *user,
+       int                visible
+);  
