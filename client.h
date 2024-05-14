@@ -37,3 +37,9 @@ void osm_way_node_id(
        unsigned long long nod_id,
        int                nod_pos
 );  
+
+void osm_way_key_val(
+   unsigned long long way_id,
+   const char        *key,
+   const char        *val
+);

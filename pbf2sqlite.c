@@ -721,9 +721,9 @@ void osm_node(
 }
 
 void osm_node_key_value(
-       unsigned long long id,
-       const char        *key,
-       const char        *value
+   unsigned long long id,
+   const char        *key,
+   const char        *value
 )
 {
 
@@ -747,7 +747,7 @@ void osm_way(
 ) {
 
    ts_to_buf(ts);
-   printf("osm_way %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
+// printf("osm_way %10llu   [%3d / %10llu] %s by %-20s (%8d) %d\n", id, version, changeset, ts_buf, user, uid, visible);
 }
 
 
@@ -758,6 +758,27 @@ void osm_way_node_id(
 )
 {
 
-   printf("   node: %10llu %10llu %d\n", way_id, nod_id, nod_pos);
+// printf("   node: %10llu %10llu %d\n", way_id, nod_id, nod_pos);
 
+   sqlite3_bind_int64(stmt_ins_nod_way, 1, way_id );
+   sqlite3_bind_int64(stmt_ins_nod_way, 2, nod_id ),
+   sqlite3_bind_int  (stmt_ins_nod_way, 3, nod_pos);
+   sqlite3_step      (stmt_ins_nod_way);
+   sqlite3_reset     (stmt_ins_nod_way);
+
+}
+
+
+void osm_way_key_val(
+   unsigned long long way_id,
+   const char        *key,
+   const char        *val
+    
+) {
+// printf("%s = %s\n", key, val);
+   sqlite3_bind_int64(stmt_ins_tag_way, 1, way_id);
+   sqlite3_bind_text (stmt_ins_tag_way, 2, key, -1, NULL);
+   sqlite3_bind_text (stmt_ins_tag_way, 3, val, -1, NULL);
+   sqlite3_step      (stmt_ins_tag_way);
+   sqlite3_reset     (stmt_ins_tag_way);
 }

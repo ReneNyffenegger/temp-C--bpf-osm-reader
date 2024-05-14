@@ -1000,7 +1000,6 @@ static void parse_pbf_nodes_v3 (
     cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 5 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_unames      = fld.pointer; end_unames      = cur_unames     + fld.str_len -1;
     cur_dense_infos = read_pbf_field_v2_protobuf_type_and_field(cur_dense_infos, &fld); if (fld.field_id != 6 || fld.protobuf_type != PROTOBUF_TYPE_LEN) { wrong_assumption("fld");} cur_dense_infos = read_bytes_pbf_field_v2 (cur_dense_infos, end_dense_infos, &fld); cur_visibilites = fld.pointer; end_visibilities= cur_visibilites+ fld.str_len -1;
 
-
 //
 //  Iterate over each node (in the current block)
 //  Currently (2024-05-14), I've found a maximum of 8000 nodes in a block.
@@ -1120,9 +1119,7 @@ static void parse_pbf_nodes_v3 (
           val = (*(strings -> strings + str_id_val))->string;
 
           osm_node_key_value(cur_node_id, key, val);
-
        }
-
 
 //     cnt_nodes ++;
     }
@@ -1184,6 +1181,7 @@ static void parse_pbf_way_v3 (
            cur_infos   = read_integer_pbf_field_v2(cur_infos  , end_infos, READOSM_VAR_INT32, &fld);
            ts = fld.value.int32_value;
 
+#if 0
                 struct tm *times = gmtime (&ts);
                 char ts_buf[64];
                 if (times) {
@@ -1192,6 +1190,7 @@ static void parse_pbf_way_v3 (
                                times->tm_mday, times->tm_hour, times->tm_min,
                                times->tm_sec);
                   }
+#endif
 
            cur_infos = read_pbf_field_v2_protobuf_type_and_field(cur_infos, &fld);
            if (fld.field_id != 3) {wrong_assumption("fld_id = 3"); }
@@ -1270,7 +1269,7 @@ static void parse_pbf_way_v3 (
          key = (*(strings -> strings + id_key))->string;
          val = (*(strings -> strings + id_val))->string;
 
-//       printf("   %s = %s\n", key, val);
+         osm_way_key_val(way_id, key, val);
 
        }
     }
