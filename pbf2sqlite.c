@@ -100,7 +100,8 @@ void dbExec(const char* sql) {
 #endif
 }
 
-static int callback_node (/*const void *user_data,*/ const readosm_node *node) {
+#if 0
+static int callback_node ( const readosm_node *node) {
     char buf[128];
     int i;
     const readosm_tag *tag;
@@ -161,7 +162,9 @@ printf("no no\n"); exit(42);
     }
     return READOSM_OK;
 }
+#endif
 
+#if 0
 static int callback_way (const readosm_way * way) {
     char buf[128];
     int i;
@@ -225,7 +228,9 @@ static int callback_way (const readosm_way * way) {
 //  }
     return READOSM_OK;
 }
+#endif
 
+#if 0
 static int callback_relation (/*const void *user_data,*/ const readosm_relation * relation) {
 /* 
 * printing an OSM Relation (callback function) 
@@ -359,6 +364,7 @@ static int callback_relation (/*const void *user_data,*/ const readosm_relation 
 //     }
     return READOSM_OK;
 }
+#endif
 
 
 void createDB(const char* name) {
@@ -639,7 +645,7 @@ dbExec("PRAGMA temp_store = MEMORY");
 #endif
 
 
-  load_osm_pbf(filename_pbf, callback_node, callback_way, callback_relation );
+  load_osm_pbf(filename_pbf /*, callback_node, callback_way, callback_relation */);
 
 
 //sqlite3_exec(db, "commit transaction", NULL, NULL, NULL);
@@ -649,7 +655,7 @@ dbExec("PRAGMA temp_store = MEMORY");
   dbExec("commit work"       );
 #endif
 
-  createIndexes();
+//createIndexes();
 }
 
 char ts_buf[64];
@@ -691,8 +697,7 @@ void osm_node(
     }
 #endif
 
-   ts_to_buf(ts);
-
+// ts_to_buf(ts);
 // printf("osm_node %10llu   %11.7f,%11.7f  [%3d / %10llu] %s by %-20s (%8d) %d\n", id, lat, lon, version, changeset, ts_buf, user, uid, visible);
 
    sqlite3_bind_int64 (stmt_ins_nod, 1, id );

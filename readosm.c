@@ -1052,11 +1052,11 @@ static void parse_pbf_nodes_v3 (
        tim += δ_tim;
 
 
-       const time_t tim_ = tim;
+//     const time_t tim_ = tim;
 
 #if 0
        char ts_buf[64];
-       struct tm *times = gmtime (&tim_);
+       struct tm *times = gmtime (&tim);
                 if (times) {
                       int len;
                       sprintf (ts_buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
@@ -1107,7 +1107,7 @@ static void parse_pbf_nodes_v3 (
 
    //  -----------------------------------------------------------------------------------------------------
 
-       osm_node(cur_node_id, lat, lon, tim_, version, changeset, uid, uname_str, visibility);
+       osm_node(cur_node_id, lat, lon, tim, version, changeset, uid, uname_str, visibility);
 
 
    //  -----------------------------------------------------------------------------------------------------
@@ -1486,18 +1486,7 @@ static int parse_primitive_group_v2 (
                      strings,
                      fld.pointer,
                      fld.pointer + fld.str_len - 1
-//                ,  g_little_endian_cpu
                    );
-
-/*
-               if (!parse_pbf_nodes_v3 (
-                     strings,
-                     fld.pointer,
-                     fld.pointer + fld.str_len - 1
-//                ,  g_little_endian_cpu
-                   ))
-                       wrong_assumption("parse_pbf_nodes");
-*/
           }
           else if (fld.field_id == 3 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { // Way
 
@@ -1509,31 +1498,12 @@ static int parse_primitive_group_v2 (
                      fld.pointer + fld.str_len - 1
                 );
 
-/*
-//              if (!parse_pbf_way (
-                if (!parse_pbf_way_v3 (
-                     strings,
-                     fld.pointer,
-                     fld.pointer + fld.str_len - 1
- //               ,  g_little_endian_cpu
-                ))
-                     wrong_assumption("parse_pbf_way");
-*/
           }
           else if (fld.field_id == 4 && fld.protobuf_type == PROTOBUF_TYPE_LEN) { // Relation
 
                 cur = read_bytes_pbf_field_v2 (cur, end, &fld);
 
                 parse_pbf_relation_v3(strings, fld.pointer, fld.pointer+fld.str_len -1);
-
-/*
-                if (!parse_pbf_relation (
-                     strings, fld.pointer,
-                     fld.pointer + fld.str_len - 1,
-                     g_little_endian_cpu
-                ))
-                     wrong_assumption("parse_pbf_relation");
-*/
 
           }
           else {
@@ -1756,11 +1726,11 @@ static int read_osm_data_block_v3 () {
 
 int load_osm_pbf(
 
-    const char* filename_pbf,
+    const char* filename_pbf
 
-    readosm_node_callback     cb_nod,
-    readosm_way_callback      cb_way,
-    readosm_relation_callback cb_rel
+//  readosm_node_callback     cb_nod,
+//  readosm_way_callback      cb_way,
+//  readosm_relation_callback cb_rel
 ) {
 
     size_t        rd;
@@ -1769,9 +1739,10 @@ int load_osm_pbf(
 
     verbose_1("load_osm_pbf\n");
 
-    g_cb_nod            = cb_nod;
-    g_cb_way            = cb_way;
-    g_cb_rel            = cb_rel;
+//  g_cb_nod            = cb_nod;
+//  g_cb_way            = cb_way;
+//  g_cb_rel            = cb_rel;
+
     g_little_endian_cpu = test_endianness();
 
     g_pbf_file = fopen(filename_pbf, "rb");

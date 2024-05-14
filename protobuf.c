@@ -747,31 +747,32 @@ static unsigned char * read_bytes_pbf_field (unsigned char *start, unsigned char
     return NULL;
 }
 
-static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *start, unsigned char *stop, char little_endian_cpu) {
+// static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *start, unsigned char *stop, char little_endian_cpu) {
+// 
+//  // parsing a uint32 packed object
+//     unsigned char *ptr = start;
+//     pbf_field variant;
+// 
+//  // initializing an empty variant field (length) 
+//     init_variant (&variant, little_endian_cpu);
+//     variant.type = READOSM_VAR_UINT32;
+// 
+//     while (1) {
+//        ptr = read_integer_pbf_field (start, stop, &variant);
+//        if (variant.valid) {
+//              append_uint32_packed (packed, variant.value.uint32_value);
+//              if (ptr > stop)
+//                  break;
+// 
+//              start = ptr;
+//              continue;
+//        }
+//        return 0;
+//     }
+//     return 1;
+// }
 
- // parsing a uint32 packed object
-    unsigned char *ptr = start;
-    pbf_field variant;
-
- // initializing an empty variant field (length) 
-    init_variant (&variant, little_endian_cpu);
-    variant.type = READOSM_VAR_UINT32;
-
-    while (1) {
-       ptr = read_integer_pbf_field (start, stop, &variant);
-       if (variant.valid) {
-             append_uint32_packed (packed, variant.value.uint32_value);
-             if (ptr > stop)
-                 break;
-
-             start = ptr;
-             continue;
-       }
-       return 0;
-    }
-    return 1;
-}
-
+#if 0
 static int parse_sint32_packed (readosm_int32_packed * packed, unsigned char *start, unsigned char *stop, char little_endian_cpu) {
 /* parsing an int32 packed object */
     unsigned char *ptr = start;
@@ -794,7 +795,9 @@ static int parse_sint32_packed (readosm_int32_packed * packed, unsigned char *st
      }
     return 1;
 }
+#endif
 
+#if 0
 static int parse_sint64_packed (
     readosm_int64_packed *packed,
     unsigned char        *start,
@@ -828,6 +831,7 @@ static int parse_sint64_packed (
     }
     return 1;
 }
+#endif
 
 readosm_node_callback        g_cb_nod;
 readosm_way_callback         g_cb_way;
@@ -993,6 +997,7 @@ parse_string_table (readosm_string_table * string_table,
     return 0;
 }
 
+#if 0
 static int parse_pbf_node_infos (
    readosm_packed_infos *packed_infos,
    unsigned char        *start,
@@ -1077,6 +1082,7 @@ printf("parse_pbf_node_infos, field_id = %d\n", variant.field_id);
     finalize_int64_packed  (&packed_64);
     return 0;
 }
+#endif
 
 
 #if 0
@@ -1365,6 +1371,7 @@ static int parse_pbf_nodes (
 }
 #endif
 
+#if 0
 static int parse_pbf_way_info (
     readosm_internal_way * way,
     readosm_string_table * strings,
@@ -1466,7 +1473,9 @@ printf("parse_pbf_way_info, field.id = %d\n", variant.field_id);
    #endif
     return 0;
 }
+#endif
 
+#if 0
 static int parse_pbf_way (readosm_string_table * strings,
                unsigned char *start, unsigned char *stop,
                char little_endian_cpu
@@ -1613,8 +1622,10 @@ printf("parse_pbf_way\n");
     destroy_internal_way (way);
     return 0;
 }
+#endif
 
 
+#if 0
 static int
 parse_pbf_relation_info (readosm_internal_relation * relation,
                          readosm_string_table * strings, unsigned char *start,
@@ -1704,7 +1715,9 @@ parse_pbf_relation_info (readosm_internal_relation * relation,
    #endif
     return 0;
 }
+#endif
 
+#if 0
 static int parse_pbf_relation (
        readosm_string_table * strings,
        unsigned char         *start,
@@ -1836,5 +1849,6 @@ static int parse_pbf_relation (
     destroy_internal_relation (relation);
     return 0;
 }
+#endif
 
 
