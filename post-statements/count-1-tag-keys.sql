@@ -1,4 +1,6 @@
-drop   table count_1_tag_keys;
+drop table if exists count_1_tag_keys;
+
+.timer on
 create table count_1_tag_keys as
 select
    k,
