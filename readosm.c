@@ -210,7 +210,7 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
 
           c &= 0x7f;
 
-          switch (field_type /* variant->type*/) {
+          switch (field_type) {
 
             case READOSM_VAR_INT32:
             case READOSM_VAR_UINT32:
@@ -478,6 +478,7 @@ typedef struct {
 } packed_sint64_v2;
 
 
+#if 0
 static void parse_uint32_packed_v2(
 // readosm_uint32_packed * packed,
    packed_uint32_v2 * packed,
@@ -487,7 +488,6 @@ static void parse_uint32_packed_v2(
 
  // parsing a uint32 packed object
     unsigned char *ptr = start;
-//q pbf_field variant;
     pbf_field_v2 fld;
 
  // initializing an empty variant field (length)
@@ -515,8 +515,10 @@ static void parse_uint32_packed_v2(
     }
 //q return 1;
 }
+#endif
 
 
+#if 0
 static void parse_sint64_packed_v2 (
 //  readosm_int64_packed   *packed,
     packed_sint64_v2       *packed,
@@ -563,7 +565,9 @@ static void parse_sint64_packed_v2 (
     }
 //  return 1;
 }
+#endif
 
+#if 0
 static void parse_uint64_packed_v2 (
 //  readosm_int64_packed   *packed,
     packed_uint64_v2       *packed,
@@ -610,6 +614,7 @@ static void parse_uint64_packed_v2 (
     }
 //  return 1;
 }
+#endif
 
 
 #if 0
