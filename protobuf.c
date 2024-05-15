@@ -721,6 +721,7 @@ static unsigned char * read_integer_pbf_field (unsigned char *start, unsigned ch
     return NULL;
 }
 
+#if 0
 static unsigned char * read_bytes_pbf_field (unsigned char *start, unsigned char *stop, pbf_field * variant) {
  /* 
  / attempting to read some bytes from PBF
@@ -750,6 +751,7 @@ static unsigned char * read_bytes_pbf_field (unsigned char *start, unsigned char
       }
     return NULL;
 }
+#endif
 
 // static int parse_uint32_packed (readosm_uint32_packed * packed, unsigned char *start, unsigned char *stop, char little_endian_cpu) {
 // 
@@ -843,28 +845,6 @@ readosm_relation_callback    g_cb_rel;
 char                         g_little_endian_cpu;
 FILE*                        g_pbf_file;
 
-static unsigned int get_header_size (unsigned char *buf) {
-//
-// retrieving the current header size 
-// please note: header sizes in PBF always are 4 bytes BIG endian encoded (network byte order)
-//
-    four_byte_value four_bytes;
-
-    if (g_little_endian_cpu) {
-        four_bytes.bytes[0] = *(buf + 3);
-        four_bytes.bytes[1] = *(buf + 2);
-        four_bytes.bytes[2] = *(buf + 1);
-        four_bytes.bytes[3] = *(buf + 0);
-    }
-    else {
-        four_bytes.bytes[0] = *(buf + 0);
-        four_bytes.bytes[1] = *(buf + 1);
-        four_bytes.bytes[2] = *(buf + 2);
-        four_bytes.bytes[3] = *(buf + 3);
-    }
-
-    return four_bytes.uint32_value;
-}
 
 #if 0
 static unsigned char *read_pbf_field (

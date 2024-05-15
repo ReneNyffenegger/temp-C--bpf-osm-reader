@@ -94,6 +94,28 @@ static int test_endianness () {
 }
 
 
+static unsigned int header_size (unsigned char *buf) {
+//
+// retrieving the current header size 
+// please note: header sizes in PBF always are 4 bytes BIG endian encoded (network byte order)
+//
+    four_byte_value four_bytes;
+
+    if (g_little_endian_cpu) {
+        four_bytes.bytes[0] = *(buf + 3);
+        four_bytes.bytes[1] = *(buf + 2);
+        four_bytes.bytes[2] = *(buf + 1);
+        four_bytes.bytes[3] = *(buf + 0);
+    }
+    else {
+        four_bytes.bytes[0] = *(buf + 0);
+        four_bytes.bytes[1] = *(buf + 1);
+        four_bytes.bytes[2] = *(buf + 2);
+        four_bytes.bytes[3] = *(buf + 3);
+    }
+
+    return four_bytes.uint32_value;
+}
 
 static unsigned int blob_size() {
     size_t        rd;
@@ -104,10 +126,9 @@ static unsigned int blob_size() {
     if (rd == 0 && feof(g_pbf_file))
        return 0;
 
-    if (rd != 4) exit(80); // return READOSM_INVALID_PBF_HEADER;
+    if (rd != 4) {wrong_assumption("blob_size, rd == 4"); }
 
-    return get_header_size (buf_4);
-
+    return header_size (buf_4);
 }
 
 static int set_uncompressed_buffer(int req_uncompressed_buffer_size) {
