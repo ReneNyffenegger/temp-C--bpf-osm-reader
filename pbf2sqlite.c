@@ -626,11 +626,11 @@ int main (int argc, char *argv[]) {
   createDB(dbName);
 
 if (1) { // https://sqlite.org/forum/info/f832398c19d30a4a
-dbExec("PRAGMA journal_mode = OFF");
-dbExec("PRAGMA synchronous = 0");
-dbExec("PRAGMA cache_size = 1000000");
-dbExec("PRAGMA locking_mode = EXCLUSIVE");
-dbExec("PRAGMA temp_store = MEMORY");
+   dbExec("PRAGMA journal_mode = OFF");
+   dbExec("PRAGMA synchronous = 0");
+   dbExec("PRAGMA cache_size = 1000000");
+   dbExec("PRAGMA locking_mode = EXCLUSIVE");
+// dbExec("PRAGMA temp_store = MEMORY");           // This pragma is deprecated.
 }
 
 
