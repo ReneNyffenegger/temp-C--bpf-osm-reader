@@ -7,7 +7,7 @@ select
    way_id,
    rel_id
 from
-   tag
+   tag not indexed
 where
   (rel_id is null or rel_id not in (8131479))   and
    k not like 'name:%'       and
