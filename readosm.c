@@ -344,7 +344,107 @@ static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
 }
 
 
+static void append_string_to_table_v2 (
+   readosm_string_table *string_table,
+   pbf_field_v2         *fld
+)
+{
+ //
+ // Append a string to a PBF StringTable object
+ //
+ 
+    pbf_string_table_elem *string = malloc (sizeof (pbf_string_table_elem));
+//  string->string = malloc (variant->str_len + 1);
+    string->string = malloc (fld->str_len + 1);
+//  memcpy (string->string, variant->pointer, variant->str_len);
+    memcpy (string->string, fld    ->pointer, fld    ->str_len);
 
+//  *(string->string + variant->str_len) = '\0';
+    *(string->string + fld    ->str_len) = '\0';
+
+    string->next_string = NULL;
+
+    if (string_table->first_string == NULL) string_table->first_string             = string;
+    if (string_table->last_string  != NULL) string_table->last_string->next_string = string;
+
+    string_table->last_string = string;
+}
+
+
+static int parse_string_table_v2 (
+   readosm_string_table * string_table,
+   unsigned char *start,
+   unsigned char *stop
+//   char little_endian_cpu
+ )
+{
+/* 
+ / attempting to parse a StringTable 
+ / 
+ / Remark: each PBF compressed block includes a StringTable
+ / i.e. a centralized table where any string value used within
+ / the compressed block itself appears only one time.
+ / This is obviously intended so to minimize storage requirements.
+ /
+ / Individual objects within the PBF file will never directly
+ / encode string values; they'll use instead the corresponding
+ / index referencing the appropriate string within the StringTable.
+*/
+
+    pbf_field_v2  fld;
+//  pbf_field variant;
+    unsigned char *cur = start;
+
+/* initializing an empty variant field */
+ // init_variant (&variant, g_little_endian_cpu);
+
+// #ifdef TQ84_USE_PBF_FIELD_HINTS
+//  add_variant_hints (&variant, READOSM_LEN_BYTES, 1);
+// #endif
+
+/* reading the StringTable */
+    while (1) {
+
+       /* resetting an empty variant field */
+    //    reset_variant (&variant);
+
+//        base = read_pbf_field (start, stop, &variant);
+          cur  = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
+
+
+//        if (base == NULL && variant.valid == 0)
+//            goto error;
+
+//        start = base;
+
+//        if (variant.field_id == 1 && variant.type == READOSM_LEN_BYTES)
+          if (fld.field_id == 1) {
+              
+              cur = read_bytes_pbf_field_v2 (cur, stop, &fld);
+              append_string_to_table_v2 (string_table, &fld);
+          }
+          else {
+             printf("parse_string_table_v2: fld.field_id = %d\n", fld.field_id);
+//           wrong_assumption("parse_string_table_v2: fld.field_id == 1");
+          }
+
+          if (cur > stop) {
+              break;
+          }
+      }
+
+// #ifdef TQ84_USE_PBF_FIELD_HINTS
+//  finalize_variant (&variant);
+// #endif
+    return 1;
+
+//  error:
+// #ifdef TQ84_USE_PBF_FIELD_HINTS
+//  finalize_variant (&variant);
+// #endif
+
+//  return 0;
+}
 int block_size_v2(char* name) {
 
     unsigned int sz = blob_size();
@@ -1678,11 +1778,10 @@ static int read_osm_data_block_v3 () {
           if (fld_data.field_id == 1 && fld_data.protobuf_type == PROTOBUF_TYPE_LEN) {
               cur = read_bytes_pbf_field_v2 (cur, end, &fld_data);
 
-                if (!parse_string_table ( 
+                if (!parse_string_table_v2 ( 
                      &string_table,
                      fld_data.pointer,
-                     fld_data.pointer + fld_data.str_len - 1,
-                     g_little_endian_cpu
+                     fld_data.pointer + fld_data.str_len - 1
                    ))
                    wrong_assumption("sta");
 

@@ -275,6 +275,7 @@ static void finalize_variant (pbf_field * variant) {
 //     string_table->strings = NULL;
 // }
 
+#if 0
 static void append_string_to_table (
    readosm_string_table *string_table,
    pbf_field      *variant
@@ -296,6 +297,9 @@ static void append_string_to_table (
 
     string_table->last_string = string;
 }
+#endif
+
+
 
 static void array_from_string_table (readosm_string_table * string_table) {
 //
@@ -862,6 +866,7 @@ static unsigned int get_header_size (unsigned char *buf) {
     return four_bytes.uint32_value;
 }
 
+#if 0
 static unsigned char *read_pbf_field (
    unsigned char *start,
    unsigned char *stop,
@@ -916,6 +921,7 @@ static unsigned char *read_pbf_field (
     };
     return NULL;
 }
+#endif
 
 
 
@@ -942,6 +948,7 @@ unzip_compressed_block (unsigned char *zip_ptr, unsigned int zip_sz,
 #endif
 
 
+#if 0
 static int
 parse_string_table (readosm_string_table * string_table,
                     unsigned char *start, unsigned char *stop,
@@ -996,6 +1003,8 @@ parse_string_table (readosm_string_table * string_table,
 
     return 0;
 }
+#endif
+
 
 #if 0
 static int parse_pbf_node_infos (
