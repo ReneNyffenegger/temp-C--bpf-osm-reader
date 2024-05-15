@@ -48,6 +48,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <zlib.h>
+
 #include "osm-pbf-data-extractor.h"
 
 

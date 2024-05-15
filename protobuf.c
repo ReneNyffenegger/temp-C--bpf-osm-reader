@@ -44,19 +44,13 @@
 / 
 */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <memory.h>
-#include <time.h>
 
-#include <zlib.h>
 
 #include "readosm.h"
 #include "readosm_internals.h"
 #include "readosm_protobuf.h"
 
-#define MAX_NODES 1024
+// #define MAX_NODES 1024
 
 #ifdef TQ84_USE_PBF_FIELD_HINTS
 typedef struct pbf_field_hint pbf_field_hint;
@@ -159,6 +153,7 @@ typedef union  {
 } eight_byte_value;
 
 
+#if 0
 static void init_variant (pbf_field * variant, int little_endian_cpu) {
 
  // initializing an empty PBF Variant object
@@ -176,7 +171,9 @@ static void init_variant (pbf_field * variant, int little_endian_cpu) {
    #endif
 
 }
+#endif
 
+#if 0
 static void reset_variant (pbf_field * variant) {
 
  // resetting a PBF Variant object to its initial empty state */
@@ -186,7 +183,9 @@ static void reset_variant (pbf_field * variant) {
     variant->pointer  = NULL;
     variant->valid    = 0;
 }
+#endif
 
+#if 0
 #ifdef TQ84_USE_PBF_FIELD_HINTS
 static void add_variant_hints (
    pbf_field        *variant,
@@ -207,7 +206,9 @@ static void add_variant_hints (
     variant->last_hint = hint;
 }
 #endif
+#endif
 
+#if 0
 #ifdef TQ84_USE_PBF_FIELD_HINTS
 static int find_type_hint (
    pbf_field     *variant,
@@ -249,7 +250,9 @@ static int find_type_hint (
    return 0;
 }
 #endif
+#endif
 
+#if 0
 #ifdef TQ84_USE_PBF_FIELD_HINTS
 static void finalize_variant (pbf_field * variant) {
 /* cleaning any memory allocation for a PBF Variant object */
@@ -265,6 +268,7 @@ static void finalize_variant (pbf_field * variant) {
     variant->first_hint = NULL;
     variant->last_hint  = NULL;
 }
+#endif
 #endif
 
 // static void init_string_table (readosm_string_table * string_table) {
@@ -348,6 +352,7 @@ static void finalize_string_table (readosm_string_table * string_table) {
         free (string_table->strings);
 }
 
+#if 0
 static void init_uint32_packed (readosm_uint32_packed * packed) {
 
 // initialing an empty PBF uint32 packed object
@@ -370,6 +375,7 @@ append_uint32_packed (readosm_uint32_packed * packed, unsigned int val)
         packed->last->next = value;
     packed->last = value;
 }
+#endif
 
 static void
 array_from_uint32_packed (readosm_uint32_packed * packed)
@@ -532,6 +538,7 @@ static void array_from_int64_packed (readosm_int64_packed * packed) {
       }
 }
 
+#if 0
 static void finalize_int64_packed (readosm_int64_packed * packed) {
 
 /* cleaning any memory allocation for an int64 packed object */
@@ -548,7 +555,9 @@ static void finalize_int64_packed (readosm_int64_packed * packed) {
     if (packed->values)
         free (packed->values);
 }
+#endif
 
+#if 0
 static void
 reset_int64_packed (readosm_int64_packed * packed)
 {
@@ -559,7 +568,9 @@ reset_int64_packed (readosm_int64_packed * packed)
     packed->count = 0;
     packed->values = NULL;
 }
+#endif
 
+#if 0
 static void init_packed_infos (readosm_packed_infos * packed) {
 
  // initialing an empty PBF  packed Infos object
@@ -574,7 +585,9 @@ static void init_packed_infos (readosm_packed_infos * packed) {
     packed->usr_count = 0;
     packed->users = NULL;
 }
+#endif
 
+#if 0
 static void finalize_packed_infos (readosm_packed_infos * packed) {
  // cleaning any memory allocation for a packed Infos object
 
@@ -584,7 +597,9 @@ static void finalize_packed_infos (readosm_packed_infos * packed) {
     if (packed->uids      ) free (packed->uids      );
     if (packed->users     ) free (packed->users     );
 }
+#endif
 
+#if 0
 static unsigned char * read_integer_pbf_field (unsigned char *start, unsigned char *stop, pbf_field *variant) {
 
 /* 
@@ -720,6 +735,7 @@ static unsigned char * read_integer_pbf_field (unsigned char *start, unsigned ch
       };
     return NULL;
 }
+#endif
 
 #if 0
 static unsigned char * read_bytes_pbf_field (unsigned char *start, unsigned char *stop, pbf_field * variant) {

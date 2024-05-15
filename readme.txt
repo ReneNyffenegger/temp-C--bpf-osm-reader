@@ -37,3 +37,9 @@ H3
    Query wiki
       https://wiki.openstreetmap.org/w/api.php?action=query&list=allpages&apprefix=Key:
       curl 'https://en.wikipedia.org/w/api.php?action=query&format=json&list=allpages&aplimit=50&apprefix=Pfung' | jq
+
+
+------------
+
+   This gives a very basic parsing of osm.pbf files.
+      https://gist.github.com/JesseKPhillips/6051600
