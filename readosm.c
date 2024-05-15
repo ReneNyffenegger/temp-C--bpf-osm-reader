@@ -56,8 +56,8 @@
 // #define OSM_PBF_CONTAINS_VISIBILITY
 // #define PARSE_INFOS
 
-unsigned int    cur_uncompressed_buffer_size = 0;
-unsigned char  *ptr_uncompressed_buffer      = NULL;
+long unsigned int cur_uncompressed_buffer_size = 0;
+unsigned char    *ptr_uncompressed_buffer      = NULL;
 
 char            g_little_endian_cpu;
 FILE*           g_pbf_file;
@@ -86,7 +86,25 @@ void wrong_assumption(char* txt) {
 
 #include "client.h"
 
-static int test_endianness () {
+
+typedef union  {
+/* a union used for 32 bit ints [cross-endian] */
+    unsigned char bytes[4];
+    int           int32_value;
+    unsigned int uint32_value;
+    float         float_value;
+} four_byte_value;
+
+typedef union  {
+// a union used for 64 bit ints [cross-endian] */
+//
+    unsigned char       bytes[8];
+    long long           int64_value;
+    unsigned long long uint64_value;
+    double              double_value;
+} eight_byte_value;
+
+static char test_endianness () {
 
 /* checks the current CPU endianness */
     four_byte_value endian4;
@@ -136,10 +154,10 @@ static unsigned int blob_size() {
     return header_size (buf_4);
 }
 
-static int set_uncompressed_buffer(int req_uncompressed_buffer_size) {
+static void set_uncompressed_buffer(long unsigned int req_uncompressed_buffer_size) {
 
     if (req_uncompressed_buffer_size > cur_uncompressed_buffer_size) {
-       printf("increase uncompressed buffer from %d to %d\n", cur_uncompressed_buffer_size, req_uncompressed_buffer_size);
+       printf("increase uncompressed buffer from %lu to %lu\n", cur_uncompressed_buffer_size, req_uncompressed_buffer_size);
        free(ptr_uncompressed_buffer);
        cur_uncompressed_buffer_size = req_uncompressed_buffer_size;
        ptr_uncompressed_buffer      = malloc(cur_uncompressed_buffer_size);
@@ -386,12 +404,9 @@ static void append_string_to_table_v2 (
  //
  
     pbf_string_table_elem *string = malloc (sizeof (pbf_string_table_elem));
-//  string->string = malloc (variant->str_len + 1);
     string->string = malloc (fld->str_len + 1);
-//  memcpy (string->string, variant->pointer, variant->str_len);
     memcpy (string->string, fld    ->pointer, fld    ->str_len);
 
-//  *(string->string + variant->str_len) = '\0';
     *(string->string + fld    ->str_len) = '\0';
 
     string->next_string = NULL;
@@ -1156,11 +1171,11 @@ static void parse_pbf_nodes_v3 (
     double    lon = 0.0;
     int       tim = 0;
     unsigned  long long changeset = 0;
-    unsigned  int       version;
+    unsigned  int       version   = 0;
     int       uid       = 0;
     int       uname     = 0;
-    int       visibility;
-    char     *uname_str;
+    int       visibility = 1;
+    char     *uname_str  = NULL;
 
     while (cur_node_ids <= end_node_ids) {
 
@@ -1291,8 +1306,8 @@ static void parse_pbf_way_v3 (
 
     unsigned char *cur_keys     = NULL;   unsigned char* end_keys     = NULL;
     unsigned char *cur_values   = NULL;   unsigned char* end_values   = NULL;
-    unsigned char *cur_infos    = NULL;   unsigned char* end_infos;
-    unsigned char *cur_node_ids;          unsigned char* end_node_ids;
+    unsigned char *cur_infos    = NULL;   unsigned char* end_infos    = NULL;
+    unsigned char *cur_node_ids = NULL;   unsigned char* end_node_ids = NULL;
 
 
     pbf_field_v2    fld;
@@ -1320,12 +1335,12 @@ static void parse_pbf_way_v3 (
    //                    Infos (user, uid, timestamp etc.)
 
 
-      char const* user;
-      int visibility;
-      long long changeset;
-      int uid;
-      int version;
-      time_t ts;
+      char const* user      = 0;
+      int         visibility= 1;
+      long long   changeset = 0;
+      int         uid       = 0;
+      int         version   = 0;
+      time_t      ts        = 0;
 #ifdef PARSE_INFOS
       if (cur_infos) {
 
@@ -1446,9 +1461,9 @@ static void parse_pbf_relation_v3 (
     unsigned char *cur_values    = NULL;   unsigned char* end_values   = NULL;
     unsigned char *cur_infos     = NULL;   unsigned char* end_infos;
 
-    unsigned char *cur_mem_roles;          unsigned char* end_mem_roles;
-    unsigned char *cur_mem_refs;           unsigned char* end_mem_refs;
-    unsigned char *cur_mem_types;          unsigned char* end_mem_types;
+    unsigned char *cur_mem_roles = NULL;   unsigned char* end_mem_roles = NULL;
+    unsigned char *cur_mem_refs  = NULL;   unsigned char* end_mem_refs  = NULL;
+    unsigned char *cur_mem_types = NULL;   unsigned char* end_mem_types = NULL;
 
 // printf("parse_pbf_relation_v3\n");
     
@@ -1477,12 +1492,12 @@ static void parse_pbf_relation_v3 (
    // -----------------------------------------------------------------------
    //                    Infos (user, uid, timestamp etc.)
 
-      char const* user;
-      int visibility;
-      long long changeset;
-      int uid;
-      int version;
-      time_t ts;
+      char const* user      = 0;
+      int         visibility= 1;
+      long long   changeset = 0;
+      int         uid       = 0;
+      int         version   = 0;
+      time_t      ts        = 0;
 #ifdef PARSE_INFOS
       if (cur_infos) {
 
@@ -1681,8 +1696,8 @@ static int read_osm_data_block_v3 () {
     unsigned char       *end;
 
     unsigned char       *zip_ptr            = NULL;
-    int                  zip_sz             = 0;
-    int                  sz_no_compression  = 0;
+    long unsigned int    zip_sz             = 0;
+    long unsigned int    sz_no_compression  = 0;
 
 //  --------------------------------------------------------------------- Data   ---------------------------------------------------------------------------------------------------
 
@@ -1773,7 +1788,7 @@ static int read_osm_data_block_v3 () {
 
           if (unc_ret != Z_OK || unc_size != sz_no_compression) {
               printf("Z_OK = %d, unc_ret = %d / Z_BUF_ERROR = %d, Z_MEM_ERROR = %d, Z_DATA_ERROR = %d\n", Z_OK, unc_ret, Z_BUF_ERROR, Z_MEM_ERROR, Z_DATA_ERROR);
-              printf("unc_size = %d, zip_sz = %d\n", unc_size, zip_sz);
+              printf("unc_size = %lu, zip_sz = %lu\n", unc_size, zip_sz);
               wrong_assumption("uncompress");
               exit(101);
           }
@@ -1815,7 +1830,7 @@ static int read_osm_data_block_v3 () {
                      fld_data.pointer,
                      fld_data.pointer + fld_data.str_len - 1
                    ))
-                   wrong_assumption("sta");
+                   wrong_assumption("string table successfully parsed");
 
                 array_from_string_table (&string_table);
           }

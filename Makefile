@@ -1,4 +1,4 @@
- C_OPTS = -Werror -O3
+C_OPTS = -Werror -O3
 #C_OPTS = \
    -Werror \
    -Wall \
@@ -18,9 +18,9 @@
    -Wno-unused \
    -Wno-variadic-macros \
    -Wno-parentheses \
- 	-Wconversion \
+   -Wconversion \
    -fdiagnostics-show-option \
- 	-O3
+ 	 -O3
 
 pbf2sqlite: pbf2sqlite.c readosm.o client.h osm-pbf-data-extractor.h Makefile
 	gcc $(C_OPTS) readosm.o pbf2sqlite.c  -lz  -lsqlite3 -o pbf2sqlite

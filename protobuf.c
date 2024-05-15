@@ -52,6 +52,7 @@
 
 // #define MAX_NODES 1024
 
+#if 0
 #ifdef TQ84_USE_PBF_FIELD_HINTS
 typedef struct pbf_field_hint pbf_field_hint;
 struct pbf_field_hint {
@@ -101,16 +102,15 @@ typedef struct {
    #endif
 }
 pbf_field;
+#endif
 
 
 typedef struct pbf_string_table_elem pbf_string_table_elem;
-struct pbf_string_table_elem
-{
+struct pbf_string_table_elem {
  // a String into a PBF StringTable
     char                     *string;      // pointer to string value (NULL terminated string)
     pbf_string_table_elem    *next_string; //  supporting linked lis
-}
-;
+};
 
 typedef struct {
 
@@ -128,29 +128,12 @@ typedef struct {
     pbf_string_table_elem  *first_string;      // pointers supporting a linked list */
     pbf_string_table_elem  *last_string;       // of PBF string objects */
 
-    int                     count;             // how many TAG items are there --- TODO: this is likely the number of strings!
+    unsigned int            count;             // how many TAG items are there --- TODO: this is likely the number of strings!
 
     pbf_string_table_elem **strings;           // array of PBF string objects (See array_from_string_table() )
 
 } readosm_string_table;
 
-typedef union  {
-
-/* a union used for 32 bit ints [cross-endian] */
-    unsigned char bytes[4];
-    int           int32_value;
-    unsigned int uint32_value;
-    float         float_value;
-} four_byte_value;
-
-typedef union  {
-// a union used for 64 bit ints [cross-endian] */
-//
-    unsigned char       bytes[8];
-    long long           int64_value;
-    unsigned long long uint64_value;
-    double              double_value;
-} eight_byte_value;
 
 
 #if 0
@@ -322,6 +305,12 @@ static void array_from_string_table (readosm_string_table * string_table) {
 // allocating the pointer array
     string_table->strings = malloc (sizeof (pbf_string_table_elem *) * string_table->count);
 
+static unsigned int max_count = 0;
+if (string_table->count > max_count) {
+  max_count = string_table->count;
+  printf("string-table, max_count = %u\n", max_count);
+}
+
     i = 0;
     string_elem = string_table->first_string;
     while (string_elem != NULL) {
@@ -377,6 +366,7 @@ append_uint32_packed (readosm_uint32_packed * packed, unsigned int val)
 }
 #endif
 
+#if 0
 static void
 array_from_uint32_packed (readosm_uint32_packed * packed)
 {
@@ -537,6 +527,7 @@ static void array_from_int64_packed (readosm_int64_packed * packed) {
           value = value->next;
       }
 }
+#endif
 
 #if 0
 static void finalize_int64_packed (readosm_int64_packed * packed) {
