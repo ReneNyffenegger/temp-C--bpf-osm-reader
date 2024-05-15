@@ -57,6 +57,9 @@
 unsigned int    cur_uncompressed_buffer_size = 0;
 unsigned char  *ptr_uncompressed_buffer      = NULL;
 
+char            g_little_endian_cpu;
+FILE*           g_pbf_file;
+
 void wrong_assumption(char* txt) {
    printf("\033[1;31m%s\033[0m\n", txt);
    exit(1);
@@ -315,37 +318,7 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
     return NULL;
 }
 
-static unsigned char * read_bytes_pbf_field_v2 (unsigned char *start, unsigned char *stop, pbf_field_v2 *variant) {
-// 
-// attempting to read some bytes from PBF
-// Strings and alike are encoded in PBF using a two steps approach:
-// - an INT32 field declares the expected length
-// - then the string (no terminating NULL char) follows
 
-    unsigned char *ptr = start;
-    pbf_field varlen;
-    unsigned int len;
-
- // initializing an empty variant field (length)
-    init_variant (&varlen, g_little_endian_cpu);
-    varlen.type = READOSM_VAR_UINT32;
-
-    ptr = read_integer_pbf_field (ptr, stop, &varlen);
-
-    if (varlen.valid) {
-          len = varlen.value.uint32_value;
-          if ((ptr + len - 1) > stop) {
-              wrong_assumption("ptr+len-1 > stop");
-              return NULL;
-          }
-
-          variant->pointer = ptr;
-          variant->str_len = len;
-          return ptr + len;
-    }
-    wrong_assumption("bla bla");
-    return NULL;
-}
 static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
    unsigned char *ptr,
    pbf_field_v2  *fld
@@ -362,6 +335,42 @@ static unsigned char *read_pbf_field_v2_protobuf_type_and_field (
 
     ptr++;
     return ptr;
+}
+
+static unsigned char * read_bytes_pbf_field_v2 (unsigned char *start, unsigned char *stop, pbf_field_v2 *variant) {
+// 
+// attempting to read some bytes from PBF
+// Strings and alike are encoded in PBF using a two steps approach:
+// - an INT32 field declares the expected length
+// - then the string (no terminating NULL char) follows
+
+    unsigned char *ptr = start;
+//  pbf_field    varlen;
+    pbf_field_v2 varlen;
+    unsigned int len;
+
+ // initializing an empty variant field (length)
+//  init_variant (&varlen, g_little_endian_cpu);
+//  varlen.type = READOSM_VAR_UINT32;
+
+//  ptr = read_integer_pbf_field (ptr, stop, &varlen);
+//  ptr = read_pbf_field_v2_protobuf_type_and_field(ptr, &varlen);                // NOTE: this field does not have a field id or protobuf-type!
+    ptr = read_integer_pbf_field_v2(ptr, stop, READOSM_VAR_UINT32, &varlen);
+
+//  if (varlen.valid) {
+          len = varlen.value.uint32_value;
+          if ((ptr + len - 1) > stop) {
+              printf("len = %d, \n", len);
+              wrong_assumption("ptr+len-1 > stop");
+              return NULL;
+          }
+
+          variant->pointer = ptr;
+          variant->str_len = len;
+          return ptr + len;
+//  }
+    wrong_assumption("bla bla");
+    return NULL;
 }
 
 

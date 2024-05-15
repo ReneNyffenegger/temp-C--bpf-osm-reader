@@ -839,11 +839,9 @@ static int parse_sint64_packed (
 }
 #endif
 
-readosm_node_callback        g_cb_nod;
-readosm_way_callback         g_cb_way;
-readosm_relation_callback    g_cb_rel;
-char                         g_little_endian_cpu;
-FILE*                        g_pbf_file;
+// readosm_node_callback        g_cb_nod;
+// readosm_way_callback         g_cb_way;
+// readosm_relation_callback    g_cb_rel;
 
 
 #if 0
