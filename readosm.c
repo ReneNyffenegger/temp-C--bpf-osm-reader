@@ -1737,9 +1737,9 @@ static int read_osm_data_block_v3 () {
     }
     else if (size_primitive_block.field_id == 2) {
 
-       cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &size_primitive_block);
+       cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_UINT32, &size_primitive_block);
        
-       sz_no_compression = size_primitive_block.value.int32_value;
+       sz_no_compression = size_primitive_block.value.uint32_value;
 
        cur = read_pbf_field_v2_protobuf_type_and_field(cur, &zipped_block);
        cur = read_bytes_pbf_field_v2 (cur, end, &zipped_block);
