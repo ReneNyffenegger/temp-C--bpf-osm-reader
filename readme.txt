@@ -1,3 +1,8 @@
+TODO:
+  - Use STRICT tables
+    - Needs version > 3.37.0 (2021-11-27)
+
+
 OSM PBF Format
 --------------
    the reference implementation of PBF is the Osmosis implementation, split into two parts,
