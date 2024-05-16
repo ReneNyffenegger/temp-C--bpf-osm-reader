@@ -413,27 +413,27 @@ dbExec("pragma page_size = 8192");
 //sqlite3_exec(db,
   dbExec(
 "create table nod ("
-"          id             bigint primary key, -- integer primary key,\n"
-"          lat            double not null, -- real not null,\n"
-"          lon            double not null  -- real not null \n"
+"          id             integer primary key, -- bigint primary key,\n"
+"          lat            real not null, -- double not null,\n"
+"          lon            real not null  -- double not null \n"
 "        )"
   );
 
   dbExec ( 
 "create table nod_way ("
-"          way_id         bigint not null,"
-"          nod_id         bigint not null,"
+"          way_id         integer /* bigint */ not null,"
+"          nod_id         integer /* bigint */ not null,"
 "          order_         integer not null"
 "        )"
   );
 
   dbExec (
 "create table rel_mem ("
-"          rel_of  bigint  not null,"
+"          rel_of  integer /* bigint */  not null,"
 "          order_  integer not null,"
-"          nod_id  bigint,"
-"          way_id  bigint,"
-"          rel_id  bigint,"
+"          nod_id  integer /* bigint */,"
+"          way_id  integer /* bigint */,"
+"          rel_id  integer /* bigint */,"
 "          rol     /*varchar(255)*/  text\n"
 ")"
   );
@@ -459,9 +459,9 @@ dbExec("pragma page_size = 8192");
 
    dbExec(
 "CREATE TABLE tag (\n"
-"          nod_id         bigint null,\n"
-"          way_id         bigint null,\n"
-"          rel_id         bigint null,\n"
+"          nod_id         integer /* bigint */ null,\n"
+"          way_id         integer /* bigint */ null,\n"
+"          rel_id         integer /* bigint */ null,\n"
 "          k              /*varchar( 255) */ text /* character set utf8mb4 collate       utf8mb4_0900_as_cs, */ not null,\n"
 "          v              /*varchar( 255) */ text /* character set utf8mb4 collate       utf8mb4_0900_as_cs  */ not null \n"
 "        )"
@@ -603,10 +603,12 @@ int main (int argc, char *argv[]) {
        exit(1);
     }
 
+
 #ifdef PBF2SQLITE
 //const char* dbName  = "/home/rene/github/github/OpenStreetMap/db/li.db";
 //const char* dbName  = "/mnt/a/osm/pbf/ch.db";
 //const char* dbName  = "/mnt/a/osm/pbf/planet.db";
+  printf("sqlite version: %s\n", sqlite3_version);
 #elif defined PBF2MYSQL
 //const char* dbName  = "osm_ch";
 #endif

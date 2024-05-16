@@ -1,6 +1,7 @@
 TODO:
   - Use STRICT tables
     - Needs version > 3.37.0 (2021-11-27)
+  - SQLite concurrent access.
 
 
 OSM PBF Format
