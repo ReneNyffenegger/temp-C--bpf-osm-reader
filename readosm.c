@@ -492,7 +492,7 @@ static int parse_string_table_v2 (
 
 //  return 0;
 }
-int block_size_v2(char* name) {
+unsigned int block_size_v2(char* name) {
 
     unsigned int sz = blob_size();
     if (!sz) return 0;
@@ -1685,7 +1685,7 @@ static int read_osm_data_block_v3 () {
 
     verbose_1("  read_osm_data_block\n");
 
-    int hdsz = block_size_v2( "OSMData");
+    size_t hdsz = block_size_v2( "OSMData");
     if (!hdsz) return 0;
 
 
@@ -1711,7 +1711,7 @@ static int read_osm_data_block_v3 () {
 
     size_t  rd;
     rd    = fread (buf, 1, hdsz, g_pbf_file);
-    if ((int) rd != hdsz) {
+    if (rd != hdsz) {
        wrong_assumption("vbla");
     }
 

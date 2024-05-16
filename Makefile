@@ -1,6 +1,6 @@
 # C_OPTS = -Werror -O3 -g
-  C_OPTS = -Werror -O3
-# C_OPTS = -Werror -Ofast #  -Ofast  Enables all -O3 optimizations and some aggressive ones that may break strict compliance with standards.
+# C_OPTS = -Werror -O3
+  C_OPTS = -Werror -Ofast #  -Ofast  Enables all -O3 optimizations and some aggressive ones that may break strict compliance with standards.
 
 #C_OPTS = \
    -Werror \
