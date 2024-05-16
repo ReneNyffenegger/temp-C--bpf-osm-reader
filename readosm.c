@@ -313,7 +313,12 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
                neg = -1;
 
            v32 = (value32 + 1) / 2;
+          
+          #pragma GCC diagnostic push // Prevent error message «conversion to ‘unsigned int’ from ‘int’ may change the sign of the result»
+          #pragma GCC diagnostic ignored "-Wsign-conversion"
            variant->value.int32_value = v32 * neg;
+          #pragma GCC diagnostic pop
+
            return ptr;
 
       case READOSM_VAR_INT64:
@@ -330,7 +335,11 @@ static unsigned char *read_integer_pbf_field_v2 (unsigned char *start, unsigned 
            else
                neg = -1;
            v64 = (value64 + 1) / 2;
+          #pragma GCC diagnostic push // Prevent error message «conversion to ‘long long int’ from ‘long long unsigned int’ may change the sign of the result»
+          #pragma GCC diagnostic ignored "-Wsign-conversion"
            variant->value.int64_value = v64 * neg;
+          #pragma GCC diagnostic pop
+
            return ptr;
       };
     wrong_assumption("xyz");
@@ -492,12 +501,13 @@ static int parse_string_table_v2 (
 
 //  return 0;
 }
+
 unsigned int block_size_v2(char* name) {
 
     unsigned int sz = blob_size();
     if (!sz) return 0;
 
-    int hdsz      = 0;
+    unsigned int hdsz      = 0;
     size_t        rd;
 
 
@@ -553,7 +563,7 @@ unsigned int block_size_v2(char* name) {
     cur = read_integer_pbf_field_v2(cur, end, READOSM_VAR_INT32, &fld_block_size);
     verbose_1("      read integer\n");
 
-    hdsz = fld_block_size.value.int32_value;
+    hdsz = (unsigned int) fld_block_size.value.int32_value;
     verbose_1("      ret = %d\n", read);
 
     free(buf);
@@ -575,14 +585,14 @@ static int read_header_block_v2() {
 
     verbose_1("  read_header_block, sz = %d\n", sz);
 
-    int hdsz = block_size_v2("OSMHeader");
+    size_t hdsz = block_size_v2("OSMHeader");
     if (!hdsz) {
         wrong_assumption("ok header, hdsz 2");
     }
  //
  // Just SKIP OVER the rest of the header buffer!
  //
-    fseek(g_pbf_file, hdsz, SEEK_CUR);
+    fseek(g_pbf_file, (long int) hdsz, SEEK_CUR);
     return 1;
  //
  // alternatively, create a buffer and parse it and deallocate it.
@@ -594,7 +604,7 @@ static int read_header_block_v2() {
     if (!rd) {
         wrong_assumption("rd");
     }
-    if ((int) rd != hdsz) {
+    if (rd != hdsz) {
         wrong_assumption("rd != hdsz");
     }
 
@@ -945,11 +955,8 @@ static int parse_pbf_nodes_v2 (
                 printf("  nd->id = %d\n", nd->id);
             /* latitudes and longitudes require to be rescaled as DOUBLEs */
 
-               #pragma GCC diagnostic push // Prevent error message «conversion from ‘long long int’ to ‘double’ may change value»
-//             #pragma GCC diagnostic ignored "-Wconversion"
                 nd->latitude  = delta_lat / 10000000.0;
                 nd->longitude = delta_lon / 10000000.0;
-               #pragma GCC diagnostic pop
 
                 if (fromPackedInfos) {
                       nd->version = *(packed_infos.versions   + base + i);
@@ -1176,8 +1183,8 @@ static void parse_pbf_nodes_v3 (
     int       tim = 0;
     unsigned  long long changeset = 0;
     unsigned  int       version   = 0;
-    int       uid       = 0;
-    int       uname     = 0;
+    int       uid        = 0;
+    int       uname      = 0;
     int       visibility = 1;
     char     *uname_str  = NULL;
 
@@ -1202,9 +1209,6 @@ static void parse_pbf_nodes_v3 (
 
        lat += δ_lat;
        lon += δ_lon;
-
-
-
 
 #ifdef PARSE_INFOS
        cur_versions = read_integer_pbf_field_v2(cur_versions, end_versions, READOSM_VAR_UINT32, &fld);
