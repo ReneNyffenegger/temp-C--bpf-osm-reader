@@ -944,8 +944,12 @@ static int parse_pbf_nodes_v2 (
                 nd->id = delta_id;
                 printf("  nd->id = %d\n", nd->id);
             /* latitudes and longitudes require to be rescaled as DOUBLEs */
+
+               #pragma GCC diagnostic push // Prevent error message «conversion from ‘long long int’ to ‘double’ may change value»
+//             #pragma GCC diagnostic ignored "-Wconversion"
                 nd->latitude  = delta_lat / 10000000.0;
                 nd->longitude = delta_lon / 10000000.0;
+               #pragma GCC diagnostic pop
 
                 if (fromPackedInfos) {
                       nd->version = *(packed_infos.versions   + base + i);
@@ -1188,12 +1192,17 @@ static void parse_pbf_nodes_v3 (
        double δ_lon;
 
        cur_latitudes  = read_integer_pbf_field_v2 (cur_latitudes , end_latitudes , READOSM_VAR_SINT64, &fld);
-       δ_lat = fld.value.int64_value / 10000000.0;
-       lat += δ_lat;
-
        cur_longitudes = read_integer_pbf_field_v2 (cur_longitudes, end_longitudes, READOSM_VAR_SINT64, &fld);
+
+      #pragma GCC diagnostic push // Prevent error message «conversion from ‘long long int’ to ‘double’ may change value»
+      #pragma GCC diagnostic ignored "-Wconversion"
+       δ_lat = fld.value.int64_value / 10000000.0;
        δ_lon = fld.value.int64_value / 10000000.0;
+      #pragma GCC diagnostic pop
+
+       lat += δ_lat;
        lon += δ_lon;
+
 
 
 
