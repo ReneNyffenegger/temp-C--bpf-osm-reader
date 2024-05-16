@@ -1264,7 +1264,7 @@ static void parse_pbf_nodes_v3 (
 
    //  -----------------------------------------------------------------------------------------------------
 
-       osm_node(cur_node_id, lat, lon, tim, version, changeset, uid, uname_str, visibility);
+       osm_node((unsigned long long) cur_node_id, lat, lon, tim, version, changeset, uid, uname_str, visibility);
 
 
    //  -----------------------------------------------------------------------------------------------------
@@ -1273,19 +1273,19 @@ static void parse_pbf_nodes_v3 (
     //
        while (1) {
           cur_packed_keys = read_integer_pbf_field_v2(cur_packed_keys, end_packed_keys, READOSM_VAR_UINT32, &fld);
-          unsigned int str_id_key = fld.value.int32_value;
+          int str_id_key = fld.value.int32_value;
 
           if (!str_id_key ) { break; }
 
           cur_packed_keys = read_integer_pbf_field_v2(cur_packed_keys, end_packed_keys, READOSM_VAR_UINT32, &fld);
-          unsigned int str_id_val = fld.value.int32_value;
+          int str_id_val = fld.value.int32_value;
 
           char *key, *val;
 
           key = (*(strings -> strings + str_id_key))->string;
           val = (*(strings -> strings + str_id_val))->string;
 
-          osm_node_key_value(cur_node_id, key, val);
+          osm_node_key_value((unsigned long long) cur_node_id, key, val);
        }
 
 //     cnt_nodes ++;
@@ -1335,12 +1335,12 @@ static void parse_pbf_way_v3 (
    //                    Infos (user, uid, timestamp etc.)
 
 
-      char const* user      = 0;
-      int         visibility= 1;
-      long long   changeset = 0;
-      int         uid       = 0;
-      int         version   = 0;
-      time_t      ts        = 0;
+      char const*  user       = 0;
+      int          visibility = 1;
+      long long    changeset  = 0;
+      int          uid        = 0;
+      unsigned int version    = 0;
+      time_t       ts         = 0;
 #ifdef PARSE_INFOS
       if (cur_infos) {
 
@@ -1401,7 +1401,7 @@ static void parse_pbf_way_v3 (
          wrong_assumption("cur_infos");
       }
 #endif
-      osm_way(way_id, ts, version, changeset, uid, user, visibility);
+      osm_way((unsigned long long) way_id, ts, version, (unsigned long long) changeset, uid, user, visibility);
 
 
    // -----------------------------------------------------------------------
@@ -1416,7 +1416,7 @@ static void parse_pbf_way_v3 (
            δ_node_id = fld.value.int64_value;
            node_id  += δ_node_id;
 
-           osm_way_node_id(way_id, node_id, nod_pos++);
+           osm_way_node_id((unsigned long long) way_id, (unsigned long long) node_id, nod_pos++);
       }
    // -----------------------------------------------------------------------
    //
@@ -1443,7 +1443,7 @@ static void parse_pbf_way_v3 (
           key = (*(strings -> strings + id_key))->string;
           val = (*(strings -> strings + id_val))->string;
 
-          osm_way_key_val(way_id, key, val);
+          osm_way_key_val((unsigned long long) way_id, key, val);
        }
     }
 }
@@ -1471,7 +1471,7 @@ static void parse_pbf_relation_v3 (
     cur = read_pbf_field_v2_protobuf_type_and_field(cur, &fld);
     if (fld.field_id != 1 || fld.protobuf_type != PROTOBUF_TYPE_VARINT) { wrong_assumption("rel id"); }
     cur = read_integer_pbf_field_v2 (cur, end , READOSM_VAR_INT64, &fld);
-    long long rel_id = fld.value.int64_value;
+    signed long long rel_id = fld.value.int64_value;
 
 
 //  reading the Relation
@@ -1492,12 +1492,12 @@ static void parse_pbf_relation_v3 (
    // -----------------------------------------------------------------------
    //                    Infos (user, uid, timestamp etc.)
 
-      char const* user      = 0;
-      int         visibility= 1;
-      long long   changeset = 0;
-      int         uid       = 0;
-      int         version   = 0;
-      time_t      ts        = 0;
+      char const*          user      = 0;
+      int                  visibility= 1;
+      unsigned long long   changeset = 0;
+      int                  uid       = 0;
+      unsigned int         version   = 0;
+      time_t               ts        = 0;
 #ifdef PARSE_INFOS
       if (cur_infos) {
 
@@ -1554,13 +1554,13 @@ static void parse_pbf_relation_v3 (
          wrong_assumption("cur_infos");
       }
 #endif
-      osm_rel(rel_id, ts, version, changeset, uid, user, visibility);
+      osm_rel((unsigned long long) rel_id, ts, version, changeset, uid, user, visibility);
 
    // -----------------------------------------------------------------------
    //    Members
    //
-   long long δelem_id  = 0;
-   long long elem_id   = 0;
+   signed long long δelem_id  = 0;
+   signed long long  elem_id  = 0;
 
    int elem_pos = 0;
    while (cur_mem_refs < end_mem_refs) {
@@ -1577,7 +1577,7 @@ static void parse_pbf_relation_v3 (
         char const* role = (*(strings -> strings + id_role))->string;
 
 
-        osm_rel_member(rel_id, elem_id, role, type, elem_pos++);
+        osm_rel_member((unsigned long long) rel_id, (unsigned long long) elem_id, role, type, elem_pos++);
 //      printf("   elem_id %lld [%s] (%d)\n", elem_id, role, type);
 
    }
@@ -1606,7 +1606,7 @@ static void parse_pbf_relation_v3 (
           key = (*(strings -> strings + id_key))->string;
           val = (*(strings -> strings + id_val))->string;
 
-          osm_rel_key_val(rel_id, key, val);
+          osm_rel_key_val((unsigned long long) rel_id, key, val);
        }
     }
 }
