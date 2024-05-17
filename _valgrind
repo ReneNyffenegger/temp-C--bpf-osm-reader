@@ -1,9 +1,0 @@
-#
-#  See also:
-#    https://valgrind.org/docs/manual/cg-manual.html
-#    https://www.sqlite.org/cpu.html#microopt
-#
-valgrind --tool=callgrind ./pbf2sqlite li
-kcachegrind callgrind.out.$PIDOFPROC
-
-
